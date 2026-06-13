@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Company Info')
-@section('page-title', 'Company Info')
+@section('title', 'Company')
+@section('page-title', 'Company')
 
 @section('content')
 <div x-data="companyPage()" x-init="init()">

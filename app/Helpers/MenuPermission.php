@@ -38,14 +38,6 @@ class MenuPermission
         'generate'     => 'generate',
         'info'         => 'update',
         'password'     => 'password.change',
-        'submit'       => 'submit',
-        'approve'      => 'approve',
-        'reject'            => 'reject',
-        'cancel'            => 'cancel',
-        'next-number'       => 'view',
-        'search-customers'  => 'view',
-        'search-products'   => 'view',
-        'product'           => 'view',
     ];
 
     private const ROUTE_OVERRIDES = [];

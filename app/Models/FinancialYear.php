@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class FinancialYear extends Model
 {
     protected $fillable = [
-        'company_id', 'label', 'start_date', 'end_date',
+        'label', 'start_date', 'end_date',
         'is_current', 'is_locked', 'notes', 'created_by',
     ];
 
@@ -17,11 +17,6 @@ class FinancialYear extends Model
         'is_current' => 'boolean',
         'is_locked'  => 'boolean',
     ];
-
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
 
     public function creator()
     {

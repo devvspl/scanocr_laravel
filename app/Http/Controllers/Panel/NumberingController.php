@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
-use App\Models\Company;
 use App\Models\DocumentType;
 use App\Models\NumberingSetting;
 use App\Services\ActivityLogger;
@@ -13,45 +12,37 @@ class NumberingController extends Controller
 {
     public function index()
     {
-        $companies  = Company::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']);
-        $selectedId = request('company_id', $companies->first()?->id);
-
-        // Load document types from DB
         $documentTypes = DocumentType::where('is_active', true)->orderBy('sort_order')->get();
 
-        // Ensure all active document types have a numbering setting for this company
-        if ($selectedId) {
-            foreach ($documentTypes as $dt) {
-                $existing = NumberingSetting::firstOrCreate(
-                    ['company_id' => $selectedId, 'document_type' => $dt->key],
-                    [
-                        'prefix'          => $dt->default_prefix,
-                        'suffix'          => '',
-                        'next_number'     => 1,
-                        'pad_length'      => 4,
-                        'reset_frequency' => 'yearly',
-                        'include_date'    => false,
-                        'date_format'     => 'YYYY-MM',
-                        'separator'       => '/',
-                        'created_by'      => auth()->id(),
-                    ]
-                );
-                // Repair blank prefix/separator
-                $updates = [];
-                if ($existing->prefix === '' || $existing->prefix === null) $updates['prefix'] = $dt->default_prefix;
-                if ($existing->separator === '' || $existing->separator === null) $updates['separator'] = '/';
-                if (!empty($updates)) $existing->update($updates);
-            }
+        // Ensure all active document types have a global numbering setting
+        foreach ($documentTypes as $dt) {
+            $existing = NumberingSetting::firstOrCreate(
+                ['document_type' => $dt->key],
+                [
+                    'prefix'          => $dt->default_prefix,
+                    'suffix'          => '',
+                    'next_number'     => 1,
+                    'pad_length'      => 4,
+                    'reset_frequency' => 'yearly',
+                    'include_date'    => false,
+                    'date_format'     => 'YYYY-MM',
+                    'separator'       => '/',
+                    'created_by'      => auth()->id(),
+                ]
+            );
+
+            // Repair blank prefix/separator
+            $updates = [];
+            if ($existing->prefix === '' || $existing->prefix === null) $updates['prefix'] = $dt->default_prefix;
+            if ($existing->separator === '' || $existing->separator === null) $updates['separator'] = '/';
+            if (!empty($updates)) $existing->update($updates);
         }
 
-        $settings = NumberingSetting::where('company_id', $selectedId)
-            ->orderBy('document_type')
+        $settings = NumberingSetting::orderBy('document_type')
             ->get()
             ->keyBy('document_type');
 
-        return view('panel.settings.numbering', compact(
-            'companies', 'selectedId', 'settings', 'documentTypes'
-        ));
+        return view('panel.settings.numbering', compact('settings', 'documentTypes'));
     }
 
     public function update(Request $request, NumberingSetting $numberingSetting)

@@ -215,6 +215,57 @@ class UserController extends Controller
         return response()->json(['success' => true, 'message' => 'User permissions updated successfully.']);
     }
 
+    public function documentAccess(User $user)
+    {
+        $allTypes = \App\Models\DocumentType::orderBy('label')->get(['id', 'key', 'label', 'is_active']);
+
+        // Build a map of document_type_id → can_view for this user
+        $access = \App\Models\UserDocumentTypeAccess::where('user_id', $user->id)
+            ->pluck('can_view', 'document_type_id');
+
+        // If no explicit access rows exist, treat all active types as allowed (default open)
+        $hasExplicitAccess = $access->isNotEmpty();
+
+        $types = $allTypes->map(function ($dt) use ($access, $hasExplicitAccess) {
+            return [
+                'id'       => $dt->id,
+                'key'      => $dt->key,
+                'label'    => $dt->label,
+                'is_active'=> $dt->is_active,
+                // default: if no rows set, all active types are viewable
+                'can_view' => $hasExplicitAccess
+                    ? (bool) ($access[$dt->id] ?? false)
+                    : (bool) $dt->is_active,
+            ];
+        });
+
+        return response()->json([
+            'user'  => ['id' => $user->id, 'name' => $user->name],
+            'types' => $types,
+        ]);
+    }
+
+    public function updateDocumentAccess(Request $request, User $user)
+    {
+        $request->validate([
+            'access'          => 'array',
+            'access.*.id'     => 'required|exists:document_types,id',
+            'access.*.can_view' => 'required|boolean',
+        ]);
+
+        $now = now();
+        foreach ($request->access as $item) {
+            \App\Models\UserDocumentTypeAccess::updateOrCreate(
+                ['user_id' => $user->id, 'document_type_id' => $item['id']],
+                ['can_view' => $item['can_view'], 'updated_at' => $now]
+            );
+        }
+
+        ActivityLogger::log('updated', $user, [], ['document_access' => 'updated']);
+
+        return response()->json(['success' => true, 'message' => 'Document access updated.']);
+    }
+
     private function validateUser(Request $request, ?int $ignoreId = null): array
     {
         $rules = [

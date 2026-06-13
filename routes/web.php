@@ -138,7 +138,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
-    // Company Info
+    // Company
     Route::get('/settings/company', [CompanyController::class, 'index'])->name('settings.company');
     Route::post('/settings/company', [CompanyController::class, 'store'])->name('settings.company.store');
     Route::get('/settings/company/{company}', [CompanyController::class, 'show'])->name('settings.company.show');
@@ -179,6 +179,8 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/users/{user}/roles', [UserController::class, 'updateRoles'])->name('settings.users.roles.update');
     Route::get('/settings/users/{user}/permissions', [UserController::class, 'permissions'])->name('settings.users.permissions');
     Route::put('/settings/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('settings.users.permissions.update');
+    Route::get('/settings/users/{user}/document-access', [UserController::class, 'documentAccess'])->name('settings.users.document-access');
+    Route::put('/settings/users/{user}/document-access', [UserController::class, 'updateDocumentAccess'])->name('settings.users.document-access.update');
 
     // Roles
     Route::get('/settings/roles', [RoleController::class, 'index'])->name('settings.roles');

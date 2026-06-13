@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
-            CompanySeeder::class,
             DocumentTypeSeeder::class,
             PermissionSeeder::class,
             DepartmentLocationSeeder::class,

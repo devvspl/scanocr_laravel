@@ -270,73 +270,332 @@
          style="display:none">
 
         {{-- Header --}}
-        <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between shrink-0">
+        <div class="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between shrink-0">
             <div>
-                <h3 class="text-sm font-semibold text-stone-800">Additional Permissions</h3>
+                <h3 class="text-sm font-semibold text-stone-800">Permissions & Access</h3>
                 <p class="text-xs text-stone-400 mt-0.5">
-                    Direct permissions for <span class="font-medium text-stone-600" x-text="selectedUser?.name"></span>
-                    — these are <em>in addition to</em> role permissions
+                    Managing access for <span class="font-medium text-stone-600" x-text="selectedUser?.name"></span>
                 </p>
             </div>
-            <div class="flex items-center gap-3">
-                <button @click="toggleAllPerms(true)"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Select All
-                </button>
-                <button @click="toggleAllPerms(false)"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Deselect All
-                </button>
+            <div class="flex items-center gap-2">
+                {{-- Select/Deselect All — only shown on permission group tabs --}}
+                <template x-if="!['__company','__doc_access'].includes(activePermGroup)">
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleAllPerms(true)"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Select All
+                        </button>
+                        <button @click="toggleAllPerms(false)"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Deselect All
+                        </button>
+                    </div>
+                </template>
                 <button @click="permsOpen = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
         </div>
 
-        {{-- Scrollable body --}}
-        <div class="flex-1 overflow-y-auto p-6">
-            <template x-if="permGroups.length === 0">
-                <div class="flex items-center justify-center h-40 text-sm text-stone-400">No permissions found</div>
-            </template>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {{-- Body: left nav + right detail --}}
+        <div class="flex flex-1 overflow-hidden">
+
+            {{-- ── Left sidebar ── --}}
+            <div class="w-52 shrink-0 border-r border-stone-100 flex flex-col bg-stone-50 overflow-y-auto">
+
+                {{-- 1. Company --}}
+                <div class="px-3 py-2 shrink-0 border-b border-stone-100">
+                    <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Company</p>
+                </div>
+                <button
+                    @click="activePermGroup = '__company'; loadCompanies()"
+                    :class="activePermGroup === '__company'
+                        ? 'bg-white border-r-2 border-red-700 text-red-700 font-semibold'
+                        : 'text-stone-600 hover:bg-stone-100 hover:text-stone-800'"
+                    class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs text-left transition-colors shrink-0">
+                    <div class="flex items-center gap-2 truncate">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <span>Company</span>
+                    </div>
+                    <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                          :class="companies.filter(c => c.has_access).length > 0
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-stone-200 text-stone-500'"
+                          x-text="companies.filter(c => c.has_access).length + '/' + companies.length">
+                    </span>
+                </button>
+
+                {{-- 2. Access Control (Document Types) --}}
+                <div class="px-3 py-2 shrink-0 border-y border-stone-100 mt-1">
+                    <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Access Control</p>
+                </div>
+                <button
+                    @click="activePermGroup = '__doc_access'; loadDocTypes()"
+                    :class="activePermGroup === '__doc_access'
+                        ? 'bg-white border-r-2 border-red-700 text-red-700 font-semibold'
+                        : 'text-stone-600 hover:bg-stone-100 hover:text-stone-800'"
+                    class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs text-left transition-colors shrink-0">
+                    <div class="flex items-center gap-2 truncate">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Document Types</span>
+                    </div>
+                    <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                          :class="docTypes.filter(d => d.can_view).length > 0
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-stone-200 text-stone-500'"
+                          x-text="docTypes.filter(d => d.can_view).length + '/' + docTypes.length">
+                    </span>
+                </button>
+
+                {{-- 3. Permissions --}}
+                <div class="px-3 py-2 shrink-0 border-y border-stone-100 mt-1">
+                    <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Permissions</p>
+                </div>
+                <nav class="flex-1 py-1 overflow-y-auto">
+                    <template x-for="group in permGroups" :key="group.name">
+                        <button
+                            @click="activePermGroup = group.name; searchPerm = ''"
+                            :class="activePermGroup === group.name
+                                ? 'bg-white border-r-2 border-red-700 text-red-700 font-semibold'
+                                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-800'"
+                            class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs text-left transition-colors">
+                            <span x-text="group.name" class="truncate"></span>
+                            <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                                  :class="permGroupSelectedCount(group) > 0
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-stone-200 text-stone-500'"
+                                  x-text="permGroupSelectedCount(group) + '/' + group.permissions.length">
+                            </span>
+                        </button>
+                    </template>
+                </nav>
+            </div>
+
+            {{-- ── Right panel ── --}}
+            <div class="flex-1 overflow-y-auto p-5">
+
+                {{-- ── Company tab ── --}}
+                <div x-show="activePermGroup === '__company'">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-stone-800">Company Access</h4>
+                            <p class="text-xs text-stone-400 mt-0.5">
+                                Control which companies
+                                <span class="font-medium text-stone-600" x-text="selectedUser?.name"></span>
+                                can access
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="setAllCompanyAccess(true)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                All
+                            </button>
+                            <button @click="setAllCompanyAccess(false)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                None
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Search --}}
+                    <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 mb-3 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700/10 transition">
+                        <svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" x-model="searchCompany" placeholder="Search companies…"
+                               class="flex-1 text-xs bg-transparent outline-none border-none p-0 text-stone-700 placeholder-stone-400">
+                        <button x-show="searchCompany" @click="searchCompany = ''" class="text-stone-300 hover:text-stone-500 transition shrink-0">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <template x-if="companies.length === 0">
+                        <div class="flex items-center justify-center h-32 text-sm text-stone-400">
+                            <svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            Loading…
+                        </div>
+                    </template>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <template x-for="co in companies.filter(c => !searchCompany || c.name.toLowerCase().includes(searchCompany.toLowerCase()))" :key="co.id">
+                            <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50 transition-colors"
+                                   :class="co.has_access ? 'bg-red-50 border-red-200' : ''">
+                                <button type="button"
+                                        @click.prevent="co.has_access = !co.has_access"
+                                        :class="co.has_access ? 'bg-red-700' : 'bg-stone-200'"
+                                        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-700/30">
+                                    <span :class="co.has_access ? 'translate-x-5' : 'translate-x-1'"
+                                          class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform"></span>
+                                </button>
+                                <span class="flex-1 text-xs font-medium truncate"
+                                      :class="co.has_access ? 'text-stone-800' : 'text-stone-500'"
+                                      x-text="co.name">
+                                </span>
+                                <span x-show="co.is_default"
+                                      class="text-[10px] text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded-full shrink-0">
+                                    Default
+                                </span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- ── Document Access tab ── --}}
+                <div x-show="activePermGroup === '__doc_access'">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-stone-800">Document Type Access</h4>
+                            <p class="text-xs text-stone-400 mt-0.5">
+                                Control which document types
+                                <span class="font-medium text-stone-600" x-text="selectedUser?.name"></span>
+                                can view
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="setAllDocAccess(true)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                All
+                            </button>
+                            <button @click="setAllDocAccess(false)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                None
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Search --}}
+                    <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 mb-3 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700/10 transition">
+                        <svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" x-model="searchDocType" placeholder="Search document types…"
+                               class="flex-1 text-xs bg-transparent outline-none border-none p-0 text-stone-700 placeholder-stone-400">
+                        <button x-show="searchDocType" @click="searchDocType = ''" class="text-stone-300 hover:text-stone-500 transition shrink-0">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <template x-if="docTypes.length === 0">
+                        <div class="flex items-center justify-center h-32 text-sm text-stone-400">
+                            <svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            Loading…
+                        </div>
+                    </template>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <template x-for="dt in docTypes.filter(d => !searchDocType || d.label.toLowerCase().includes(searchDocType.toLowerCase()))" :key="dt.id">
+                            <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50 transition-colors"
+                                   :class="dt.can_view ? 'bg-red-50 border-red-200' : ''"
+                                   :style="!dt.is_active ? 'opacity:0.5' : ''">
+                                <button type="button"
+                                        @click.prevent="dt.can_view = !dt.can_view"
+                                        :class="dt.can_view ? 'bg-red-700' : 'bg-stone-200'"
+                                        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-700/30">
+                                    <span :class="dt.can_view ? 'translate-x-5' : 'translate-x-1'"
+                                          class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform"></span>
+                                </button>
+                                <span class="flex-1 text-xs font-medium truncate"
+                                      :class="dt.can_view ? 'text-stone-800' : 'text-stone-500'"
+                                      x-text="dt.label">
+                                </span>
+                                <span x-show="!dt.is_active"
+                                      class="text-[10px] text-stone-400 bg-stone-100 px-1 py-0.5 rounded-full shrink-0">
+                                    Off
+                                </span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- ── Permission groups ── --}}
+                <template x-if="permGroups.length === 0 && !['__company','__doc_access'].includes(activePermGroup)">
+                    <div class="flex items-center justify-center h-40 text-sm text-stone-400">No permissions found</div>
+                </template>
+
                 <template x-for="group in permGroups" :key="group.name">
-                    <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
-                        <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-600" x-text="group.name"></span>
+                    <div x-show="activePermGroup === group.name">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h4 class="text-sm font-semibold text-stone-800" x-text="group.name"></h4>
+                                <p class="text-xs text-stone-400 mt-0.5"
+                                   x-text="permGroupSelectedCount(group) + ' of ' + group.permissions.length + ' permissions selected'">
+                                </p>
+                            </div>
                             <div class="flex items-center gap-2">
-                                <button @click="togglePermGroup(group, true)" class="text-[10px] text-red-700 hover:underline font-medium">All</button>
-                                <span class="text-stone-300 text-[10px]">|</span>
-                                <button @click="togglePermGroup(group, false)" class="text-[10px] text-stone-500 hover:underline font-medium">None</button>
+                                <button @click="togglePermGroup(group, true)"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    All
+                                </button>
+                                <button @click="togglePermGroup(group, false)"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    None
+                                </button>
                             </div>
                         </div>
-                        <div class="divide-y divide-stone-100">
-                            <template x-for="perm in group.permissions" :key="perm.id">
-                                <label class="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors">
-                                    <input type="checkbox"
-                                           :value="perm.id"
-                                           :checked="selectedPerms.includes(perm.id)"
-                                           @change="togglePerm(perm.id, $event.target.checked)"
-                                           class="w-3.5 h-3.5 rounded border-stone-300 text-red-700 focus:ring-red-700 shrink-0">
-                                    <span class="text-xs text-stone-700" x-text="perm.name"></span>
+
+                        {{-- Search --}}
+                        <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 mb-3 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700/10 transition">
+                            <svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <input type="text" x-model="searchPerm" placeholder="Search permissions…"
+                                   class="flex-1 text-xs bg-transparent outline-none border-none p-0 text-stone-700 placeholder-stone-400">
+                            <button x-show="searchPerm" @click="searchPerm = ''" class="text-stone-300 hover:text-stone-500 transition shrink-0">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <template x-for="perm in group.permissions.filter(p => !searchPerm || p.name.toLowerCase().includes(searchPerm.toLowerCase()))" :key="perm.id">
+                                <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50 transition-colors"
+                                       :class="selectedPerms.includes(perm.id) ? 'bg-red-50 border-red-200' : ''">
+                                    <button type="button"
+                                            @click.prevent="togglePerm(perm.id, !selectedPerms.includes(perm.id))"
+                                            :class="selectedPerms.includes(perm.id) ? 'bg-red-700' : 'bg-stone-200'"
+                                            class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-700/30">
+                                        <span :class="selectedPerms.includes(perm.id) ? 'translate-x-5' : 'translate-x-1'"
+                                              class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform"></span>
+                                    </button>
+                                    <span class="flex-1 text-xs font-medium truncate"
+                                          :class="selectedPerms.includes(perm.id) ? 'text-stone-800' : 'text-stone-500'"
+                                          x-text="perm.name">
+                                    </span>
                                 </label>
                             </template>
                         </div>
                     </div>
                 </template>
+
             </div>
+
         </div>
 
         {{-- Footer --}}
-        <div class="px-6 py-4 border-t border-stone-100 flex items-center justify-between gap-3 shrink-0 bg-stone-50">
-            <p class="text-xs text-stone-400">
+        <div class="px-5 py-3.5 border-t border-stone-100 flex items-center justify-between gap-3 shrink-0 bg-stone-50">
+            {{-- Company count --}}
+            <p class="text-xs text-stone-400" x-show="activePermGroup === '__company'">
+                <span class="font-semibold text-stone-600" x-text="companies.filter(c => c.has_access).length"></span>
+                of <span x-text="companies.length"></span> companies accessible
+            </p>
+            {{-- Doc access count --}}
+            <p class="text-xs text-stone-400" x-show="activePermGroup === '__doc_access'">
+                <span class="font-semibold text-stone-600" x-text="docTypes.filter(d => d.can_view).length"></span>
+                of <span x-text="docTypes.length"></span> document types accessible
+            </p>
+            {{-- Permissions count --}}
+            <p class="text-xs text-stone-400" x-show="!['__company','__doc_access'].includes(activePermGroup)">
                 <span class="font-semibold text-stone-600" x-text="selectedPerms.length"></span>
                 direct permission<span x-show="selectedPerms.length !== 1">s</span> assigned
             </p>
             <div class="flex items-center gap-2">
                 <button @click="permsOpen = false" class="tb-btn tb-btn-edit">Cancel</button>
-                <button @click="savePerms()" :disabled="saving"
+                <button @click="saveAll()" :disabled="saving"
                         class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-red-800 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-semibold transition-colors">
                     <svg x-show="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -345,7 +604,7 @@
                     <svg x-show="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Save Permissions
+                    Save All
                 </button>
             </div>
         </div>
@@ -362,6 +621,7 @@
          style="display:none">
     </div>
 
+
 </div>
 @endsection
 
@@ -372,6 +632,10 @@ function usersPage() {
         panelOpen: false,
         rolesOpen: false,
         permsOpen: false,
+        docAccessOpen: false,
+        docAccessTab: 'types',
+        docTypes: [],
+        companies: [],
         editId: null,
         saving: false,
         mainUsers: [],
@@ -379,6 +643,10 @@ function usersPage() {
         selectedUserRoles: [],
         selectedPerms: [],
         permGroups: [],
+        activePermGroup: '',
+        searchCompany: '',
+        searchDocType: '',
+        searchPerm: '',
         toast: { show: false, type: 'success', message: '' },
         errors: {},
         form: {},
@@ -515,10 +783,47 @@ function usersPage() {
         async openPermsPanel(id) {
             const res  = await fetch(`/settings/users/${id}/permissions`, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
-            this.selectedUser  = data.user;
-            this.selectedPerms = data.directPerms ?? [];
-            this.permGroups    = Object.entries(data.allPermissions).map(([name, perms]) => ({ name, permissions: perms }));
-            this.permsOpen     = true;
+            this.selectedUser      = data.user;
+            this.selectedPerms     = data.directPerms ?? [];
+            this.permGroups        = Object.entries(data.allPermissions).map(([name, perms]) => ({ name, permissions: perms }));
+            this.activePermGroup   = '__company';   // start on Company tab
+            this.docTypes          = [];
+            this.companies         = [];
+            this.searchCompany     = '';
+            this.searchDocType     = '';
+            this.searchPerm        = '';
+            this.permsOpen         = true;
+            this.loadCompanies();                   // pre-load companies immediately
+        },
+
+        async loadDocTypes() {
+            if (this.docTypes.length > 0 || !this.selectedUser) return;
+            const res  = await fetch(`/settings/users/${this.selectedUser.id}/document-access`, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            this.docTypes = data.types;
+        },
+
+        async loadCompanies() {
+            if (this.companies.length > 0 || !this.selectedUser) return;
+            const res = await fetch('{{ route("settings.company") }}', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.data ?? []);
+                this.companies = list.map(c => ({
+                    id: c.id, name: c.name, is_default: c.is_default, is_active: c.is_active,
+                    has_access: true,
+                }));
+            }
+        },
+
+        setAllDocAccess(val) {
+            this.docTypes = this.docTypes.map(d => ({ ...d, can_view: val }));
+        },
+
+        setAllCompanyAccess(val) {
+            this.companies = this.companies.map(c => ({ ...c, has_access: val }));
         },
 
         togglePerm(id, checked) {
@@ -529,6 +834,10 @@ function usersPage() {
             }
         },
 
+        permGroupSelectedCount(group) {
+            return group.permissions.filter(p => this.selectedPerms.includes(p.id)).length;
+        },
+
         togglePermGroup(group, checked) {
             group.permissions.forEach(p => this.togglePerm(p.id, checked));
         },
@@ -537,30 +846,48 @@ function usersPage() {
             this.permGroups.forEach(g => this.togglePermGroup(g, checked));
         },
 
-        async savePerms() {
+        async saveAll() {
             this.saving = true;
             try {
-                const res  = await fetch(`/settings/users/${this.selectedUser.id}/permissions`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ permissions: this.selectedPerms }),
-                });
-                const json = await res.json();
-                if (json.success) {
+                const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+                const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' };
+                const uid = this.selectedUser.id;
+
+                const promises = [
+                    // Always save permissions
+                    fetch(`/settings/users/${uid}/permissions`, {
+                        method: 'PUT', headers,
+                        body: JSON.stringify({ permissions: this.selectedPerms }),
+                    }),
+                ];
+
+                // Save doc access if loaded
+                if (this.docTypes.length > 0) {
+                    promises.push(fetch(`/settings/users/${uid}/document-access`, {
+                        method: 'PUT', headers,
+                        body: JSON.stringify({ access: this.docTypes.map(d => ({ id: d.id, can_view: d.can_view })) }),
+                    }));
+                }
+
+                const results = await Promise.all(promises);
+                const jsons   = await Promise.all(results.map(r => r.json()));
+                const allOk   = jsons.every(j => j.success);
+
+                if (allOk) {
                     this.permsOpen = false;
-                    _showGlobalToast('success', json.message);
+                    _showGlobalToast('success', 'Permissions & access saved.');
                 } else {
-                    _showGlobalToast('error', json.message ?? 'Something went wrong.');
+                    _showGlobalToast('error', jsons.find(j => !j.success)?.message ?? 'Something went wrong.');
                 }
             } catch (e) {
                 _showGlobalToast('error', 'Network error.');
             } finally {
                 this.saving = false;
             }
+        },
+
+        setAllDocAccess(val) {
+            this.docTypes = this.docTypes.map(d => ({ ...d, can_view: val }));
         },
 
         initTable() {
@@ -629,7 +956,7 @@ function usersPage() {
                                 <button class="act-btn act-edit btn-edit" data-id="${id}" title="Edit">
                                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </button>
-                                <button class="act-btn act-edit btn-perms" data-id="${id}" title="Manage Permissions" style="color:#0369a1">
+                                <button class="act-btn act-edit btn-perms" data-id="${id}" title="Permissions & Access" style="color:#0369a1">
                                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                                 </button>
                                 <button class="act-btn act-delete btn-delete" data-id="${id}" title="Delete">
@@ -660,6 +987,10 @@ function usersPage() {
 
             $('#users-table').on('click', '.btn-perms', async function () {
                 await self.openPermsPanel($(this).data('id'));
+            });
+
+            $('#users-table').on('click', '.btn-doc-access', async function () {
+                await self.openDocAccessPanel($(this).data('id'));
             });
 
             $('#users-table').on('click', '.btn-delete', async function () {

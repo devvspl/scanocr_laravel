@@ -13,6 +13,16 @@ class CompanyController extends Controller
     public function index()
     {
         $companies = Company::with('creator')->orderByDesc('is_default')->orderBy('name')->get();
+
+        if (request()->expectsJson()) {
+            return response()->json($companies->map(fn($c) => [
+                'id'         => $c->id,
+                'name'       => $c->name,
+                'is_default' => $c->is_default,
+                'is_active'  => $c->is_active,
+            ]));
+        }
+
         return view('panel.settings.company', compact('companies'));
     }
 

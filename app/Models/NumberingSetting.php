@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class NumberingSetting extends Model
 {
     protected $fillable = [
-        'company_id', 'document_type', 'prefix', 'suffix',
+        'document_type', 'prefix', 'suffix',
         'next_number', 'pad_length', 'reset_frequency',
         'include_date', 'date_format', 'separator', 'preview', 'created_by',
     ];
@@ -17,11 +17,6 @@ class NumberingSetting extends Model
         'next_number'  => 'integer',
         'pad_length'   => 'integer',
     ];
-
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
 
     public function buildPreview(): string
     {

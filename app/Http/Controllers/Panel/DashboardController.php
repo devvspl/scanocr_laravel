@@ -14,9 +14,7 @@ class DashboardController extends Controller
     public function index()
     {
         $company   = Company::getDefault();
-        $currentFY = $company
-            ? FinancialYear::where('company_id', $company->id)->where('is_current', true)->first()
-            : null;
+        $currentFY = FinancialYear::where('is_current', true)->first();
 
         $fyProgress = null;
         if ($currentFY) {

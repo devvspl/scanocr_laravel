@@ -16,7 +16,9 @@ class CheckPermission
         'settings.update',
         'settings.permission-groups.index',
         'settings.users.sub-users',
-        // Document AI routes (all gated by auth, no granular permissions)
+        'settings.users.document-access',
+        'settings.users.document-access.update',
+        // Document AI — all gated by auth only, no granular permission checks
         'document-ai.playground',
         'document-ai.predict',
         'document-ai.save-classification',
@@ -35,10 +37,7 @@ class CheckPermission
         'document-ai.dept-rules.store',
         'document-ai.dept-rules.update',
         'document-ai.dept-rules.delete',
-        'odometer.playground',
-        'odometer.extract',
-        'odometer.confirm',
-        // Import AJAX sub-routes (all gated by import.view at the page level)
+        // Import AJAX sub-routes — gated by import.view at page level
         'master.import.upload',
         'master.import.tables',
         'master.import.table-columns',
@@ -49,28 +48,6 @@ class CheckPermission
         'master.import.templates.delete',
         'master.import.api-connections.test',
         'master.import.preview',
-        // Workflow designer AJAX sub-routes (all gated by workflow.view at the page level)
-        'master.workflow.stage.store',
-        'master.workflow.stage.update',
-        'master.workflow.stage.destroy',
-        'master.workflow.stage.reorder',
-        'master.workflow.stage.roles',
-        'master.workflow.stage.actions',
-        'master.workflow.stage.widgets',
-        'master.workflow.stage.widgets.save',
-        'master.workflow.stage-action.update',
-        'master.workflow.action.toggle',
-        'master.workflow.action.update',
-        'master.workflow.routing.store',
-        'master.workflow.routing.update',
-        'master.workflow.routing.destroy',
-        'master.workflow.duplicate',
-        'master.workflow.activate',
-        'master.workflow.publish',
-        'master.workflow.page-fields',
-        'workflow.run',
-        'workflow.entry.action',
-        'workflow.entry.list',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];
@@ -98,25 +75,6 @@ class CheckPermission
         'generate'     => 'generate',
         'info'         => 'update',
         'password'     => 'password.change',
-        'submit'       => 'submit',
-        'approve'      => 'approve',
-        'reject'            => 'reject',
-        'cancel'            => 'cancel',
-        'next-number'       => 'view',
-        'search-customers'  => 'view',
-        'search-products'   => 'view',
-        'search-transporters' => 'view',
-        'search-invoices'     => 'view',
-        'product'           => 'view',
-        'pdf'               => 'view',
-        'approval-logs'     => 'view',
-        'level-approve'     => 'approve',
-        'level-reject'      => 'reject',
-        'convert'           => 'create',
-        'mark-delivered'    => 'edit',
-        'upload-signature'  => 'edit',
-        'send-signature-link' => 'edit',
-        'export'            => 'view',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -73,6 +73,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Document type access pivot
+     */
+    public function documentTypeAccess()
+    {
+        return $this->hasMany(\App\Models\UserDocumentTypeAccess::class);
+    }
+
+    public function allowedDocumentTypeIds(): array
+    {
+        return $this->documentTypeAccess()->where('can_view', true)->pluck('document_type_id')->toArray();
+    }
+
+    /**
      * Get the user who created this user
      */
     public function creator()

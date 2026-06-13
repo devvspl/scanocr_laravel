@@ -12,20 +12,17 @@ class FinancialYearController extends Controller
 {
     public function index()
     {
-        $companies     = Company::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']);
-        $selectedId    = request('company_id', $companies->first()?->id);
+        $companies      = Company::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']);
         $financialYears = FinancialYear::with('creator')
-            ->where('company_id', $selectedId)
             ->orderByDesc('start_date')
             ->get();
 
-        return view('panel.settings.financial-year', compact('companies', 'selectedId', 'financialYears'));
+        return view('panel.settings.financial-year', compact('companies', 'financialYears'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'company_id' => ['required', 'exists:companies,id'],
             'label'      => ['required', 'string', 'max:50'],
             'start_date' => ['required', 'date'],
             'end_date'   => ['required', 'date', 'after:start_date'],
@@ -36,9 +33,9 @@ class FinancialYearController extends Controller
         $data['is_current'] = $request->boolean('is_current', false);
         $data['created_by'] = auth()->id();
 
-        // Only one FY can be current per company
+        // Only one FY can be current globally
         if ($data['is_current']) {
-            FinancialYear::where('company_id', $data['company_id'])->update(['is_current' => false]);
+            FinancialYear::query()->update(['is_current' => false]);
         }
 
         $fy = FinancialYear::create($data);
@@ -75,8 +72,7 @@ class FinancialYearController extends Controller
         $data['is_locked']  = $request->boolean('is_locked', false);
 
         if ($data['is_current']) {
-            FinancialYear::where('company_id', $financialYear->company_id)
-                ->where('id', '!=', $financialYear->id)
+            FinancialYear::where('id', '!=', $financialYear->id)
                 ->update(['is_current' => false]);
         }
 
@@ -101,7 +97,7 @@ class FinancialYearController extends Controller
 
     public function setCurrent(FinancialYear $financialYear)
     {
-        FinancialYear::where('company_id', $financialYear->company_id)->update(['is_current' => false]);
+        FinancialYear::query()->update(['is_current' => false]);
         $financialYear->update(['is_current' => true]);
 
         return response()->json(['success' => true, 'message' => "{$financialYear->label} is now the active financial year."]);
