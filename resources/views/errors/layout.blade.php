@@ -300,7 +300,7 @@
             </div>
 
             <p class="err-help">
-                Need help? <a href="mailto:support@wolfbooks.com">Contact support</a>
+                Need help? <a href="mailto:support@ScanOCR.com">Contact support</a>
             </p>
 
         </div>

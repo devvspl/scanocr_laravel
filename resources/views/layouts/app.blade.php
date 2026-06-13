@@ -64,133 +64,8 @@
                             'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
                         'children' => [
                             ['section' => 'Core'],
-                            ['label' => 'Builder', 'route' => 'master.page-builder', 'permission' => 'page-builder.view'],
-                            ['label' => 'Workflow', 'route' => 'master.workflow.index', 'permission' => 'workflow.view'],
+                            ['label' => 'Builder',     'route' => 'master.page-builder', 'permission' => 'page-builder.view'],
                             ['label' => 'Import Data', 'route' => 'master.import.index', 'permission' => 'import.view'],
-                            ['section' => 'Accounts'],
-                            ['label' => 'Chart of Accounts', 'route' => 'master.accounts', 'permission' => 'accounts.view'],
-                            ['label' => 'Account Groups', 'route' => 'master.account-groups', 'permission' => 'account-groups.view'],
-                            ['section' => 'Parties'],
-                            ['label' => 'Customers', 'route' => 'master.customers', 'permission' => 'customers.view'],
-                            ['label' => 'Vendors', 'route' => 'master.vendors', 'permission' => 'vendors.view'],
-                            ['section' => 'Items'],
-                            ['label' => 'Products', 'route' => 'master.products', 'permission' => 'products.view'],
-                            ['label' => 'Item Groups', 'route' => 'master.item-groups', 'permission' => 'item-groups.view'],
-                            ['label' => 'Units of Measure', 'route' => 'master.units', 'permission' => 'units.view'],
-                            ['section' => 'Tax'],
-                            ['label' => 'Tax Rates', 'route' => 'master.taxes', 'permission' => 'taxes.view'],
-                            ['label' => 'HSN / SAC Codes', 'route' => 'master.hsn', 'permission' => 'hsn.view'],
-                        ],
-                    ],
-                    // ── Dynamic: Published Workflows as "Process" menu ──
-                    [
-                        'id' => 'process',
-                        'label' => 'Process',
-                        'route' => 'process',
-                        'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
-                        'children' => array_merge(
-                            [['section' => 'Workflows']],
-                            \App\Models\WfWorkflow::where('is_active', true)
-                                ->where('is_default', true)
-                                ->orderBy('name')
-                                ->get()
-                                ->map(fn($wf) => [
-                                    'label' => $wf->name,
-                                    'route' => 'workflow.run',
-                                    'params' => [$wf->id],
-                                ])
-                                ->toArray()
-                        ),
-                    ],
-                    [
-                        'id' => 'sales',
-                        'label' => 'Sales',
-                        'route' => 'sales',
-                        'icon' =>
-                            'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
-                        'badge' => '4',
-                        'children' => [
-                            ['section' => 'Invoicing'],
-                            ['label' => 'Sales Invoices', 'route' => 'sales.invoices'],
-                            ['label' => 'Proforma', 'route' => 'sales.proforma'],
-                            ['label' => 'Delivery Notes', 'route' => 'sales.delivery'],
-                            ['section' => 'Returns'],
-                            ['label' => 'Credit Notes', 'route' => 'sales.credit-notes'],
-                            ['section' => 'Collections'],
-                            ['label' => 'Receipts', 'route' => 'sales.receipts'],
-                            ['section' => 'Reports'],
-                            ['label' => 'Sales Register', 'route' => 'sales.register'],
-                            ['label' => 'Outstanding', 'route' => 'sales.outstanding'],
-                        ],
-                    ],
-                    [
-                        'id' => 'purchases',
-                        'label' => 'Purchase',
-                        'route' => 'purchases',
-                        'icon' =>
-                            'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z',
-                        'children' => [
-                            ['section' => 'Procurement'],
-                            ['label' => 'Purchase Orders', 'route' => 'purchases.orders'],
-                            ['label' => 'GRN', 'route' => 'purchases.grn'],
-                            ['label' => 'Bills', 'route' => 'purchases.bills'],
-                            ['section' => 'Returns'],
-                            ['label' => 'Debit Notes', 'route' => 'purchases.debit-notes'],
-                            ['section' => 'Payments'],
-                            ['label' => 'Payments', 'route' => 'purchases.payments'],
-                            ['label' => 'Advance Payments', 'route' => 'purchases.advance'],
-                        ],
-                    ],
-                    [
-                        'id' => 'journal',
-                        'label' => 'Journal',
-                        'route' => 'journal',
-                        'icon' =>
-                            'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-                        'children' => [
-                            ['section' => 'Entries'],
-                            ['label' => 'Journal Voucher', 'route' => 'journal.entries'],
-                            ['label' => 'Contra', 'route' => 'journal.contra'],
-                            ['section' => 'Banking'],
-                            ['label' => 'Bank Receipts', 'route' => 'journal.bank-receipts'],
-                            ['label' => 'Bank Payments', 'route' => 'journal.bank-payments'],
-                            ['label' => 'Reconciliation', 'route' => 'journal.recon'],
-                        ],
-                    ],
-                    [
-                        'id' => 'inventory',
-                        'label' => 'Inventory',
-                        'route' => 'inventory',
-                        'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
-                        'children' => [
-                            ['section' => 'Stock'],
-                            ['label' => 'Stock Summary', 'route' => 'inventory.summary'],
-                            ['label' => 'Stock Transfer', 'route' => 'inventory.transfer'],
-                            ['label' => 'Adjustments', 'route' => 'inventory.adjustments'],
-                            ['section' => 'Valuation'],
-                            ['label' => 'Stock Ledger', 'route' => 'inventory.ledger'],
-                            ['label' => 'Ageing Report', 'route' => 'inventory.ageing'],
-                        ],
-                    ],
-                    [
-                        'id' => 'reports',
-                        'label' => 'Reports',
-                        'route' => 'reports',
-                        'icon' =>
-                            'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-                        'children' => [
-                            ['section' => 'Financials'],
-                            ['label' => 'Profit & Loss', 'route' => 'reports.pl'],
-                            ['label' => 'Balance Sheet', 'route' => 'reports.balance-sheet'],
-                            ['label' => 'Cash Flow', 'route' => 'reports.cash-flow'],
-                            ['section' => 'Ledgers'],
-                            ['label' => 'Trial Balance', 'route' => 'reports.trial-balance'],
-                            ['label' => 'General Ledger', 'route' => 'reports.ledger'],
-                            ['label' => 'Day Book', 'route' => 'reports.daybook'],
-                            ['section' => 'GST'],
-                            ['label' => 'GSTR-1', 'route' => 'reports.gstr1'],
-                            ['label' => 'GSTR-2A', 'route' => 'reports.gstr2a'],
-                            ['label' => 'GSTR-3B', 'route' => 'reports.gstr3b'],
                         ],
                     ],
                     [
@@ -200,12 +75,10 @@
                         'icon' => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
                         'children' => [
                             ['section' => 'Document AI'],
-                            ['label' => 'Playground', 'route' => 'document-ai.playground'],
-                            ['label' => 'Prediction Logs', 'route' => 'document-ai.logs'],
-                            ['label' => 'Analytics', 'route' => 'document-ai.analytics'],
+                            ['label' => 'Playground',        'route' => 'document-ai.playground'],
+                            ['label' => 'Prediction Logs',   'route' => 'document-ai.logs'],
+                            ['label' => 'Analytics',         'route' => 'document-ai.analytics'],
                             ['label' => 'Training Settings', 'route' => 'document-ai.settings'],
-                            ['section' => 'Odometer'],
-                            ['label' => 'Odometer Reader', 'route' => 'odometer.playground'],
                         ],
                     ],
                     [
@@ -216,14 +89,14 @@
                             'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
                         'children' => [
                             ['section' => 'General'],
-                            ['label' => 'Company Info',   'route' => 'settings.company',        'permission' => 'company.view'],
-                            ['label' => 'Financial Year', 'route' => 'settings.financial-year',     'permission' => 'financial-year.view'],
+                            ['label' => 'Company Info',   'route' => 'settings.company',       'permission' => 'company.view'],
+                            ['label' => 'Financial Year', 'route' => 'settings.financial-year', 'permission' => 'financial-year.view'],
                             ['label' => 'Numbering',      'route' => 'settings.numbering',      'permission' => 'numbering.view'],
-                            ['label' => 'Document',      'route' => 'settings.document-types',      'permission' => 'document-types.view'],
+                            ['label' => 'Document',       'route' => 'settings.document-types', 'permission' => 'document-types.view'],
                             ['section' => 'Users & Access'],
-                            ['label' => 'Users',          'route' => 'settings.users',          'permission' => 'users.view'],
-                            ['label' => 'Roles',          'route' => 'settings.roles',          'permission' => 'roles.view'],
-                            ['label' => 'Permissions',    'route' => 'settings.permissions',    'permission' => 'permissions.view'],
+                            ['label' => 'Users',       'route' => 'settings.users',       'permission' => 'users.view'],
+                            ['label' => 'Roles',       'route' => 'settings.roles',       'permission' => 'roles.view'],
+                            ['label' => 'Permissions', 'route' => 'settings.permissions', 'permission' => 'permissions.view'],
                         ],
                     ],
                 ];
@@ -318,7 +191,7 @@
                     <p class="text-sm font-semibold text-stone-100 truncate">{{ auth()->user()->name ?? 'Admin User' }}
                     </p>
                     <p class="text-xs text-stone-400 truncate mt-0.5">
-                        {{ auth()->user()->email ?? 'admin@wolfbooks.com' }}</p>
+                        {{ auth()->user()->email ?? 'admin@ScanOCR.com' }}</p>
                 </div>
                 <a href="{{ route('profile') }}"
                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-300 hover:bg-white/5 hover:text-white transition-colors">

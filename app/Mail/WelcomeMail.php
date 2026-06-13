@@ -23,7 +23,7 @@ class WelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to the WolfBooks Pack! 🐺',
+            subject: 'Welcome to the ScanOCR Pack! 🐺',
         );
     }
 

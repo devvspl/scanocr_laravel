@@ -10,25 +10,27 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User', 'password' => bcrypt('password')]
+        );
 
         $this->call([
             CompanySeeder::class,
-            AccountGroupSeeder::class,
-            AccountSeeder::class,
-            PartySeeder::class,
-            ItemSeeder::class,
-            TaxSeeder::class,
+            DocumentTypeSeeder::class,
+            PermissionSeeder::class,
+            DepartmentLocationSeeder::class,
+            OcrClassificationBasisSeeder::class,
+            SeedTitlePatterns::class,
+            DepartmentPredictionRulesSeeder::class,
         ]);
+
+        // Assign Super Admin role to the first user
+        $firstUser = User::orderBy('id')->first();
+        if ($firstUser) {
+            $firstUser->assignRole('Super Admin');
+        }
     }
 }

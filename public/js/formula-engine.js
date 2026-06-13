@@ -1,5 +1,5 @@
 /**
- * WolfBooks Formula Engine
+ * ScanOCR Formula Engine
  * Safe expression parser for form calculations.
  * Supports: +, -, *, /, %, parentheses, SUM(), AVG(), MIN(), MAX(), ROUND(), IF()
  * References fields via {field_key} and table columns via {table_key.col_key}

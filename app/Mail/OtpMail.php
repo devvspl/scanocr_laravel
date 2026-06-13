@@ -24,13 +24,13 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         $subjects = [
-            'login' => 'Your WolfBooks Login OTP',
-            'register' => 'Verify Your WolfBooks Registration',
-            'reset' => 'Your WolfBooks Password Reset OTP',
+            'login' => 'Your ScanOCR Login OTP',
+            'register' => 'Verify Your ScanOCR Registration',
+            'reset' => 'Your ScanOCR Password Reset OTP',
         ];
 
         return new Envelope(
-            subject: $subjects[$this->type] ?? 'Your WolfBooks OTP',
+            subject: $subjects[$this->type] ?? 'Your ScanOCR OTP',
         );
     }
 

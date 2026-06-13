@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('app_name')->default('WolfBooks');
+            $table->string('app_name')->default('ScanOCR');
             $table->string('timezone')->default('UTC');
             $table->string('date_format')->default('DD/MM/YYYY');
             $table->string('theme_color')->default('wolf_red');

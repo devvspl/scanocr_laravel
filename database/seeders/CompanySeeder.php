@@ -13,16 +13,18 @@ class CompanySeeder extends Seeder
 
     public function run(): void
     {
-        $company = Company::create([
+        $company = Company::firstOrCreate(
+            ['code' => 'WBDEMO'],
+            [
             // ── Identity ──────────────────────────────────────────────────────
-            'name'                  => 'WolfBooks Demo Pvt. Ltd.',
-            'legal_name'            => 'WolfBooks Demo Private Limited',
-            'display_name'          => 'WolfBooks Demo',
+            'name'                  => 'ScanOCR Demo Pvt. Ltd.',
+            'legal_name'            => 'ScanOCR Demo Private Limited',
+            'display_name'          => 'ScanOCR Demo',
             'code'                  => 'WBDEMO',
             'type'                  => 'private_limited',
             'industry'              => 'Technology',
-            'website'               => 'https://wolfbooks.in',
-            'email'                 => 'accounts@wolfbooks.in',
+            'website'               => 'https://ScanOCR.in',
+            'email'                 => 'accounts@ScanOCR.in',
             'phone'                 => '044-12345678',
             'mobile'                => '9876543210',
 
@@ -61,14 +63,15 @@ class CompanySeeder extends Seeder
         ]);
 
         // ── Financial Year: FY 2025-26 ────────────────────────────────────────
-        FinancialYear::create([
-            'company_id' => $company->id,
-            'label'      => 'FY 2025-26',
-            'start_date' => '2025-04-01',
-            'end_date'   => '2026-03-31',
-            'is_current' => true,
-            'is_locked'  => false,
-            'notes'      => 'Current financial year',
-        ]);
+        FinancialYear::firstOrCreate(
+            ['company_id' => $company->id, 'label' => 'FY 2025-26'],
+            [
+                'start_date' => '2025-04-01',
+                'end_date'   => '2026-03-31',
+                'is_current' => true,
+                'is_locked'  => false,
+                'notes'      => 'Current financial year',
+            ]
+        );
     }
 }

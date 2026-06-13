@@ -1,4 +1,4 @@
-# WolfBooks Page Builder — Feature Documentation
+# ScanOCR Page Builder — Feature Documentation
 
 ## Overview
 

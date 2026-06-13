@@ -43,7 +43,7 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── Sales Invoice ────────────────────────────────────────
             'invoice' => [
                 [
-                    'text' => 'TAX INVOICE Invoice No INV-2025-0042 Date 15-Jan-2025 Due Date 14-Feb-2025 Bill To M/s Sharma Enterprises GSTIN 07AABCS1234H1Z5 Address 45 Nehru Place New Delhi 110019 Ship To Same as above HSN Code Description Qty Rate Amount 8471 Laptop Dell Inspiron 15 2 45000.00 90000.00 8443 HP LaserJet Printer 1 18500.00 18500.00 Sub Total 108500.00 CGST 9% 9765.00 SGST 9% 9765.00 Total 128030.00 Amount in Words Rupees One Lakh Twenty Eight Thousand Thirty Only Bank Details Account Name WolfBooks Pvt Ltd Account No 50200012345678 IFSC HDFC0001234 Terms Payment due within 30 days Authorized Signatory',
+                    'text' => 'TAX INVOICE Invoice No INV-2025-0042 Date 15-Jan-2025 Due Date 14-Feb-2025 Bill To M/s Sharma Enterprises GSTIN 07AABCS1234H1Z5 Address 45 Nehru Place New Delhi 110019 Ship To Same as above HSN Code Description Qty Rate Amount 8471 Laptop Dell Inspiron 15 2 45000.00 90000.00 8443 HP LaserJet Printer 1 18500.00 18500.00 Sub Total 108500.00 CGST 9% 9765.00 SGST 9% 9765.00 Total 128030.00 Amount in Words Rupees One Lakh Twenty Eight Thousand Thirty Only Bank Details Account Name ScanOCR Pvt Ltd Account No 50200012345678 IFSC HDFC0001234 Terms Payment due within 30 days Authorized Signatory',
                     'keywords' => 'tax invoice,invoice no,inv,bill to,gstin,hsn,cgst,sgst,sub total,due date,amount in words,authorized signatory',
                 ],
                 [
@@ -51,7 +51,7 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'invoice,invoice number,customer gstin,billing address,particulars,taxable value,subtotal,discount,igst,grand total,payment terms',
                 ],
                 [
-                    'text' => 'SALES INVOICE Seller WolfBooks Private Limited CIN U72200DL2020PTC123456 GSTIN 07AABCW1234H1Z5 Invoice Ref SI/2025/00156 Date of Issue 05-Apr-2025 Buyer ABC Corporation Ltd GSTIN 29AABCA5678K1Z2 Place of Supply Karnataka Item Description SAC HSN Qty Rate Per Amount Annual Software License 997331 1 250000 Nos 250000 Implementation Service 998314 1 75000 Nos 75000 Total Before Tax 325000 IGST at 18% 58500 Total After Tax 383500 Total Invoice Value INR 3,83,500 Due Date 05-May-2025',
+                    'text' => 'SALES INVOICE Seller ScanOCR Private Limited CIN U72200DL2020PTC123456 GSTIN 07AABCW1234H1Z5 Invoice Ref SI/2025/00156 Date of Issue 05-Apr-2025 Buyer ABC Corporation Ltd GSTIN 29AABCA5678K1Z2 Place of Supply Karnataka Item Description SAC HSN Qty Rate Per Amount Annual Software License 997331 1 250000 Nos 250000 Implementation Service 998314 1 75000 Nos 75000 Total Before Tax 325000 IGST at 18% 58500 Total After Tax 383500 Total Invoice Value INR 3,83,500 Due Date 05-May-2025',
                     'keywords' => 'sales invoice,seller,cin,gstin,invoice ref,buyer,place of supply,sac,implementation,total before tax,total after tax,total invoice value',
                 ],
             ],
@@ -83,7 +83,7 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'credit memo,original invoice,issued to,reason for credit,pricing error,overcharged,credit subtotal,outstanding balance,approved by',
                 ],
                 [
-                    'text' => 'CREDIT NOTE Ref CN/2025/WB/078 Issue Date 28-Mar-2025 Linked Invoice SI/2025/00156 Customer ABC Corporation Ltd GSTIN 29AABCA5678K1Z2 Nature of Credit Service not rendered as per scope Particulars Amount Annual Software License partial 3 months unused 62500 IGST 18% on above 11250 Net Credit Value 73750 Adjustment This amount will be adjusted against next invoice Note Original invoice value was 383500 Credit percentage 19.2% Issued By Accounts Department WolfBooks Pvt Ltd',
+                    'text' => 'CREDIT NOTE Ref CN/2025/WB/078 Issue Date 28-Mar-2025 Linked Invoice SI/2025/00156 Customer ABC Corporation Ltd GSTIN 29AABCA5678K1Z2 Nature of Credit Service not rendered as per scope Particulars Amount Annual Software License partial 3 months unused 62500 IGST 18% on above 11250 Net Credit Value 73750 Adjustment This amount will be adjusted against next invoice Note Original invoice value was 383500 Credit percentage 19.2% Issued By Accounts Department ScanOCR Pvt Ltd',
                     'keywords' => 'credit note,linked invoice,nature of credit,service not rendered,net credit value,adjustment,adjusted against,credit percentage,accounts department',
                 ],
             ],
@@ -91,7 +91,7 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── Delivery Note / Challan ──────────────────────────────
             'delivery_note' => [
                 [
-                    'text' => 'DELIVERY CHALLAN DC No DN-2025-0091 Date 18-Jan-2025 Dispatch From WolfBooks Warehouse Sector 62 Noida UP 201301 Deliver To M/s Sharma Enterprises 45 Nehru Place New Delhi 110019 Contact Person Mr Rahul Sharma Phone 9876543210 Vehicle No DL-01-AB-1234 Transporter BlueDart Logistics LR No BD2025001234 Sr Item Description Qty UOM 1 Laptop Dell Inspiron 15 2 Nos 2 HP LaserJet Printer 1 Nos Total Packages 2 Boxes Weight 12.5 Kg Remarks Handle with care fragile items Dispatched By Warehouse Manager Received By signature date',
+                    'text' => 'DELIVERY CHALLAN DC No DN-2025-0091 Date 18-Jan-2025 Dispatch From ScanOCR Warehouse Sector 62 Noida UP 201301 Deliver To M/s Sharma Enterprises 45 Nehru Place New Delhi 110019 Contact Person Mr Rahul Sharma Phone 9876543210 Vehicle No DL-01-AB-1234 Transporter BlueDart Logistics LR No BD2025001234 Sr Item Description Qty UOM 1 Laptop Dell Inspiron 15 2 Nos 2 HP LaserJet Printer 1 Nos Total Packages 2 Boxes Weight 12.5 Kg Remarks Handle with care fragile items Dispatched By Warehouse Manager Received By signature date',
                     'keywords' => 'delivery challan,dc no,dispatch from,deliver to,vehicle no,transporter,lr no,total packages,weight,handle with care,dispatched by,received by',
                 ],
                 [
@@ -99,7 +99,7 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'delivery note,delivery date,reference invoice,delivery address,mode of transport,awb no,items delivered,ordered,pending,stock shortage,receiver name',
                 ],
                 [
-                    'text' => 'DISPATCH CHALLAN Challan No DC/WB/2025/234 Date of Dispatch 02-May-2025 Consignor WolfBooks Pvt Ltd GSTIN 07AABCW1234H1Z5 Consignee Sunrise Exports Ltd SEZ Unit 5 Kandla Gujarat GSTIN 24AABCS3456N1Z1 Purpose of Dispatch Supply against PO No PO-SUN-2025-045 Eway Bill No 3312 4567 8901 Valid Until 04-May-2025 Description of Goods Qty Weight Server Hardware 2 45kg Network Equipment 1 8kg Cables and Accessories 1 lot 3kg Total Weight 56 Kg Packages 4 Driver Name Suresh Kumar DL No DL-0420110012345 Vehicle DL-01-CD-5678',
+                    'text' => 'DISPATCH CHALLAN Challan No DC/WB/2025/234 Date of Dispatch 02-May-2025 Consignor ScanOCR Pvt Ltd GSTIN 07AABCW1234H1Z5 Consignee Sunrise Exports Ltd SEZ Unit 5 Kandla Gujarat GSTIN 24AABCS3456N1Z1 Purpose of Dispatch Supply against PO No PO-SUN-2025-045 Eway Bill No 3312 4567 8901 Valid Until 04-May-2025 Description of Goods Qty Weight Server Hardware 2 45kg Network Equipment 1 8kg Cables and Accessories 1 lot 3kg Total Weight 56 Kg Packages 4 Driver Name Suresh Kumar DL No DL-0420110012345 Vehicle DL-01-CD-5678',
                     'keywords' => 'dispatch challan,consignor,consignee,purpose of dispatch,eway bill,valid until,description of goods,driver name,vehicle,packages',
                 ],
             ],
@@ -107,15 +107,15 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── Receipt ──────────────────────────────────────────────
             'receipt' => [
                 [
-                    'text' => 'PAYMENT RECEIPT Receipt No RCP-2025-0067 Date 14-Feb-2025 Received From M/s Sharma Enterprises Amount Received Rs 128030.00 Rupees One Lakh Twenty Eight Thousand Thirty Only Payment Mode NEFT Reference No HDFC2025021400123 Against Invoice INV-2025-0042 dated 15-Jan-2025 Balance Due Nil Payment Status Full and Final Settlement Received By Accounts Department WolfBooks Pvt Ltd',
+                    'text' => 'PAYMENT RECEIPT Receipt No RCP-2025-0067 Date 14-Feb-2025 Received From M/s Sharma Enterprises Amount Received Rs 128030.00 Rupees One Lakh Twenty Eight Thousand Thirty Only Payment Mode NEFT Reference No HDFC2025021400123 Against Invoice INV-2025-0042 dated 15-Jan-2025 Balance Due Nil Payment Status Full and Final Settlement Received By Accounts Department ScanOCR Pvt Ltd',
                     'keywords' => 'payment receipt,receipt no,received from,amount received,payment mode,neft,reference no,against invoice,balance due,full and final,received by',
                 ],
                 [
-                    'text' => 'RECEIPT No WB-RCP-2025-134 Date 28-Mar-2025 Received with thanks from Rajesh Trading Co the sum of Rupees Two Lakh Fifty Seven Thousand Eight Hundred Thirty Only Rs 257830 by Cheque No 456789 dated 25-Mar-2025 drawn on ICICI Bank Andheri Branch towards payment of Invoice WB-INV-0089 Previous Balance 257830 Amount Received 257830 Current Balance 0.00 For WolfBooks Pvt Ltd Authorized Signatory Cashier Stamp',
+                    'text' => 'RECEIPT No WB-RCP-2025-134 Date 28-Mar-2025 Received with thanks from Rajesh Trading Co the sum of Rupees Two Lakh Fifty Seven Thousand Eight Hundred Thirty Only Rs 257830 by Cheque No 456789 dated 25-Mar-2025 drawn on ICICI Bank Andheri Branch towards payment of Invoice WB-INV-0089 Previous Balance 257830 Amount Received 257830 Current Balance 0.00 For ScanOCR Pvt Ltd Authorized Signatory Cashier Stamp',
                     'keywords' => 'receipt,received with thanks,cheque no,drawn on,towards payment,previous balance,current balance,authorized signatory,cashier',
                 ],
                 [
-                    'text' => 'MONEY RECEIPT Receipt Number RCP/WB/2025/201 Receipt Date 10-May-2025 Customer Name ABC Corporation Ltd Customer ID CUST-0045 Amount Rs 200000.00 Two Lakhs Only Mode of Payment Bank Transfer UTR No UTIB2025051000456 Bank AXIS Bank Payment Against Advance for PO WB-PO-2025-089 Narration Advance payment 50% as per proforma PRO/WB/2025/067 Outstanding After Payment Rs 832500.00 Acknowledgement This receipt confirms payment received in our bank account Issued By Finance Team WolfBooks',
+                    'text' => 'MONEY RECEIPT Receipt Number RCP/WB/2025/201 Receipt Date 10-May-2025 Customer Name ABC Corporation Ltd Customer ID CUST-0045 Amount Rs 200000.00 Two Lakhs Only Mode of Payment Bank Transfer UTR No UTIB2025051000456 Bank AXIS Bank Payment Against Advance for PO WB-PO-2025-089 Narration Advance payment 50% as per proforma PRO/WB/2025/067 Outstanding After Payment Rs 832500.00 Acknowledgement This receipt confirms payment received in our bank account Issued By Finance Team ScanOCR',
                     'keywords' => 'money receipt,receipt number,customer name,amount,mode of payment,utr no,payment against,advance,narration,outstanding,acknowledgement',
                 ],
             ],
@@ -123,7 +123,7 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── Purchase Order ───────────────────────────────────────
             'purchase_order' => [
                 [
-                    'text' => 'PURCHASE ORDER PO Number PO-WB-2025-0078 Date 05-Jan-2025 Delivery Date 20-Jan-2025 Vendor TechSupply India Pvt Ltd Vendor GSTIN 27AABCT4567M1Z9 Address Unit 34 Electronic City Bangalore 560100 Ship To WolfBooks Warehouse Sector 62 Noida UP 201301 Sr Item Code Description UOM Qty Unit Price Total 1 DELL-INS15 Laptop Dell Inspiron 15 Nos 5 42000 210000 2 HP-LJ-PRO HP LaserJet Pro Nos 3 17500 52500 Subtotal 262500 GST 18% 47250 Grand Total 309750 Terms Net 30 days Delivery FOB destination Warranty 1 year standard Approved By Purchase Manager',
+                    'text' => 'PURCHASE ORDER PO Number PO-WB-2025-0078 Date 05-Jan-2025 Delivery Date 20-Jan-2025 Vendor TechSupply India Pvt Ltd Vendor GSTIN 27AABCT4567M1Z9 Address Unit 34 Electronic City Bangalore 560100 Ship To ScanOCR Warehouse Sector 62 Noida UP 201301 Sr Item Code Description UOM Qty Unit Price Total 1 DELL-INS15 Laptop Dell Inspiron 15 Nos 5 42000 210000 2 HP-LJ-PRO HP LaserJet Pro Nos 3 17500 52500 Subtotal 262500 GST 18% 47250 Grand Total 309750 Terms Net 30 days Delivery FOB destination Warranty 1 year standard Approved By Purchase Manager',
                     'keywords' => 'purchase order,po number,delivery date,vendor,ship to,item code,uom,unit price,fob,warranty,approved by,purchase manager',
                 ],
                 [
@@ -131,7 +131,7 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'purchase order,order date,required by,supplier,deliver to,specification,total before tax,total order value,special instructions,assembly,payment terms',
                 ],
                 [
-                    'text' => 'PURCHASE ORDER Ref PO-2025-SRV-034 Date 22-Apr-2025 Vendor Global Cloud Services Inc Address 100 Tech Park Hyderabad 500081 GSTIN 36AABCG7890P1Z4 Category Service Purchase Description of Services Sr Service Description SAC Period Rate Amount 1 Cloud Server Hosting 998315 12 months 25000/mo 300000 2 SSL Certificate Wildcard 998316 1 year 8000 8000 3 CDN Service 998315 12 months 5000/mo 60000 4 Email Hosting 50 users 998319 12 months 3000/mo 36000 Net Value 404000 GST 18% 72720 Total PO Value 476720 Validity This PO is valid for 15 days Authorized Signatory CTO WolfBooks',
+                    'text' => 'PURCHASE ORDER Ref PO-2025-SRV-034 Date 22-Apr-2025 Vendor Global Cloud Services Inc Address 100 Tech Park Hyderabad 500081 GSTIN 36AABCG7890P1Z4 Category Service Purchase Description of Services Sr Service Description SAC Period Rate Amount 1 Cloud Server Hosting 998315 12 months 25000/mo 300000 2 SSL Certificate Wildcard 998316 1 year 8000 8000 3 CDN Service 998315 12 months 5000/mo 60000 4 Email Hosting 50 users 998319 12 months 3000/mo 36000 Net Value 404000 GST 18% 72720 Total PO Value 476720 Validity This PO is valid for 15 days Authorized Signatory CTO ScanOCR',
                     'keywords' => 'purchase order,service purchase,sac,cloud server,ssl certificate,cdn,email hosting,net value,total po value,validity,authorized,cto',
                 ],
             ],
@@ -139,15 +139,15 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── Purchase Bill ────────────────────────────────────────
             'bill' => [
                 [
-                    'text' => 'TAX INVOICE BILL Supplier TechSupply India Pvt Ltd GSTIN 27AABCT4567M1Z9 CIN U51909KA2015PTC078901 Invoice No TS-INV-2025-3456 Date 20-Jan-2025 Bill To WolfBooks Pvt Ltd GSTIN 07AABCW1234H1Z5 Address Sector 62 Noida UP 201301 Against PO PO-WB-2025-0078 HSN Description Qty Rate Amount 8471 Laptop Dell Inspiron 15 5 42000 210000 8443 HP LaserJet Pro 3 17500 52500 Taxable Amount 262500 IGST 18% 47250 Round Off 0.00 Total 309750 Amount in Words Three Lakhs Nine Thousand Seven Hundred Fifty Only Bank Details A/C 12345678901234 IFSC SBIN0001234 Payment Due 20-Feb-2025',
+                    'text' => 'TAX INVOICE BILL Supplier TechSupply India Pvt Ltd GSTIN 27AABCT4567M1Z9 CIN U51909KA2015PTC078901 Invoice No TS-INV-2025-3456 Date 20-Jan-2025 Bill To ScanOCR Pvt Ltd GSTIN 07AABCW1234H1Z5 Address Sector 62 Noida UP 201301 Against PO PO-WB-2025-0078 HSN Description Qty Rate Amount 8471 Laptop Dell Inspiron 15 5 42000 210000 8443 HP LaserJet Pro 3 17500 52500 Taxable Amount 262500 IGST 18% 47250 Round Off 0.00 Total 309750 Amount in Words Three Lakhs Nine Thousand Seven Hundred Fifty Only Bank Details A/C 12345678901234 IFSC SBIN0001234 Payment Due 20-Feb-2025',
                     'keywords' => 'tax invoice,bill,supplier,cin,against po,taxable amount,igst,round off,amount in words,bank details,payment due',
                 ],
                 [
-                    'text' => 'VENDOR INVOICE Bill No FW-2025-7890 Bill Date 30-Mar-2025 Vendor Furniture World GSTIN 07AABCF2345K1Z6 PAN AABCF2345K Billed To WolfBooks Pvt Ltd Our PO Ref WB/PO/2025/112 Delivery Challan Ref FW-DC-2025-456 dated 28-Mar-2025 Particulars HSN Qty Rate Taxable Ergonomic Office Chair 9401 20 7800 156000 Adjustable Standing Desk 9403 10 21000 210000 Dual Monitor Arm 8302 20 3200 64000 Total Taxable Value 430000 CGST 9% 38700 SGST 9% 38700 Invoice Total 507400 TDS Applicable under 194C at 1% Deduct TDS 4300 Net Payable 503100 E-Invoice IRN abcdef1234567890 QR Code Generated',
+                    'text' => 'VENDOR INVOICE Bill No FW-2025-7890 Bill Date 30-Mar-2025 Vendor Furniture World GSTIN 07AABCF2345K1Z6 PAN AABCF2345K Billed To ScanOCR Pvt Ltd Our PO Ref WB/PO/2025/112 Delivery Challan Ref FW-DC-2025-456 dated 28-Mar-2025 Particulars HSN Qty Rate Taxable Ergonomic Office Chair 9401 20 7800 156000 Adjustable Standing Desk 9403 10 21000 210000 Dual Monitor Arm 8302 20 3200 64000 Total Taxable Value 430000 CGST 9% 38700 SGST 9% 38700 Invoice Total 507400 TDS Applicable under 194C at 1% Deduct TDS 4300 Net Payable 503100 E-Invoice IRN abcdef1234567890 QR Code Generated',
                     'keywords' => 'vendor invoice,bill no,bill date,pan,our po ref,delivery challan ref,taxable,tds applicable,deduct tds,net payable,e-invoice,irn,qr code',
                 ],
                 [
-                    'text' => 'PURCHASE BILL From Global Cloud Services Inc GSTIN 36AABCG7890P1Z4 Bill Reference GCS-INV-2025-0567 Date 01-May-2025 Service Period May 2025 to Apr 2026 Bill To WolfBooks Private Limited GSTIN 07AABCW1234H1Z5 PO Reference PO-2025-SRV-034 SAC Description Period Amount 998315 Cloud Server Hosting 12 months 300000 998316 SSL Certificate Wildcard 1 year 8000 998315 CDN Service 12 months 60000 998319 Email Hosting 50 users 12 months 36000 Subtotal 404000 IGST 18% 72720 Total Bill Amount 476720 Due Date 31-May-2025 Late Payment Interest 1.5% per month',
+                    'text' => 'PURCHASE BILL From Global Cloud Services Inc GSTIN 36AABCG7890P1Z4 Bill Reference GCS-INV-2025-0567 Date 01-May-2025 Service Period May 2025 to Apr 2026 Bill To ScanOCR Private Limited GSTIN 07AABCW1234H1Z5 PO Reference PO-2025-SRV-034 SAC Description Period Amount 998315 Cloud Server Hosting 12 months 300000 998316 SSL Certificate Wildcard 1 year 8000 998315 CDN Service 12 months 60000 998319 Email Hosting 50 users 12 months 36000 Subtotal 404000 IGST 18% 72720 Total Bill Amount 476720 Due Date 31-May-2025 Late Payment Interest 1.5% per month',
                     'keywords' => 'purchase bill,bill reference,service period,bill to,po reference,sac,subtotal,total bill amount,due date,late payment,interest',
                 ],
             ],
@@ -159,11 +159,11 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'debit note,debit note no,against bill,reason for debit,damaged,returned to vendor,total debit amount,deduction,deducted from,goods returned,prepared by',
                 ],
                 [
-                    'text' => 'DEBIT NOTE No WB-DBN-2025-034 Issue Date 05-Apr-2025 Vendor Furniture World GSTIN 07AABCF2345K1Z6 Reference Bill FW-2025-7890 dated 30-Mar-2025 Nature of Claim Rate difference as per agreed PO price vs billed price Item PO Rate Billed Rate Qty Difference Ergonomic Office Chair 7500 7800 20 6000 Total Claim Before Tax 6000 CGST 9% 540 SGST 9% 540 Net Debit Value 7080 Request Please adjust this amount in your next invoice or issue a credit note within 7 days Raised By Accounts Payable WolfBooks',
+                    'text' => 'DEBIT NOTE No WB-DBN-2025-034 Issue Date 05-Apr-2025 Vendor Furniture World GSTIN 07AABCF2345K1Z6 Reference Bill FW-2025-7890 dated 30-Mar-2025 Nature of Claim Rate difference as per agreed PO price vs billed price Item PO Rate Billed Rate Qty Difference Ergonomic Office Chair 7500 7800 20 6000 Total Claim Before Tax 6000 CGST 9% 540 SGST 9% 540 Net Debit Value 7080 Request Please adjust this amount in your next invoice or issue a credit note within 7 days Raised By Accounts Payable ScanOCR',
                     'keywords' => 'debit note,vendor,reference bill,nature of claim,rate difference,po rate,billed rate,net debit value,adjust,credit note,accounts payable',
                 ],
                 [
-                    'text' => 'DEBIT MEMO Ref DBN/WB/2025/056 Date 15-May-2025 Supplier Global Cloud Services Inc GSTIN 36AABCG7890P1Z4 Against Invoice GCS-INV-2025-0567 Reason Service downtime exceeding SLA 99.9% uptime guarantee Actual uptime 97.2% in May 2025 Penalty as per contract clause 8.3 Calculation Monthly hosting charge 25000 SLA breach penalty 10% 2500 Days affected 8 out of 31 Pro-rata deduction 6452 Service Credit Amount 6452 IGST 18% 1161 Total Debit 7613 Action Required Credit to be applied to June 2025 invoice Authorized By CTO WolfBooks',
+                    'text' => 'DEBIT MEMO Ref DBN/WB/2025/056 Date 15-May-2025 Supplier Global Cloud Services Inc GSTIN 36AABCG7890P1Z4 Against Invoice GCS-INV-2025-0567 Reason Service downtime exceeding SLA 99.9% uptime guarantee Actual uptime 97.2% in May 2025 Penalty as per contract clause 8.3 Calculation Monthly hosting charge 25000 SLA breach penalty 10% 2500 Days affected 8 out of 31 Pro-rata deduction 6452 Service Credit Amount 6452 IGST 18% 1161 Total Debit 7613 Action Required Credit to be applied to June 2025 invoice Authorized By CTO ScanOCR',
                     'keywords' => 'debit memo,supplier,against invoice,service downtime,sla,uptime,penalty,contract clause,pro-rata,service credit,action required',
                 ],
             ],
@@ -175,7 +175,7 @@ class OcrClassificationBasisSeeder extends Seeder
                     'keywords' => 'payment voucher,pay to,against bill,less tds,net payment,mode of payment,neft,utr no,debit account,credit account,narration,approved by',
                 ],
                 [
-                    'text' => 'PAYMENT ADVICE Payment Ref PAY/WB/2025/145 Payment Date 02-Apr-2025 Beneficiary Furniture World Account No 9876543210123 IFSC ICIC0001234 Bank ICICI Bank Kirti Nagar Amount Paid Rs 503100.00 Breakup Bill Amount 507400.00 Less TDS 1% 4300.00 Net Paid 503100.00 Bills Covered Bill No FW-2025-7890 dated 30-Mar-2025 Amount 507400 TDS Deducted 4300 TDS Certificate will be issued quarterly Remittance sent via RTGS Ref ICICR2025040200567 For WolfBooks Pvt Ltd Accounts Department',
+                    'text' => 'PAYMENT ADVICE Payment Ref PAY/WB/2025/145 Payment Date 02-Apr-2025 Beneficiary Furniture World Account No 9876543210123 IFSC ICIC0001234 Bank ICICI Bank Kirti Nagar Amount Paid Rs 503100.00 Breakup Bill Amount 507400.00 Less TDS 1% 4300.00 Net Paid 503100.00 Bills Covered Bill No FW-2025-7890 dated 30-Mar-2025 Amount 507400 TDS Deducted 4300 TDS Certificate will be issued quarterly Remittance sent via RTGS Ref ICICR2025040200567 For ScanOCR Pvt Ltd Accounts Department',
                     'keywords' => 'payment advice,payment ref,beneficiary,account no,ifsc,amount paid,less tds,net paid,bills covered,tds certificate,remittance,rtgs',
                 ],
                 [
@@ -219,7 +219,7 @@ class OcrClassificationBasisSeeder extends Seeder
             // ─── GRN (Goods Receipt Note) ─────────────────────────────
             'grn' => [
                 [
-                    'text' => 'GOODS RECEIPT NOTE GRN No GRN-WB-2025-0045 Date 20-Jan-2025 Received From TechSupply India Pvt Ltd Against PO PO-WB-2025-0078 DC/Invoice Ref TS-DC-2025-890 Received At WolfBooks Warehouse Sector 62 Noida Inspected By Mr Amit Kumar Sr Item Description PO Qty Received Accepted Rejected 1 Laptop Dell Inspiron 15 5 5 5 0 2 HP LaserJet Pro 3 3 3 0 Total Items 8 Condition Good no visible damage Remarks All items received in original sealed packaging Serial numbers verified and recorded Quality Check Passed Received By Store Keeper Approved By Warehouse Manager',
+                    'text' => 'GOODS RECEIPT NOTE GRN No GRN-WB-2025-0045 Date 20-Jan-2025 Received From TechSupply India Pvt Ltd Against PO PO-WB-2025-0078 DC/Invoice Ref TS-DC-2025-890 Received At ScanOCR Warehouse Sector 62 Noida Inspected By Mr Amit Kumar Sr Item Description PO Qty Received Accepted Rejected 1 Laptop Dell Inspiron 15 5 5 5 0 2 HP LaserJet Pro 3 3 3 0 Total Items 8 Condition Good no visible damage Remarks All items received in original sealed packaging Serial numbers verified and recorded Quality Check Passed Received By Store Keeper Approved By Warehouse Manager',
                     'keywords' => 'goods receipt note,grn,received from,against po,inspected by,po qty,received,accepted,rejected,condition,serial numbers,quality check,store keeper',
                 ],
                 [

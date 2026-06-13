@@ -1,9 +1,0 @@
-# YOLOv8 Training Configuration
-# Update paths after running prepare_data.py
-
-train: dataset/train/images
-val: dataset/val/images
-test: dataset/test/images
-
-nc: 2
-names: ['analog', 'digital']

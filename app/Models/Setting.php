@@ -33,7 +33,7 @@ class Setting extends Model
         return static::firstOrCreate(
             ['user_id' => $userId],
             [
-                'app_name'    => 'WolfBooks',
+                'app_name'    => 'ScanOCR',
                 'timezone'    => 'UTC',
                 'date_format' => 'DD/MM/YYYY',
                 'theme_color' => 'wolf_red',
