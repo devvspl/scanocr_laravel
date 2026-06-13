@@ -1,0 +1,514 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKFLOW DESIGNER — Custom Styles
+   All classes prefixed with wf- to avoid conflicts
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Save Bar ────────────────────────────────────────────────────────────── */
+.wf-save-bar {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px solid #e7e5e4;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+/* ── Stage Library (Left Sidebar) ────────────────────────────────────────── */
+.wf-stage-library {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid #e7e5e4;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.wf-library-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f5f5f4;
+    border: 1px solid #e7e5e4;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.wf-library-item:hover {
+    background: #e7e5e4;
+}
+
+.wf-library-item.is-inactive {
+    opacity: 0.5;
+    filter: grayscale(0.7);
+}
+
+.wf-library-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.wf-library-toggle {
+    margin-left: auto;
+    width: 36px;
+    height: 20px;
+    background: #d6d3d1;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wf-library-toggle.on {
+    background: #7f1d1d;
+}
+
+.wf-library-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.wf-library-toggle.on::after {
+    transform: translateX(16px);
+}
+
+/* ── Pipeline Canvas (Center) ────────────────────────────────────────────── */
+.wf-pipeline-canvas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    gap: 0;
+    background: #f1f5f9;
+    min-height: 600px;
+    position: relative;
+}
+
+.wf-stage-card {
+    width: 280px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    cursor: default;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    border: 2px solid transparent;
+}
+
+.wf-stage-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+}
+
+.wf-stage-card.wf-card-selected {
+    border-color: #0d9488;
+}
+
+.wf-stage-card.is-inactive {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+}
+
+.wf-stage-card.is-optional {
+    border-style: dashed;
+    border-color: #94a3b8;
+}
+
+.wf-card-header {
+    padding: 12px 16px;
+    border-radius: 10px 10px 0 0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.wf-drag-handle {
+    cursor: grab;
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+.wf-drag-handle:active {
+    cursor: grabbing;
+}
+
+.wf-card-body {
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #57534e;
+}
+
+.wf-card-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #f5f5f4;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wf-toggle {
+    width: 40px;
+    height: 22px;
+    background: #d6d3d1;
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wf-toggle.on {
+    background: #7f1d1d;
+}
+
+.wf-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.wf-toggle.on::after {
+    transform: translateX(18px);
+}
+
+.btn-config {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #57534e;
+    background: #f5f5f4;
+    border: 1px solid #e7e5e4;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-config:hover {
+    background: #e7e5e4;
+    color: #292524;
+}
+
+/* ── Arrow Connector ─────────────────────────────────────────────────────── */
+.wf-arrow {
+    width: 2px;
+    height: 36px;
+    background: #94a3b8;
+    margin: 0 auto;
+    position: relative;
+}
+
+.wf-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -12px;
+    left: -4px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.wf-arrow.optional {
+    border-left: 2px dashed #f59e0b;
+    background: none;
+    width: 0;
+}
+
+.btn-delete-stage svg {
+    margin-left: 4px;
+}
+
+.wf-arrow.optional::after {
+    color: #f59e0b;
+}
+
+/* ── Config Drawer (Right Sidebar) ───────────────────────────────────────── */
+.wf-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 420px;
+    background: #fff;
+    z-index: 1050;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.wf-drawer.open {
+    transform: translateX(0);
+}
+
+.wf-drawer-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e7e5e4;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 14px;
+    color: #292524;
+    flex-shrink: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    border-bottom: 1px solid #e7e5e4;
+    flex-shrink: 0;
+}
+
+.nav-tabs li {
+    flex: 1;
+}
+
+.nav-tabs a {
+    display: block;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #78716c;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.nav-tabs a:hover,
+.nav-tabs a.active {
+    color: #7f1d1d;
+    border-bottom-color: #7f1d1d;
+}
+
+#drawer-content {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ── Action List ─────────────────────────────────────────────────────────── */
+.wf-action-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #fafaf9;
+    transition: background 0.2s;
+}
+
+.wf-action-item:hover {
+    background: #f5f5f4;
+}
+
+.wf-action-item.is-inactive {
+    opacity: 0.5;
+}
+
+.wf-action-toggle {
+    width: 36px;
+    height: 20px;
+    background: #d6d3d1;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.wf-action-toggle.on {
+    background: #7f1d1d;
+}
+
+.wf-action-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.wf-action-toggle.on::after {
+    transform: translateX(16px);
+}
+
+.wf-action-label {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: #292524;
+}
+
+.wf-action-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.wf-action-badge.primary {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.wf-action-badge.success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.wf-action-badge.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.wf-action-badge.warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.wf-action-badge.secondary {
+    background: #f5f5f4;
+    color: #57534e;
+}
+
+.wf-action-badge.info {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+/* ── Role List ───────────────────────────────────────────────────────────── */
+.wf-role-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #fafaf9;
+}
+
+.wf-role-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: #292524;
+}
+
+.wf-role-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #78716c;
+}
+
+.wf-role-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+/* ── Config Form ─────────────────────────────────────────────────────────── */
+.wf-config-group {
+    margin-bottom: 16px;
+}
+
+.wf-config-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #57534e;
+    margin-bottom: 6px;
+}
+
+.wf-config-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid #d6d3d1;
+    border-radius: 6px;
+    transition: border-color 0.2s;
+}
+
+.wf-config-input:focus {
+    outline: none;
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 3px rgba(127, 29, 29, 0.1);
+}
+
+.wf-config-select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid #d6d3d1;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.wf-config-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #292524;
+}
+
+.wf-config-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .wf-drawer {
+        width: 100vw;
+    }
+
+    .wf-stage-card {
+        width: 90vw;
+    }
+
+    .wf-stage-library {
+        display: none;
+    }
+}

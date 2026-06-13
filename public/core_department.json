@@ -1,0 +1,28 @@
+[
+{"type":"header","version":"5.2.2","comment":"Export to JSON plugin for PHPMyAdmin"},
+{"type":"database","name":"vspl_nova"},
+{"type":"table","name":"core_department","database":"vspl_nova","data":
+[
+{"id":"1","api_id":"1","department_name":"Administration","department_code":"ADM","effective_date":"2005-01-01","is_active":"1","focus_code":"ADM","numeric_code":"01"},
+{"id":"2","api_id":"2","department_name":"Breeding","department_code":"BRD","effective_date":"2005-01-01","is_active":"1","focus_code":"BRD","numeric_code":"02"},
+{"id":"3","api_id":"3","department_name":"Breeding Support","department_code":"BS","effective_date":"2005-01-01","is_active":"1","focus_code":"BS","numeric_code":"03"},
+{"id":"4","api_id":"4","department_name":"Finance & Account","department_code":"FIN","effective_date":"2005-01-01","is_active":"1","focus_code":"FIN","numeric_code":"04"},
+{"id":"5","api_id":"5","department_name":"Human Resource","department_code":"HR","effective_date":"2005-01-01","is_active":"1","focus_code":"HR","numeric_code":"05"},
+{"id":"6","api_id":"6","department_name":"In Licensing & Procurement","department_code":"ILP","effective_date":"2005-01-01","is_active":"1","focus_code":"ILP","numeric_code":"06"},
+{"id":"7","api_id":"7","department_name":"Information Technology","department_code":"IT","effective_date":"2005-01-01","is_active":"1","focus_code":"IT","numeric_code":"07"},
+{"id":"8","api_id":"8","department_name":"Legal","department_code":"LGL","effective_date":"2005-01-01","is_active":"1","focus_code":"LGL","numeric_code":"08"},
+{"id":"9","api_id":"9","department_name":"Accounts Receivable & MIS","department_code":"MIS","effective_date":"2025-04-01","is_active":"1","focus_code":"MIS","numeric_code":"09"},
+{"id":"10","api_id":"10","department_name":"Marketing","department_code":"MKT","effective_date":"2005-01-01","is_active":"1","focus_code":"MKT","numeric_code":"10"},
+{"id":"11","api_id":"11","department_name":"Parent Seed","department_code":"PSD","effective_date":"2005-01-01","is_active":"1","focus_code":"PSD","numeric_code":"11"},
+{"id":"12","api_id":"12","department_name":"Processing","department_code":"PRS","effective_date":"2005-01-01","is_active":"1","focus_code":"PRS","numeric_code":"12"},
+{"id":"13","api_id":"13","department_name":"Production","department_code":"PDN","effective_date":"2005-01-01","is_active":"1","focus_code":"PDN","numeric_code":"13"},
+{"id":"14","api_id":"14","department_name":"Quality Assurance","department_code":"QA","effective_date":"2005-01-01","is_active":"1","focus_code":"QA","numeric_code":"14"},
+{"id":"15","api_id":"15","department_name":"Sales","department_code":"SLS","effective_date":"2005-01-01","is_active":"1","focus_code":"SLS","numeric_code":"15"},
+{"id":"16","api_id":"16","department_name":"Seed Tech","department_code":"SDT","effective_date":"2005-01-01","is_active":"1","focus_code":"SDT","numeric_code":"16"},
+{"id":"17","api_id":"17","department_name":"Trialing & PD","department_code":"TPD","effective_date":"2005-01-01","is_active":"1","focus_code":"TPD","numeric_code":"17"},
+{"id":"18","api_id":"18","department_name":"Management","department_code":"MGT","effective_date":"2005-01-01","is_active":"1","focus_code":"MGT","numeric_code":"18"},
+{"id":"19","api_id":"19","department_name":"Common","department_code":"COM","effective_date":"2005-01-01","is_active":"1","focus_code":"COM","numeric_code":"19"},
+{"id":"20","api_id":"20","department_name":"MIS","department_code":"MIS","effective_date":"2005-01-01","is_active":"0","focus_code":null,"numeric_code":"20"}
+]
+}
+]
