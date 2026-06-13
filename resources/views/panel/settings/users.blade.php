@@ -805,16 +805,12 @@ function usersPage() {
 
         async loadCompanies() {
             if (this.companies.length > 0 || !this.selectedUser) return;
-            const res = await fetch('{{ route("settings.company") }}', {
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            const res = await fetch(`/settings/users/${this.selectedUser.id}/company-access`, {
+                headers: { 'Accept': 'application/json' }
             });
             if (res.ok) {
                 const data = await res.json();
-                const list = Array.isArray(data) ? data : (data.data ?? []);
-                this.companies = list.map(c => ({
-                    id: c.id, name: c.name, is_default: c.is_default, is_active: c.is_active,
-                    has_access: true,
-                }));
+                this.companies = data.companies;
             }
         },
 
@@ -866,6 +862,14 @@ function usersPage() {
                     promises.push(fetch(`/settings/users/${uid}/document-access`, {
                         method: 'PUT', headers,
                         body: JSON.stringify({ access: this.docTypes.map(d => ({ id: d.id, can_view: d.can_view })) }),
+                    }));
+                }
+
+                // Save company access if loaded
+                if (this.companies.length > 0) {
+                    promises.push(fetch(`/settings/users/${uid}/company-access`, {
+                        method: 'PUT', headers,
+                        body: JSON.stringify({ access: this.companies.map(c => ({ id: c.id, has_access: c.has_access })) }),
                     }));
                 }
 

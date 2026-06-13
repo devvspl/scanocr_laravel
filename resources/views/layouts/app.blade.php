@@ -56,6 +56,54 @@
                         'icon' =>
                             'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
                     ],
+                                       [
+                        'id' => 'temp-scanning',
+                        'label' => 'Temp Scanning',
+                        'route' => '#',
+                        'icon' => 'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z',
+                    ],
+                    [
+                        'id' => 'direct-scanning',
+                        'label' => 'Direct Scanning',
+                        'route' => '#',
+                        'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
+                    ],
+                    [
+                        'id' => 'document-naming',
+                        'label' => 'Document Naming',
+                        'route' => '#',
+                        'icon' => 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2h2z',
+                    ],
+                    [
+                        'id' => 'bill-approval',
+                        'label' => 'Bill Approval',
+                        'route' => '#',
+                        'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+                    ],
+                    [
+                        'id' => 'classification',
+                        'label' => 'Classification',
+                        'route' => '#',
+                        'icon' => 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+                    ],
+                    [
+                        'id' => 'punching',
+                        'label' => 'Punching',
+                        'route' => '#',
+                        'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+                    ],
+                    [
+                        'id' => 'punch-approval',
+                        'label' => 'Punch Approval',
+                        'route' => '#',
+                        'icon' => 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+                    ],
+                    [
+                        'id' => 'reports',
+                        'label' => 'Reports',
+                        'route' => '#',
+                        'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                    ],
                     [
                         'id' => 'master',
                         'label' => 'Master',
@@ -92,7 +140,10 @@
                             ['label' => 'Company',   'route' => 'settings.company',       'permission' => 'company.view'],
                             ['label' => 'Financial Year', 'route' => 'settings.financial-year', 'permission' => 'financial-year.view'],
                             ['label' => 'Numbering',      'route' => 'settings.numbering',      'permission' => 'numbering.view'],
-                            ['label' => 'Document',       'route' => 'settings.document-types', 'permission' => 'document-types.view'],
+                            ['label' => 'Document',        'route' => 'settings.document-types',    'permission' => 'document-types.view'],
+                            ['section' => 'Ext Master'],
+                            ['label' => 'API Control',     'route' => 'settings.ext-api-control',   'permission' => 'ext-api-control.view'],
+                            ['label' => 'Field Mappings',  'route' => 'settings.ext-field-mappings','permission' => 'ext-field-mappings.view'],
                             ['section' => 'Users & Access'],
                             ['label' => 'Users',       'route' => 'settings.users',       'permission' => 'users.view'],
                             ['label' => 'Roles',       'route' => 'settings.roles',       'permission' => 'roles.view'],
@@ -140,7 +191,7 @@
 
             @foreach ($railItems as $item)
                 @php
-                    $isActive = Request::routeIs($item['route']) || Request::routeIs($item['route'] . '.*');
+                    $isActive = $item['route'] !== '#' && (Request::routeIs($item['route']) || Request::routeIs($item['route'] . '.*'));
                     $hasChildren = !empty($item['children']);
                 @endphp
 
@@ -347,10 +398,16 @@
 
                 {{-- Company & FY Switcher --}}
                 @php
-                    $__currentCompany = \App\Models\Company::getDefault();
-                    $__currentFy = \App\Models\FinancialYear::where('is_current', true)->first();
-                    $__companies = \App\Models\Company::where('is_active', true)->orderBy('name')->get(['id', 'name', 'is_default']);
-                    $__fys = \App\Models\FinancialYear::orderByDesc('start_date')->get(['id', 'label', 'is_current']);
+                    $__user        = auth()->user();
+                    $__isSuperAdmin = $__user?->hasRole('Super Admin') ?? false;
+
+                    $__companies   = $__user
+                        ? \App\Services\UserAccessService::allowedCompanies($__user->id, $__isSuperAdmin)
+                        : collect();
+
+                    $__currentCompany = $__companies->firstWhere('is_default', true) ?? $__companies->first();
+                    $__currentFy      = \App\Models\FinancialYear::where('is_current', true)->first();
+                    $__fys            = \App\Models\FinancialYear::orderByDesc('start_date')->get(['id', 'label', 'is_current']);
                 @endphp
                 <div x-data="{ cfOpen: false }" class="relative">
                     <button @click="cfOpen = !cfOpen" @click.outside="cfOpen = false"

@@ -111,6 +111,22 @@ class PermissionSeeder extends Seeder
                 'document-types.delete',                // destroy
             ],
 
+            // ── Ext Master — API Control ──────────────────────────────────
+            'Ext API Control' => [
+                'ext-api-control.view',                 // index, data, show
+                'ext-api-control.create',               // store
+                'ext-api-control.edit',                 // update
+                'ext-api-control.delete',               // destroy
+            ],
+
+            // ── Ext Master — Field Mappings ───────────────────────────────
+            'Ext Field Mappings' => [
+                'ext-field-mappings.view',              // index, data, show
+                'ext-field-mappings.create',            // store
+                'ext-field-mappings.edit',              // update
+                'ext-field-mappings.delete',            // destroy
+            ],
+
             // ── Users ─────────────────────────────────────────────────────
             'Users' => [
                 'users.view',                           // index, data, show

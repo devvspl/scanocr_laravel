@@ -83,6 +83,9 @@ class UserController extends Controller
             $user->syncRoles($roles);
         }
 
+        // Bust company access cache — role may have changed
+        \App\Services\UserAccessService::forgetAll($user->id);
+
         ActivityLogger::log('created', $user, null, $user->getAttributes());
 
         return response()->json([
@@ -116,6 +119,7 @@ class UserController extends Controller
         if ($request->has('roles')) {
             $roles = \Spatie\Permission\Models\Role::whereIn('id', $request->roles ?? [])->get();
             $user->syncRoles($roles);
+            \App\Services\UserAccessService::forgetAll($user->id);
         }
 
         ActivityLogger::log('updated', $user, $old, $user->getAttributes());
@@ -177,6 +181,9 @@ class UserController extends Controller
             ['roles' => $newRoles]
         );
 
+        // Role change may affect Super Admin status → bust company cache
+        \App\Services\UserAccessService::forgetAll($user->id);
+
         return response()->json(['success' => true, 'message' => 'User roles updated successfully.']);
     }
 
@@ -219,21 +226,18 @@ class UserController extends Controller
     {
         $allTypes = \App\Models\DocumentType::orderBy('label')->get(['id', 'key', 'label', 'is_active']);
 
-        // Build a map of document_type_id → can_view for this user
         $access = \App\Models\UserDocumentTypeAccess::where('user_id', $user->id)
             ->pluck('can_view', 'document_type_id');
 
-        // If no explicit access rows exist, treat all active types as allowed (default open)
         $hasExplicitAccess = $access->isNotEmpty();
 
         $types = $allTypes->map(function ($dt) use ($access, $hasExplicitAccess) {
             return [
-                'id'       => $dt->id,
-                'key'      => $dt->key,
-                'label'    => $dt->label,
-                'is_active'=> $dt->is_active,
-                // default: if no rows set, all active types are viewable
-                'can_view' => $hasExplicitAccess
+                'id'        => $dt->id,
+                'key'       => $dt->key,
+                'label'     => $dt->label,
+                'is_active' => $dt->is_active,
+                'can_view'  => $hasExplicitAccess
                     ? (bool) ($access[$dt->id] ?? false)
                     : (bool) $dt->is_active,
             ];
@@ -248,8 +252,8 @@ class UserController extends Controller
     public function updateDocumentAccess(Request $request, User $user)
     {
         $request->validate([
-            'access'          => 'array',
-            'access.*.id'     => 'required|exists:document_types,id',
+            'access'            => 'array',
+            'access.*.id'       => 'required|exists:document_types,id',
             'access.*.can_view' => 'required|boolean',
         ]);
 
@@ -264,6 +268,59 @@ class UserController extends Controller
         ActivityLogger::log('updated', $user, [], ['document_access' => 'updated']);
 
         return response()->json(['success' => true, 'message' => 'Document access updated.']);
+    }
+
+    public function companyAccess(User $user)
+    {
+        $allCompanies = \App\Models\Company::where('is_active', true)->orderBy('name')
+            ->get(['id', 'name', 'is_default']);
+
+        $access = \App\Models\UserCompanyAccess::where('user_id', $user->id)
+            ->pluck('has_access', 'company_id');
+
+        $hasExplicit = $access->isNotEmpty();
+
+        $companies = $allCompanies->map(function ($co) use ($access, $hasExplicit) {
+            return [
+                'id'         => $co->id,
+                'name'       => $co->name,
+                'is_default' => $co->is_default,
+                'is_active'  => true,
+                // default open — if no rows set, all active companies are accessible
+                'has_access' => $hasExplicit
+                    ? (bool) ($access[$co->id] ?? false)
+                    : true,
+            ];
+        });
+
+        return response()->json([
+            'user'      => ['id' => $user->id, 'name' => $user->name],
+            'companies' => $companies,
+        ]);
+    }
+
+    public function updateCompanyAccess(Request $request, User $user)
+    {
+        $request->validate([
+            'access'               => 'array',
+            'access.*.id'          => 'required|exists:companies,id',
+            'access.*.has_access'  => 'required|boolean',
+        ]);
+
+        $now = now();
+        foreach ($request->access as $item) {
+            \App\Models\UserCompanyAccess::updateOrCreate(
+                ['user_id' => $user->id, 'company_id' => $item['id']],
+                ['has_access' => $item['has_access'], 'updated_at' => $now]
+            );
+        }
+
+        // Bust the cached company list for this user
+        \App\Services\UserAccessService::forgetCompanyCache($user->id);
+
+        ActivityLogger::log('updated', $user, [], ['company_access' => 'updated']);
+
+        return response()->json(['success' => true, 'message' => 'Company access updated.']);
     }
 
     private function validateUser(Request $request, ?int $ignoreId = null): array

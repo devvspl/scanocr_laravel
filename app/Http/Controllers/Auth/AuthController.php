@@ -112,18 +112,30 @@ class AuthController extends Controller
                 ]);
             }
 
-            // Normal login flow
-            $otp = rand(100000, 999999);
             $remember = $request->boolean('remember');
-            
-            Cache::put('login_otp_' . $request->email, [
-                'otp' => $otp,
-                'remember' => $remember
-            ], now()->addMinutes(15));
-            
-            Mail::to($request->email)->send(new OtpMail($otp, 'login'));
-            
-            return redirect()->route('login.verify.form')->with(['email' => $request->email, 'success' => 'Please enter the OTP sent to your email to complete login.']);
+
+            // ── OTP gate — controlled by LOGIN_OTP_ENABLED in .env ────────
+            if (config('auth.login_otp_enabled', true)) {
+                $otp = rand(100000, 999999);
+
+                Cache::put('login_otp_' . $request->email, [
+                    'otp'      => $otp,
+                    'remember' => $remember,
+                ], now()->addMinutes(15));
+
+                Mail::to($request->email)->send(new OtpMail($otp, 'login'));
+
+                return redirect()->route('login.verify.form')->with([
+                    'email'   => $request->email,
+                    'success' => 'Please enter the OTP sent to your email to complete login.',
+                ]);
+            }
+
+            // ── Direct login — OTP disabled ───────────────────────────────
+            Auth::login($user, $remember);
+            $request->session()->regenerate();
+
+            return redirect()->intended(route('dashboard'))->with('success', 'Logged in successfully!');
         }
 
         return back()->withErrors([

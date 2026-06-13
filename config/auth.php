@@ -6,6 +6,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Login OTP
+    |--------------------------------------------------------------------------
+    | When true, users must verify a 6-digit OTP sent to their email after
+    | entering their password. Set LOGIN_OTP_ENABLED=false in .env to allow
+    | direct login without the OTP step.
+    */
+
+    'login_otp_enabled' => env('LOGIN_OTP_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Defaults
     |--------------------------------------------------------------------------
     |

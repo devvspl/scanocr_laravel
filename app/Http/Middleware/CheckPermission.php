@@ -18,6 +18,8 @@ class CheckPermission
         'settings.users.sub-users',
         'settings.users.document-access',
         'settings.users.document-access.update',
+        'settings.users.company-access',
+        'settings.users.company-access.update',
         // Document AI — all gated by auth only, no granular permission checks
         'document-ai.playground',
         'document-ai.predict',

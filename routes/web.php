@@ -18,6 +18,7 @@ use App\Http\Controllers\Panel\PermissionGroupController;
 use App\Http\Controllers\Panel\ProfileController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\SettingsController;
+use App\Http\Controllers\Panel\ExtMasterController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
@@ -167,6 +168,22 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('settings.document-types.update');
     Route::delete('/settings/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('settings.document-types.destroy');
 
+    // Ext Master — API Control
+    Route::get('/settings/ext-api-control', [ExtMasterController::class, 'apiIndex'])->name('settings.ext-api-control');
+    Route::get('/settings/ext-api-control/data', [ExtMasterController::class, 'apiData'])->name('settings.ext-api-control.data');
+    Route::post('/settings/ext-api-control', [ExtMasterController::class, 'apiStore'])->name('settings.ext-api-control.store');
+    Route::get('/settings/ext-api-control/{extMasterApiControl}', [ExtMasterController::class, 'apiShow'])->name('settings.ext-api-control.show');
+    Route::put('/settings/ext-api-control/{extMasterApiControl}', [ExtMasterController::class, 'apiUpdate'])->name('settings.ext-api-control.update');
+    Route::delete('/settings/ext-api-control/{extMasterApiControl}', [ExtMasterController::class, 'apiDestroy'])->name('settings.ext-api-control.destroy');
+
+    // Ext Master — Field Mappings
+    Route::get('/settings/ext-field-mappings', [ExtMasterController::class, 'fieldIndex'])->name('settings.ext-field-mappings');
+    Route::get('/settings/ext-field-mappings/data', [ExtMasterController::class, 'fieldData'])->name('settings.ext-field-mappings.data');
+    Route::post('/settings/ext-field-mappings', [ExtMasterController::class, 'fieldStore'])->name('settings.ext-field-mappings.store');
+    Route::get('/settings/ext-field-mappings/{extFieldMapping}', [ExtMasterController::class, 'fieldShow'])->name('settings.ext-field-mappings.show');
+    Route::put('/settings/ext-field-mappings/{extFieldMapping}', [ExtMasterController::class, 'fieldUpdate'])->name('settings.ext-field-mappings.update');
+    Route::delete('/settings/ext-field-mappings/{extFieldMapping}', [ExtMasterController::class, 'fieldDestroy'])->name('settings.ext-field-mappings.destroy');
+
     // Users
     Route::get('/settings/users', [UserController::class, 'index'])->name('settings.users');
     Route::get('/settings/users/data', [UserController::class, 'data'])->name('settings.users.data');
@@ -181,6 +198,8 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('settings.users.permissions.update');
     Route::get('/settings/users/{user}/document-access', [UserController::class, 'documentAccess'])->name('settings.users.document-access');
     Route::put('/settings/users/{user}/document-access', [UserController::class, 'updateDocumentAccess'])->name('settings.users.document-access.update');
+    Route::get('/settings/users/{user}/company-access', [UserController::class, 'companyAccess'])->name('settings.users.company-access');
+    Route::put('/settings/users/{user}/company-access', [UserController::class, 'updateCompanyAccess'])->name('settings.users.company-access.update');
 
     // Roles
     Route::get('/settings/roles', [RoleController::class, 'index'])->name('settings.roles');

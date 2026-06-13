@@ -86,6 +86,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Company access pivot
+     */
+    public function companyAccess()
+    {
+        return $this->hasMany(\App\Models\UserCompanyAccess::class);
+    }
+
+    public function allowedCompanyIds(): array
+    {
+        return $this->companyAccess()->where('has_access', true)->pluck('company_id')->toArray();
+    }
+
+    /**
      * Get the user who created this user
      */
     public function creator()
