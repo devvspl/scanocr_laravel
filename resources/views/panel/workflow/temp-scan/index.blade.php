@@ -88,6 +88,22 @@
 .modal-file-item:hover{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}.modal-file-item.active{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12);border-left:3px solid #7f1d1d}
 .modal-file-icon{width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;background:#f5f5f4;border-radius:.375rem;color:#78716c;font-size:9px;font-weight:700;text-transform:uppercase;flex-shrink:0;border:1px solid #e7e5e4}
 .modal-file-name{flex:1;min-width:0;font-size:.72rem;color:#292524;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ── Tabs ──────────────────────────────────────── */
+.tabs{display:flex;gap:.25rem;border-bottom:2px solid #e7e5e4;padding:0 1.25rem;background:#fff}
+.tab-btn{padding:.625rem 1rem;font-size:.72rem;font-weight:600;color:#78716c;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s;position:relative}
+.tab-btn:hover{color:#292524;background:#fafaf9}
+.tab-btn.active{color:#7f1d1d;border-bottom-color:#7f1d1d}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 .35rem;border-radius:9999px;background:#e7e5e4;color:#57534e;font-size:.6rem;font-weight:700;margin-left:.35rem}
+.tab-btn.active .tab-badge{background:#7f1d1d;color:#fff}
+/* ── Filters ───────────────────────────────────── */
+.filter-bar{display:flex;align-items:center;gap:.75rem;padding:.875rem 1.25rem;background:#fafaf9;border-bottom:1px solid #e7e5e4;flex-wrap:wrap}
+.filter-input{height:2rem;padding:0 .65rem;font-size:.72rem;border:1px solid #d6d3d1;border-radius:.375rem;background:#fff;outline:none;color:#292524}
+.filter-input:focus{border-color:#7f1d1d;box-shadow:0 0 0 3px rgba(127,29,29,.08)}
+.filter-btn{height:2rem;px-3;display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;border-radius:.375rem;cursor:pointer;transition:all .15s}
+.filter-btn-primary{background:#7f1d1d;color:#fff;border:none;padding:0 .875rem}
+.filter-btn-primary:hover{background:#6b1a1a}
+.filter-btn-secondary{background:#fff;color:#57534e;border:1px solid #d6d3d1;padding:0 .75rem}
+.filter-btn-secondary:hover{background:#f5f5f4}
 </style>
 @endpush
 @section('content')
@@ -139,6 +155,29 @@
                         </div>
                     </div>
                 </div>
+                {{-- Tabs --}}
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="all">All Scans<span class="tab-badge" id="badge-all">0</span></button>
+                    <button class="tab-btn" data-tab="pending">Pending<span class="tab-badge" id="badge-pending">0</span></button>
+                    <button class="tab-btn" data-tab="approved">Approved<span class="tab-badge" id="badge-approved">0</span></button>
+                    <button class="tab-btn" data-tab="rejected">Rejected<span class="tab-badge" id="badge-rejected">0</span></button>
+                </div>
+                {{-- Filters --}}
+                <div class="filter-bar">
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-semibold text-stone-600 uppercase" >From</label>
+                        <input type="date" id="filterFromDate" class="filter-input" style="width:140px" onfocus="this.showPicker()">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-semibold text-stone-600 uppercase">To</label>
+                        <input type="date" id="filterToDate" class="filter-input" style="width:140px" onfocus="this.showPicker()">
+                    </div>
+                    <button id="btnApplyFilters" class="filter-btn filter-btn-primary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        Apply
+                    </button>
+                    <button id="btnResetFilters" class="filter-btn filter-btn-secondary">Reset</button>
+                </div>
                 <div class="dt-ctrl-bar border-b border-stone-100 flex-shrink-0">
                     <div class="flex items-center gap-2 text-xs text-stone-500"><span>Show</span><select class="dt-length-sel" id="dtLength"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select><span>entries</span></div>
                     <div class="dt-search-wrap"><input type="text" class="dt-search-input" id="dtSearch" placeholder="Search…"></div>
@@ -185,7 +224,6 @@
                         <div id="supportProgressWrap" class="hidden"><div class="upload-progress"><div class="upload-progress-bar" id="supportProgressBar"></div></div><p class="text-[10px] text-stone-400 mt-1" id="supportProgressText">Uploading…</p></div>
                         <button type="submit" id="supportUploadBtn" class="w-full h-9 bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Upload File</button>
                     </form>
-                    <div class="bg-stone-50 rounded-lg border border-stone-100 px-3 py-2.5"><p class="text-[10px] text-stone-500 leading-relaxed">Attach supporting documents — invoices, receipts, approval forms, etc.</p></div>
                 </div>
                 <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
                     <div class="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
@@ -194,6 +232,23 @@
                     </div>
                     <div id="supportList"><div class="flex flex-col items-center justify-center py-10 gap-2 text-stone-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8 a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><p class="text-xs">No supporting files yet</p></div></div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="resubmitModalBackdrop"></div>
+<div class="modal-container" id="resubmitModal">
+    <div class="modal-dialog" style="max-width:500px">
+        <div class="modal-header">
+            <div><h3 class="text-sm font-semibold text-stone-800">Resubmit for Approval</h3><p class="text-xs text-stone-400 mt-0.5">Review and change bill approver if needed</p></div>
+            <button id="btnCloseResubmitModal" class="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <div class="modal-body" style="padding:1.25rem">
+            <div id="resubmitAlert" class="hidden px-3 py-2 rounded-lg border text-xs mb-3"></div>
+            <div class="mb-4"><label class="block text-xs font-medium text-stone-600 mb-2">Bill Approver <span class="text-[10px] text-stone-400">(Change if needed)</span></label><select id="resubmitApprover" style="width:100%"><option value="">Select approver</option></select></div>
+            <div class="flex items-center gap-2 justify-end">
+                <button id="btnCancelResubmit" class="h-9 px-4 border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium rounded-lg transition-colors">Cancel</button>
+                <button id="btnConfirmResubmit" class="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Resubmit</button>
             </div>
         </div>
     </div>
@@ -229,8 +284,10 @@
 <script>
 $(function(){
 const CSRF=$('meta[name="csrf-token"]').attr('content');
-const R={locations:'{{route("workflow.temp-scan.locations")}}',approvers:'{{route("workflow.temp-scan.bill-approvers")}}',docTypes:'{{route("workflow.temp-scan.doc-types")}}',store:'{{route("workflow.temp-scan.store")}}',data:'{{route("workflow.temp-scan.data")}}',exportLogs:'{{route("workflow.temp-scan.export.logs")}}',supportStore:(id)=>`/workflow/temp-scan/${id}/supporting`,supportList:(id)=>`/workflow/temp-scan/${id}/support-list`,finalSubmit:(id)=>`/workflow/temp-scan/${id}/final-submit`,destroy:(id)=>`/workflow/temp-scan/${id}`,supportDel:(id,sid)=>`/workflow/temp-scan/${id}/support/${sid}`,scanDetail:(id)=>`/workflow/temp-scan/${id}`};
+const R={locations:'{{route("workflow.temp-scan.locations")}}',approvers:'{{route("workflow.temp-scan.bill-approvers")}}',docTypes:'{{route("workflow.temp-scan.doc-types")}}',companies:'{{route("workflow.temp-scan.companies")}}',financialYears:'{{route("workflow.temp-scan.financial-years")}}',store:'{{route("workflow.temp-scan.store")}}',data:'{{route("workflow.temp-scan.data")}}',tabCounts:'{{route("workflow.temp-scan.tab-counts")}}',exportLogs:'{{route("workflow.temp-scan.export.logs")}}',supportStore:(id)=>`/workflow/temp-scan/${id}/supporting`,supportList:(id)=>`/workflow/temp-scan/${id}/support-list`,finalSubmit:(id)=>`/workflow/temp-scan/${id}/final-submit`,resubmit:(id)=>`/workflow/temp-scan/${id}/resubmit`,destroy:(id)=>`/workflow/temp-scan/${id}`,supportDel:(id,sid)=>`/workflow/temp-scan/${id}/support/${sid}`,scanDetail:(id)=>`/workflow/temp-scan/${id}`};
 let activeScan=null;
+let currentTab='all';
+let currentFilters={from_date:'',to_date:''};
 function s2(selector,url,extra){$(selector).select2({placeholder:$(selector).data('ph')||'Search…',allowClear:true,minimumInputLength:0,ajax:{url,dataType:'json',delay:250,data:(p)=>Object.assign({q:p.term||'',page:p.page||1},extra||{}),processResults:(d)=>({results:d.results,pagination:d.pagination}),cache:true}})}
 s2('#sel-location',R.locations);
 function onLocationChange(){const loc=$(this).val();const $a=$('#sel-approver');if($a.data('select2'))$a.select2('destroy');$a.empty().append('<option value="">Select Approver</option>');if(loc){$a.select2({placeholder:'Search approver…',allowClear:true,minimumInputLength:0,ajax:{url:R.approvers,dataType:'json',delay:250,cache:false,data:(p)=>({q:p.term||'',page:p.page||1,location_id:loc}),processResults:(d)=>({results:d.results,pagination:d.pagination})}}).prop('disabled',false)}else{initApprover()}}
@@ -239,12 +296,16 @@ function initApprover(){const $a=$('#sel-approver');if($a.data('select2'))$a.sel
 initApprover();s2('#sel-doctype',R.docTypes);
 function dropZone(zId,iId,lId){const $z=$('#'+zId),$i=$('#'+iId),$l=$('#'+lId);$z.on('click',function(e){if($(e.target).is($i))return;e.stopPropagation();$i[0].click()});$i.on('change',function(){if(this.files[0]){$l.text(this.files[0].name);$z.addClass('has-file')}});$z.on('dragover',(e)=>{e.preventDefault();$z.addClass('dragover')});$z.on('dragleave',()=>$z.removeClass('dragover'));$z.on('drop',(e)=>{e.preventDefault();$z.removeClass('dragover');const f=e.originalEvent.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);$i[0].files=dt.files;$l.text(f.name);$z.addClass('has-file')}})}
 dropZone('dropZone','mainFile','dropLabel');dropZone('supportDropZone','supportFile','supportDropLabel');
-const dt=$('#scansTable').DataTable({serverSide:true,processing:true,ajax:{url:R.data,type:'GET'},order:[[3,'desc']],pageLength:10,dom:'rt',columns:[{data:'DT_RowIndex',orderable:false,searchable:false},{data:'location_name',defaultContent:'—'},{data:'File',render:(d,t,r)=>`<a href="${esc(r.File_Location)}" target="_blank" class="text-blue-600 hover:underline block truncate" title="${esc(d)}">${esc(d)}</a>`},{data:'Temp_Scan_Date',defaultContent:'—'},{data:'final_submit_badge',orderable:false,className:'text-center'},{data:'bill_approved_badge',orderable:false,className:'text-center'},{data:'approver_name',defaultContent:'—'},{data:'Bill_Approver_Remark',defaultContent:'—',render:(d)=>d?`<span title="${esc(d)}" class="block truncate">${esc(d)}</span>`:'—'},{data:'actions',orderable:false,searchable:false,className:'text-center',render:(d,t,r)=>buildBtns(r)}],language:{emptyTable:'No scan files found',zeroRecords:'No matching records',processing:'<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>'},drawCallback:attachTblEvents});
+const dt=$('#scansTable').DataTable({serverSide:true,processing:true,ajax:{url:R.data,type:'GET',data:function(d){d.tab=currentTab;d.from_date=currentFilters.from_date;d.to_date=currentFilters.to_date}},order:[[3,'desc']],pageLength:10,dom:'rt',columns:[{data:'DT_RowIndex',orderable:false,searchable:false},{data:'location_name',defaultContent:'—'},{data:'File',render:(d,t,r)=>`<a href="${esc(r.File_Location)}" target="_blank" class="text-blue-600 hover:underline block truncate" title="${esc(d)}">${esc(d)}</a>`},{data:'Temp_Scan_Date',defaultContent:'—'},{data:'final_submit_badge',orderable:false,className:'text-center'},{data:'bill_approved_badge',orderable:false,className:'text-center'},{data:'approver_name',defaultContent:'—'},{data:'Bill_Approver_Remark',defaultContent:'—',render:(d)=>d?`<span title="${esc(d)}" class="block truncate">${esc(d)}</span>`:'—'},{data:'actions',orderable:false,searchable:false,className:'text-center',render:(d,t,r)=>buildBtns(r)}],language:{emptyTable:'No scan files found',zeroRecords:'No matching records',processing:'<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>'},drawCallback:attachTblEvents});
+$('.tab-btn').on('click',function(){const tab=$(this).data('tab');currentTab=tab;$('.tab-btn').removeClass('active');$(this).addClass('active');dt.ajax.reload()});
+$('#btnApplyFilters').on('click',function(){currentFilters.from_date=$('#filterFromDate').val();currentFilters.to_date=$('#filterToDate').val();dt.ajax.reload()});
+$('#btnResetFilters').on('click',function(){$('#filterFromDate,#filterToDate').val('');currentFilters={from_date:'',to_date:''};dt.ajax.reload()});
 $('#dtLength').on('change',function(){dt.page.len(+$(this).val()).draw()});
 let st;$('#dtSearch').on('input',function(){clearTimeout(st);const v=$(this).val();st=setTimeout(()=>dt.search(v).draw(),350)});
-dt.on('draw',function(){const $p=$('#scansTable_wrapper .dataTables_paginate').first();const $i=$('#scansTable_wrapper .dataTables_info').first();if($p.length)$p.appendTo('#dtPaginate');if($i.length)$i.appendTo('#dtInfo')});
-function buildBtns(r){let h=`<div class="dt-actions">`;h+=`<button class="dt-btn blue btn-view-modal" title="View Scan" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>`;h+=`<button class="dt-btn blue btn-s2" title="Supporting Files" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}" data-date="${esc(r.Temp_Scan_Date)}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>`;if(r.Final_Submit!=='Y')h+=`<button class="dt-btn green btn-fs" title="Final Submit" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>`;h+=`<button class="dt-btn red btn-del" title="Delete" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`;return h+'</div>'}
-function attachTblEvents(){$('#scansTable').off('click','.btn-view-modal').on('click','.btn-view-modal',async function(){await openViewModal($(this).data('id'))}).off('click','.btn-s2').on('click','.btn-s2',function(){const $b=$(this);goStep2({id:$b.data('id'),file:$b.data('file'),file_url:$b.data('url'),scan_date:$b.data('date')})}).off('click','.btn-fs').on('click','.btn-fs',async function(){if(!confirm('Mark as final submitted?'))return;await $.ajax({url:R.finalSubmit($(this).data('id')),method:'POST',headers:{'X-CSRF-TOKEN':CSRF}});dt.ajax.reload(null,false)}).off('click','.btn-del').on('click','.btn-del',async function(){if(!confirm('Delete this scan?'))return;await $.ajax({url:R.destroy($(this).data('id')),method:'DELETE',headers:{'X-CSRF-TOKEN':CSRF}});dt.ajax.reload(null,false)})}
+dt.on('draw',function(){const $p=$('#scansTable_wrapper .dataTables_paginate').first();const $i=$('#scansTable_wrapper .dataTables_info').first();if($p.length)$p.appendTo('#dtPaginate');if($i.length)$i.appendTo('#dtInfo');updateTabBadges()});
+async function updateTabBadges(){try{const userId='{{Auth::id()}}';const baseQuery={Temp_Scan:'Y',Temp_Scan_By:userId,Is_Deleted:'N'};const counts=await $.getJSON('{{route("workflow.temp-scan.tab-counts")}}');$('#badge-all').text(counts.all||0);$('#badge-pending').text(counts.pending||0);$('#badge-approved').text(counts.approved||0);$('#badge-rejected').text(counts.rejected||0)}catch(e){console.error('Failed to load tab counts',e)}}
+function buildBtns(r){const canDelete=(r.Bill_Approved==='R'||r.temp_scan_reject==='Y'||r.Final_Submit!=='Y');const canAttachSupport=(r.Final_Submit!=='Y');const isRejected=(r.Bill_Approved==='R'||r.temp_scan_reject==='Y');let h=`<div class="dt-actions">`;h+=`<button class="dt-btn blue btn-view-modal" title="View Scan" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>`;if(canAttachSupport){h+=`<button class="dt-btn blue btn-s2" title="Add Supporting Files" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}" data-date="${esc(r.Temp_Scan_Date)}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>`}if(isRejected){h+=`<button class="dt-btn blue btn-resubmit" title="Resubmit for Approval" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>`}if(r.Final_Submit!=='Y'){h+=`<button class="dt-btn green btn-fs" title="Final Submit" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>`}if(canDelete){h+=`<button class="dt-btn red btn-del" title="Delete" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`}return h+'</div>'}
+function attachTblEvents(){$('#scansTable').off('click','.btn-view-modal').on('click','.btn-view-modal',async function(){await openViewModal($(this).data('id'))}).off('click','.btn-s2').on('click','.btn-s2',function(){const $b=$(this);goStep2({id:$b.data('id'),file:$b.data('file'),file_url:$b.data('url'),scan_date:$b.data('date')})}).off('click','.btn-resubmit').on('click','.btn-resubmit',async function(){openResubmitModal($(this).data('id'))}).off('click','.btn-fs').on('click','.btn-fs',async function(){if(!confirm('Mark as final submitted?'))return;await $.ajax({url:R.finalSubmit($(this).data('id')),method:'POST',headers:{'X-CSRF-TOKEN':CSRF}});dt.ajax.reload(null,false)}).off('click','.btn-del').on('click','.btn-del',async function(){if(!confirm('Delete this scan?'))return;await $.ajax({url:R.destroy($(this).data('id')),method:'DELETE',headers:{'X-CSRF-TOKEN':CSRF}});dt.ajax.reload(null,false)})}
 $('#btnExportToggle').on('click',function(e){e.stopPropagation();$('#exportMenu').toggleClass('open')});
 $(document).on('click',function(e){if(!$(e.target).closest('#exportMenu').length)$('#exportMenu').removeClass('open')});
 $('#exportExcel,#exportPdf').on('click',function(){$('#exportMenu').removeClass('open')});
@@ -270,6 +331,10 @@ async function openViewModal(scanId){try{const [supportRes]=await Promise.all([$
 function loadModalViewer(url,name){const $body=$('#modalViewerBody');$body.find('iframe,img').remove();$('#modalViewingFileName').text(name);const isPdf=url.toLowerCase().includes('.pdf');const isImg=/\.(jpe?g|png|gif|webp)(\?|$)/i.test(url);if(isPdf){$body.append(`<iframe src="${esc(url)}"></iframe>`)}else if(isImg){$body.append(`<img src="${esc(url)}" alt="${esc(name)}">`)}else{$body.append(`<iframe src="${esc(url)}"></iframe>`)}$('.modal-file-item').removeClass('active');$(`.modal-file-item[data-url="${url}"]`).addClass('active')}
 $(document).on('click','.modal-file-item',function(){loadModalViewer($(this).data('url'),$(this).data('name'))});
 $('#btnCloseModal,#viewScanModalBackdrop').on('click',function(){$('#viewScanModal,#viewScanModalBackdrop').removeClass('open');$('#modalMainFile,#modalSupportingFiles').empty();$('#modalSupportingGroup').hide()});
+let resubmitScanId=null;
+function openResubmitModal(scanId){resubmitScanId=scanId;const scanData=dt.rows().data().toArray().find(r=>r.Scan_Id==scanId);if(!scanData){alert('Scan not found');return}const $sel=$('#resubmitApprover');if($sel.data('select2'))$sel.select2('destroy');$sel.empty();if(scanData.Bill_Approver&&scanData.approver_name){$sel.append(new Option(scanData.approver_name,scanData.Bill_Approver,true,true))}else{$sel.append('<option value="">Select approver</option>')}$sel.select2({placeholder:'Search approver…',allowClear:true,dropdownParent:$('#resubmitModal'),ajax:{url:R.approvers,dataType:'json',delay:250,data:(p)=>({q:p.term||'',page:p.page||1,location_id:scanData.Location||''}),processResults:(d)=>({results:d.results,pagination:d.pagination})}});$('#resubmitModal,#resubmitModalBackdrop').addClass('open')}
+$('#btnCloseResubmitModal,#btnCancelResubmit,#resubmitModalBackdrop').on('click',function(){$('#resubmitModal,#resubmitModalBackdrop').removeClass('open');resubmitScanId=null});
+$('#btnConfirmResubmit').on('click',async function(){if(!resubmitScanId)return;const scanData=dt.rows().data().toArray().find(r=>r.Scan_Id==resubmitScanId);const selectedApprover=$('#resubmitApprover').val();if(!selectedApprover){alert2('resubmitAlert','error','Please select a bill approver');return}try{const data={_token:CSRF};if(selectedApprover!==String(scanData.Bill_Approver)){data.bill_approver=selectedApprover}await $.ajax({url:R.resubmit(resubmitScanId),method:'POST',data,headers:{'X-CSRF-TOKEN':CSRF}});$('#resubmitModal,#resubmitModalBackdrop').removeClass('open');dt.ajax.reload(null,false);alert2('uploadAlert','success','Scan resubmitted for approval successfully')}catch(err){alert2('resubmitAlert','error',err.responseJSON?.message||'Failed to resubmit')}});
 function alert2(id,type,msg){const $e=$('#'+id).removeClass('hidden border-red-200 bg-red-50 text-red-700 border-green-200 bg-green-50 text-green-700');$e.addClass(type==='error'?'border-red-200 bg-red-50 text-red-700':'border-green-200 bg-green-50 text-green-700').text(msg).removeClass('hidden');setTimeout(()=>$e.addClass('hidden'),6000)}
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 });

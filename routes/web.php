@@ -237,9 +237,12 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::post('/',             [\App\Http\Controllers\Workflow\TempScannerController::class, 'store'])                     ->name('store');
             // Select2 / DataTables endpoints
             Route::get('/data',          [\App\Http\Controllers\Workflow\TempScannerController::class, 'data'])                     ->name('data');
+            Route::get('/tab-counts',    [\App\Http\Controllers\Workflow\TempScannerController::class, 'tabCounts'])               ->name('tab-counts');
             Route::get('/locations',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'locationsSelect'])           ->name('locations');
             Route::get('/bill-approvers',[\App\Http\Controllers\Workflow\TempScannerController::class, 'getBillApproversForLocation'])->name('bill-approvers');
             Route::get('/doc-types',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'docTypesSelect'])            ->name('doc-types');
+            Route::get('/companies',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'companiesSelect'])           ->name('companies');
+            Route::get('/financial-years',[\App\Http\Controllers\Workflow\TempScannerController::class, 'financialYearsSelect'])     ->name('financial-years');
             // Export
             Route::get('/export/excel',  [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportExcel'])           ->name('export.excel');
             Route::get('/export/pdf',    [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportPdf'])             ->name('export.pdf');
@@ -248,6 +251,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/{scan}/support-list',       [\App\Http\Controllers\Workflow\TempScannerController::class, 'supportList'])       ->name('support-list');
             Route::post('/{scan}/supporting',        [\App\Http\Controllers\Workflow\TempScannerController::class, 'storeSupporting'])   ->name('supporting.store');
             Route::post('/{scan}/final-submit',      [\App\Http\Controllers\Workflow\TempScannerController::class, 'finalSubmit'])       ->name('final-submit');
+            Route::post('/{scan}/resubmit',          [\App\Http\Controllers\Workflow\TempScannerController::class, 'resubmit'])          ->name('resubmit');
             Route::post('/{scan}/replace',           [\App\Http\Controllers\Workflow\TempScannerController::class, 'replaceFile'])       ->name('replace');
             Route::delete('/{scan}',                 [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroy'])           ->name('destroy');
             Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroySupport'])->name('support.destroy');

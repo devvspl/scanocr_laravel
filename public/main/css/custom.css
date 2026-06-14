@@ -950,3 +950,12 @@ select.input-lg {
 #filter-status{
         padding: 0px 25px;
 }
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    cursor: pointer;
+    float: right;
+    font-weight: bold;
+    height: 26px;
+    margin-right: 20px;
+    padding-right: 0px;
+    margin-left: 10px;
+}
