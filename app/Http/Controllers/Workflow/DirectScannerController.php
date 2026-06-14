@@ -18,21 +18,21 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 
-class TempScannerController extends Controller
+class DirectScannerController extends Controller
 {
-    private const S3_TEMP_FOLDER = 'uploads/temp';
+    private const S3_DIRECT_FOLDER = 'uploads/direct';
 
     /**
-     * GET /workflow/temp-scan
+     * GET /workflow/direct-scan
      * Single wizard view (step 1 = upload, step 2 = supporting).
      */
     public function index()
     {
-        return view('panel.workflow.temp-scan.index');
+        return view('panel.workflow.direct-scan.index');
     }
 
     /**
-     * GET /workflow/temp-scan/locations?q=&page=
+     * GET /workflow/direct-scan/locations?q=&page=
      * Paginated, searchable location list for Select2.
      */
     public function locationsSelect(Request $request)
@@ -62,7 +62,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * GET /workflow/temp-scan/bill-approvers?location_id=&q=&page=
+     * GET /workflow/direct-scan/bill-approvers?location_id=&q=&page=
      * Paginated, searchable bill-approver list for Select2.
      */
     public function getBillApproversForLocation(Request $request)
@@ -100,7 +100,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * GET /workflow/temp-scan/doc-types?q=&page=
+     * GET /workflow/direct-scan/doc-types?q=&page=
      * Paginated, searchable doc-type list for Select2.
      */
     public function docTypesSelect(Request $request)
@@ -129,8 +129,104 @@ class TempScannerController extends Controller
     }
 
     /**
-     * GET /workflow/temp-scan/data  (AJAX — DataTables server-side)
-     * Returns the user's own pending temp scans.
+     * GET /workflow/direct-scan/companies?q=&page=
+     * Paginated, searchable company list for Select2.
+     */
+    public function companiesSelect(Request $request)
+    {
+        $q = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per = 20;
+
+        $query = Company::where('is_active', true)
+            ->orderBy('name');
+
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%");
+        }
+
+        $total = $query->count();
+        $results = $query->offset(($page - 1) * $per)
+            ->limit($per)
+            ->get(['id', 'name as text']);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => ($page * $per) < $total],
+        ]);
+    }
+
+    /**
+     * GET /workflow/direct-scan/financial-years?q=&page=
+     * Paginated, searchable financial year list for Select2.
+     */
+    public function financialYearsSelect(Request $request)
+    {
+        $q = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per = 20;
+
+        $query = FinancialYear::orderByDesc('start_date');
+
+        if ($q !== '') {
+            $query->where('label', 'like', "%{$q}%");
+        }
+
+        $total = $query->count();
+        $results = $query->offset(($page - 1) * $per)
+            ->limit($per)
+            ->get(['id', 'label as text']);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => ($page * $per) < $total],
+        ]);
+    }
+
+    /**
+     * GET /workflow/direct-scan/vendors?q=&page=
+     * Paginated, searchable vendor list from master_firm table for Select2.
+     */
+    public function vendorsSelect(Request $request)
+    {
+        $q = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per = 20;
+
+        $query = \App\Models\MasterFirm::active()
+            ->vendors()
+            ->orderBy('firm_name');
+
+        if ($q !== '') {
+            $query->where(function ($subQuery) use ($q) {
+                $subQuery->where('firm_name', 'like', "%{$q}%")
+                         ->orWhere('firm_code', 'like', "%{$q}%");
+            });
+        }
+
+        $total = $query->count();
+        $results = $query->offset(($page - 1) * $per)
+            ->limit($per)
+            ->get(['firm_id as id', 'firm_name', 'firm_code'])
+            ->map(function ($firm) {
+                return [
+                    'id' => $firm->id,
+                    'text' => $firm->firm_code 
+                        ? "{$firm->firm_name} ({$firm->firm_code})" 
+                        : $firm->firm_name,
+                    'firm_name_clean' => preg_replace('/[^A-Za-z0-9 ]/', '', strtoupper($firm->firm_name))
+                ];
+            });
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => ($page * $per) < $total],
+        ]);
+    }
+
+    /**
+     * GET /workflow/direct-scan/data  (AJAX — DataTables server-side)
+     * Returns the user's own direct scans.
      */
     public function data(Request $request)
     {
@@ -141,9 +237,10 @@ class TempScannerController extends Controller
             ->leftJoin('users as u', 'u.id', '=', 's.Bill_Approver')
             ->where('s.Group_Id', Company::currentId())
             ->where('s.year_id', FinancialYear::currentId())
-            ->where('s.Temp_Scan', 'Y')
-            ->where('s.Temp_Scan_By', $userId)
-            ->where('s.Is_Deleted', 'N');
+            ->where('s.Scan_By', $userId)
+            ->where('s.Scan_Complete', 'Y')
+            ->where('s.Is_Deleted', 'N')
+            ->whereNull('s.Temp_Scan'); // Direct scans don't have Temp_Scan set
 
         $query->select([
             's.Scan_Id',
@@ -152,7 +249,8 @@ class TempScannerController extends Controller
             'l.location_name',
             's.File',
             's.File_Location',
-            's.Temp_Scan_Date',
+            's.Document_name',
+            's.Scan_Date',
             's.Final_Submit',
             's.Bill_Approved',
             's.temp_scan_reject',
@@ -160,8 +258,7 @@ class TempScannerController extends Controller
             's.Bill_Approver_Remark',
         ]);
 
-
-
+        // Tab filtering
         $tab = $request->input('tab', 'all');
         switch ($tab) {
             case 'pending':
@@ -176,26 +273,23 @@ class TempScannerController extends Controller
                         ->orWhere('s.temp_scan_reject', 'Y');
                 });
                 break;
-
-
         }
 
-
-
+        // Date range filtering
         if ($request->filled('from_date')) {
-            $query->whereDate('s.Temp_Scan_Date', '>=', $request->input('from_date'));
+            $query->whereDate('s.Scan_Date', '>=', $request->input('from_date'));
         }
         if ($request->filled('to_date')) {
-            $query->whereDate('s.Temp_Scan_Date', '<=', $request->input('to_date'));
+            $query->whereDate('s.Scan_Date', '<=', $request->input('to_date'));
         }
 
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn(
-                'Temp_Scan_Date',
+                'Scan_Date',
                 fn($r) =>
-                $r->Temp_Scan_Date
-                ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y')
+                $r->Scan_Date
+                ? \Carbon\Carbon::parse($r->Scan_Date)->format('d M Y')
                 : '—'
             )
             ->addColumn(
@@ -206,7 +300,6 @@ class TempScannerController extends Controller
                 : '<span class="badge-no">No</span>'
             )
             ->addColumn('bill_approved_badge', function ($r) {
-
                 if ($r->temp_scan_reject === 'Y' || $r->Bill_Approved === 'R') {
                     return '<span class="badge-rejected">Rejected</span>';
                 }
@@ -230,7 +323,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * GET /workflow/temp-scan/tab-counts  (AJAX JSON)
+     * GET /workflow/direct-scan/tab-counts  (AJAX JSON)
      * Returns counts for each tab.
      */
     public function tabCounts()
@@ -240,9 +333,10 @@ class TempScannerController extends Controller
         $baseQuery = DB::table('scan_file')
             ->where('Group_Id', Company::currentId())
             ->where('year_id', FinancialYear::currentId())
-            ->where('Temp_Scan', 'Y')
-            ->where('Temp_Scan_By', $userId)
-            ->where('Is_Deleted', 'N');
+            ->where('Scan_By', $userId)
+            ->where('Scan_Complete', 'Y')
+            ->where('Is_Deleted', 'N')
+            ->whereNull('Temp_Scan'); // Direct scans don't have Temp_Scan set
 
         return response()->json([
             'all' => (clone $baseQuery)->count(),
@@ -265,7 +359,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * GET /workflow/temp-scan/{scan}/support-list  (AJAX JSON)
+     * GET /workflow/direct-scan/{scan}/support-list  (AJAX JSON)
      * Returns the list of supporting files for a scan.
      */
     public function supportList(ScanFile $scan)
@@ -282,7 +376,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * POST /workflow/temp-scan  (AJAX JSON)
+     * POST /workflow/direct-scan  (AJAX JSON)
      * Upload main file → S3, insert scan_file row.
      */
     public function store(Request $request, S3Service $s3)
@@ -290,6 +384,10 @@ class TempScannerController extends Controller
         $request->validate([
             'location' => 'required|integer|exists:master_work_location,location_id',
             'bill_approver' => 'required|integer|exists:users,id',
+            'bill_date' => 'nullable|date',
+            'vendor_id' => 'nullable|integer|exists:master_firm,firm_id',
+            'bill_no' => 'nullable|string|max:100',
+            'document_name' => 'required|string|max:255',
             'main_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
         ]);
 
@@ -298,7 +396,7 @@ class TempScannerController extends Controller
         $ext = $file->getClientOriginalExtension();
         $newName = time() . '.' . $ext;
 
-        $result = $s3->upload($file, self::S3_TEMP_FOLDER, $newName);
+        $result = $s3->upload($file, self::S3_DIRECT_FOLDER, $newName);
 
         if (!$result['success']) {
             return response()->json(['success' => false, 'message' => 'S3 Upload Error: ' . $result['error']], 422);
@@ -309,9 +407,12 @@ class TempScannerController extends Controller
             'year_id' => FinancialYear::currentId(),
             'Location' => $request->input('location'),
             'Bill_Approver' => $request->input('bill_approver'),
-            'Temp_Scan_By' => $user->id,
-            'Temp_Scan' => 'Y',
-            'Scan_Complete' => 'N',
+            'Scan_By' => $user->id,
+            'bill_voucher_date' => $request->input('bill_date'),
+            'firm_id' => $request->input('vendor_id'),
+            'bill_no_voucher_no' => $request->input('bill_no'),
+            'Document_name' => $request->input('document_name'),
+            'Scan_Complete' => 'Y',
             'DocType_Id' => 0,
             'department_id' => 0,
             'File' => $newName,
@@ -319,7 +420,7 @@ class TempScannerController extends Controller
             'File_Location' => $result['url'],
             'File_Location1' => $result['key'],
             'Year' => date('Y'),
-            'Temp_Scan_Date' => now(),
+            'Scan_Date' => now(),
         ]);
 
         return response()->json([
@@ -328,13 +429,14 @@ class TempScannerController extends Controller
                 'id' => $scan->Scan_Id,
                 'file' => $scan->File,
                 'file_url' => $scan->File_Location,
-                'scan_date' => \Carbon\Carbon::parse($scan->Temp_Scan_Date)->format('d M Y H:i'),
+                'document_name' => $scan->Document_name,
+                'scan_date' => \Carbon\Carbon::parse($scan->Scan_Date)->format('d M Y H:i'),
             ],
         ]);
     }
 
     /**
-     * POST /workflow/temp-scan/{scan}/supporting  (AJAX JSON)
+     * POST /workflow/direct-scan/{scan}/supporting  (AJAX JSON)
      * Upload one supporting file → S3, insert support_file row.
      */
     public function storeSupporting(Request $request, ScanFile $scan, S3Service $s3)
@@ -350,7 +452,7 @@ class TempScannerController extends Controller
         $ext = $file->getClientOriginalExtension();
         $newName = time() . '.' . $ext;
 
-        $result = $s3->upload($file, self::S3_TEMP_FOLDER, $newName);
+        $result = $s3->upload($file, self::S3_DIRECT_FOLDER, $newName);
 
         if (!$result['success']) {
             return response()->json(['success' => false, 'message' => 'S3 Upload Error: ' . $result['error']], 422);
@@ -384,7 +486,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * POST /workflow/temp-scan/{scan}/final-submit  (AJAX JSON)
+     * POST /workflow/direct-scan/{scan}/final-submit  (AJAX JSON)
      */
     public function finalSubmit(ScanFile $scan)
     {
@@ -394,7 +496,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * POST /workflow/temp-scan/{scan}/resubmit  (AJAX JSON)
+     * POST /workflow/direct-scan/{scan}/resubmit  (AJAX JSON)
      * Resubmit a rejected scan for approval.
      */
     public function resubmit(Request $request, ScanFile $scan)
@@ -406,19 +508,23 @@ class TempScannerController extends Controller
             'temp_scan_reject' => 'N',
             'Bill_Approver_Remark' => null,
         ];
+
         if ($request->filled('bill_approver')) {
             $updates['Bill_Approver'] = $request->input('bill_approver');
         }
+
         $scan->update($updates);
+
         return response()->json(['success' => true, 'message' => 'Scan resubmitted for approval']);
     }
 
     /**
-     * DELETE /workflow/temp-scan/{scan}  (AJAX JSON)
+     * DELETE /workflow/direct-scan/{scan}  (AJAX JSON)
      */
     public function destroy(ScanFile $scan)
     {
         $this->authorizeOwner($scan);
+
         DB::transaction(function () use ($scan) {
             DB::table('support_file')->where('Scan_Id', $scan->Scan_Id)->delete();
             $scan->update([
@@ -432,7 +538,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * DELETE /workflow/temp-scan/{scan}/support/{supportId}  (AJAX JSON)
+     * DELETE /workflow/direct-scan/{scan}/support/{supportId}  (AJAX JSON)
      */
     public function destroySupport(ScanFile $scan, int $supportId)
     {
@@ -447,134 +553,12 @@ class TempScannerController extends Controller
     }
 
     /**
-     * POST /workflow/temp-scan/{scan}/replace  (AJAX JSON)
-     */
-    public function replaceFile(Request $request, ScanFile $scan, S3Service $s3)
-    {
-        $this->authorizeOwner($scan);
-
-        $request->validate([
-            'image' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
-        ]);
-
-        $file = $request->file('image');
-        $ext = $file->getClientOriginalExtension();
-        $newName = time() . '.' . $ext;
-
-        $result = $s3->upload($file, self::S3_TEMP_FOLDER, $newName);
-
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'message' => $result['error']], 422);
-        }
-
-        $scan->update([
-            'File' => $newName,
-            'File_Ext' => $ext,
-            'File_Location' => $result['url'],
-            'File_Location1' => $result['key'],
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Shared query for exports — returns the same data as data() but as a Collection.
-     */
-    private function exportQuery(): \Illuminate\Support\Collection
-    {
-        $userId = Auth::id();
-
-        return DB::table('scan_file as s')
-            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
-            ->leftJoin('users as u', 'u.id', '=', 's.Bill_Approver')
-            ->where('s.Temp_Scan', 'Y')
-            ->where('s.Temp_Scan_By', $userId)
-            ->where('s.Is_Deleted', 'N')
-            ->orderByDesc('s.Temp_Scan_Date')
-            ->select([
-                's.Scan_Id',
-                'l.location_name',
-                's.File',
-                's.File_Location',
-                's.Temp_Scan_Date',
-                's.Final_Submit',
-                's.Bill_Approved',
-                'u.name as approver_name',
-                's.Bill_Approver_Remark',
-            ])
-            ->get();
-    }
-
-    /**
-     * GET /workflow/temp-scan/export/excel
-     */
-    public function exportExcel(): \Symfony\Component\HttpFoundation\BinaryFileResponse
-    {
-        $rows = $this->exportQuery();
-        $fileName = 'temp-scan-' . now()->format('Ymd-His') . '.xlsx';
-        $hash = md5($rows->toJson());
-
-
-
-        $existing = ExportLog::where('model', 'TempScan')
-            ->where('user_id', Auth::id())
-            ->where('data_hash', $hash)
-            ->where('created_at', '>=', now()->subSeconds(60))
-            ->first();
-
-        if (!$existing) {
-            ExportLog::create([
-                'model' => 'TempScan',
-                'file_name' => $fileName,
-                'file_path' => 'exports/temp-scan/' . $fileName,
-                'row_count' => $rows->count(),
-                'data_hash' => $hash,
-                'user_id' => Auth::id(),
-            ]);
-        }
-
-        return Excel::download(new TempScanExport($rows), $fileName);
-    }
-
-    /**
-     * GET /workflow/temp-scan/export/pdf
-     */
-    public function exportPdf(): \Illuminate\Http\Response
-    {
-        $rows = $this->exportQuery();
-        $fileName = 'temp-scan-' . now()->format('Ymd-His') . '.pdf';
-        $hash = md5($rows->toJson());
-
-        if (
-            !ExportLog::where('model', 'TempScan')->where('user_id', Auth::id())
-                ->where('data_hash', $hash)->where('created_at', '>=', now()->subSeconds(60))->exists()
-        ) {
-            ExportLog::create([
-                'model' => 'TempScan',
-                'file_name' => $fileName,
-                'file_path' => 'exports/temp-scan/' . $fileName,
-                'row_count' => $rows->count(),
-                'data_hash' => $hash,
-                'user_id' => Auth::id(),
-            ]);
-        }
-
-        $pdf = Pdf::loadView('exports.temp-scan-pdf', [
-            'rows' => $rows,
-            'exportedBy' => Auth::user()->name,
-            'exportedAt' => now()->format('d M Y H:i'),
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download($fileName);
-    }
-
-    /**
-     * GET /workflow/temp-scan/export/logs  (AJAX JSON)
+     * GET /workflow/direct-scan/export/logs  (AJAX JSON)
      * Returns the user's own export history.
      */
     public function exportLogs(): \Illuminate\Http\JsonResponse
     {
-        $logs = ExportLog::where('model', 'TempScan')
+        $logs = ExportLog::where('model', 'DirectScan')
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->limit(50)
@@ -584,12 +568,117 @@ class TempScannerController extends Controller
     }
 
     /**
+     * GET /workflow/direct-scan/export/excel
+     * Export direct scans to Excel.
+     */
+    public function exportExcel()
+    {
+        $userId = Auth::id();
+        $fileName = "direct_scans_" . date('Y_m_d_H_i_s') . ".xlsx";
+
+        // Log the export
+        ExportLog::create([
+            'model' => 'DirectScan',
+            'user_id' => $userId,
+            'file_name' => $fileName,
+            'row_count' => 0, // Will be updated by the export class if needed
+        ]);
+
+        return Excel::download(new TempScanExport($userId, 'direct'), $fileName);
+    }
+
+    /**
+     * GET /workflow/direct-scan/export/pdf
+     * Export direct scans to PDF.
+     */
+    public function exportPdf()
+    {
+        $userId = Auth::id();
+        
+        $scans = DB::table('scan_file as s')
+            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->leftJoin('users as u', 'u.id', '=', 's.Bill_Approver')
+            ->where('s.Group_Id', Company::currentId())
+            ->where('s.year_id', FinancialYear::currentId())
+            ->where('s.Scan_By', $userId)
+            ->where('s.Scan_Complete', 'Y')
+            ->where('s.Is_Deleted', 'N')
+            ->whereNull('s.Temp_Scan')
+            ->select([
+                's.Scan_Id',
+                'l.location_name',
+                's.Document_name',
+                's.File',
+                's.Scan_Date',
+                's.Final_Submit',
+                's.Bill_Approved',
+                'u.name as approver_name',
+                's.Bill_Approver_Remark',
+            ])
+            ->orderByDesc('s.Scan_Date')
+            ->get();
+
+        $fileName = "direct_scans_" . date('Y_m_d_H_i_s') . ".pdf";
+
+        // Log the export
+        ExportLog::create([
+            'model' => 'DirectScan',
+            'user_id' => $userId,
+            'file_name' => $fileName,
+            'row_count' => $scans->count(),
+        ]);
+
+        $pdf = Pdf::loadView('exports.direct-scan-pdf', compact('scans'));
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * POST /workflow/direct-scan/{scan}/replace (AJAX JSON)
+     * Replace the main scan file.
+     */
+    public function replaceFile(Request $request, ScanFile $scan, S3Service $s3)
+    {
+        $this->authorizeOwner($scan);
+
+        $request->validate([
+            'replacement_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
+        ]);
+
+        $file = $request->file('replacement_file');
+        $ext = $file->getClientOriginalExtension();
+        $newName = time() . '.' . $ext;
+
+        $result = $s3->upload($file, self::S3_DIRECT_FOLDER, $newName);
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'message' => 'S3 Upload Error: ' . $result['error']], 422);
+        }
+
+        // Update the scan with new file details
+        $scan->update([
+            'File' => $newName,
+            'File_Ext' => $ext,
+            'File_Location' => $result['url'],
+            'File_Location1' => $result['key'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'file' => [
+                'name' => $newName,
+                'url' => $result['url'],
+            ],
+        ]);
+    }
+
+    /**
+     * Authorization check
      */
     private function authorizeOwner(ScanFile $scan): void
     {
         $user = Auth::user();
         if (
-            $scan->Temp_Scan_By !== $user->id
+            $scan->Scan_By !== $user->id
             && !$user->hasAnyRole(['Super Admin', 'Classification'])
         ) {
             abort(403);

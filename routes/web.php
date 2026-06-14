@@ -235,7 +235,6 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
         Route::prefix('temp-scan')->name('temp-scan.')->group(function () {
             Route::get('/',              [\App\Http\Controllers\Workflow\TempScannerController::class, 'index'])                     ->name('index');
             Route::post('/',             [\App\Http\Controllers\Workflow\TempScannerController::class, 'store'])                     ->name('store');
-            // Select2 / DataTables endpoints
             Route::get('/data',          [\App\Http\Controllers\Workflow\TempScannerController::class, 'data'])                     ->name('data');
             Route::get('/tab-counts',    [\App\Http\Controllers\Workflow\TempScannerController::class, 'tabCounts'])               ->name('tab-counts');
             Route::get('/locations',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'locationsSelect'])           ->name('locations');
@@ -243,11 +242,9 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/doc-types',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'docTypesSelect'])            ->name('doc-types');
             Route::get('/companies',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'companiesSelect'])           ->name('companies');
             Route::get('/financial-years',[\App\Http\Controllers\Workflow\TempScannerController::class, 'financialYearsSelect'])     ->name('financial-years');
-            // Export
             Route::get('/export/excel',  [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportExcel'])           ->name('export.excel');
             Route::get('/export/pdf',    [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportPdf'])             ->name('export.pdf');
             Route::get('/export/logs',   [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportLogs'])            ->name('export.logs');
-            // Scan-scoped
             Route::get('/{scan}/support-list',       [\App\Http\Controllers\Workflow\TempScannerController::class, 'supportList'])       ->name('support-list');
             Route::post('/{scan}/supporting',        [\App\Http\Controllers\Workflow\TempScannerController::class, 'storeSupporting'])   ->name('supporting.store');
             Route::post('/{scan}/final-submit',      [\App\Http\Controllers\Workflow\TempScannerController::class, 'finalSubmit'])       ->name('final-submit');
@@ -255,6 +252,30 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::post('/{scan}/replace',           [\App\Http\Controllers\Workflow\TempScannerController::class, 'replaceFile'])       ->name('replace');
             Route::delete('/{scan}',                 [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroy'])           ->name('destroy');
             Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroySupport'])->name('support.destroy');
+        });
+
+        // Direct Scanner
+        Route::prefix('direct-scan')->name('direct-scan.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Workflow\DirectScannerController::class, 'index'])                     ->name('index');
+            Route::post('/',             [\App\Http\Controllers\Workflow\DirectScannerController::class, 'store'])                     ->name('store');
+            Route::get('/data',          [\App\Http\Controllers\Workflow\DirectScannerController::class, 'data'])                     ->name('data');
+            Route::get('/tab-counts',    [\App\Http\Controllers\Workflow\DirectScannerController::class, 'tabCounts'])               ->name('tab-counts');
+            Route::get('/locations',     [\App\Http\Controllers\Workflow\DirectScannerController::class, 'locationsSelect'])           ->name('locations');
+            Route::get('/bill-approvers',[\App\Http\Controllers\Workflow\DirectScannerController::class, 'getBillApproversForLocation'])->name('bill-approvers');
+            Route::get('/doc-types',     [\App\Http\Controllers\Workflow\DirectScannerController::class, 'docTypesSelect'])            ->name('doc-types');
+            Route::get('/companies',     [\App\Http\Controllers\Workflow\DirectScannerController::class, 'companiesSelect'])           ->name('companies');
+            Route::get('/financial-years',[\App\Http\Controllers\Workflow\DirectScannerController::class, 'financialYearsSelect'])     ->name('financial-years');
+            Route::get('/vendors',       [\App\Http\Controllers\Workflow\DirectScannerController::class, 'vendorsSelect'])             ->name('vendors');
+            Route::get('/export/excel',  [\App\Http\Controllers\Workflow\DirectScannerController::class, 'exportExcel'])           ->name('export.excel');
+            Route::get('/export/pdf',    [\App\Http\Controllers\Workflow\DirectScannerController::class, 'exportPdf'])             ->name('export.pdf');
+            Route::get('/export/logs',   [\App\Http\Controllers\Workflow\DirectScannerController::class, 'exportLogs'])            ->name('export.logs');
+            Route::get('/{scan}/support-list',       [\App\Http\Controllers\Workflow\DirectScannerController::class, 'supportList'])       ->name('support-list');
+            Route::post('/{scan}/supporting',        [\App\Http\Controllers\Workflow\DirectScannerController::class, 'storeSupporting'])   ->name('supporting.store');
+            Route::post('/{scan}/final-submit',      [\App\Http\Controllers\Workflow\DirectScannerController::class, 'finalSubmit'])       ->name('final-submit');
+            Route::post('/{scan}/resubmit',          [\App\Http\Controllers\Workflow\DirectScannerController::class, 'resubmit'])          ->name('resubmit');
+            Route::post('/{scan}/replace',           [\App\Http\Controllers\Workflow\DirectScannerController::class, 'replaceFile'])       ->name('replace');
+            Route::delete('/{scan}',                 [\App\Http\Controllers\Workflow\DirectScannerController::class, 'destroy'])           ->name('destroy');
+            Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\DirectScannerController::class, 'destroySupport'])->name('support.destroy');
         });
 
     });

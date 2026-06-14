@@ -69,6 +69,27 @@ class CheckPermission
         'workflow.temp-scan.export.excel',
         'workflow.temp-scan.export.pdf',
         'workflow.temp-scan.export.logs',
+        // Workflow — Direct Scanning (gated by role, not granular permissions)
+        'workflow.direct-scan.index',
+        'workflow.direct-scan.store',
+        'workflow.direct-scan.data',
+        'workflow.direct-scan.tab-counts',
+        'workflow.direct-scan.locations',
+        'workflow.direct-scan.bill-approvers',
+        'workflow.direct-scan.doc-types',
+        'workflow.direct-scan.companies',
+        'workflow.direct-scan.financial-years',
+        'workflow.direct-scan.vendors',
+        'workflow.direct-scan.export.excel',
+        'workflow.direct-scan.export.pdf',
+        'workflow.direct-scan.export.logs',
+        'workflow.direct-scan.support-list',
+        'workflow.direct-scan.supporting.store',
+        'workflow.direct-scan.final-submit',
+        'workflow.direct-scan.resubmit',
+        'workflow.direct-scan.replace',
+        'workflow.direct-scan.destroy',
+        'workflow.direct-scan.support.destroy',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];

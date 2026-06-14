@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Temp Scan Upload')
-@section('page-title', 'Temp Scan Upload')
+@section('title', 'Direct Scan Upload')
+@section('page-title', 'Direct Scan Upload')
 @push('head')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
@@ -104,23 +104,24 @@
         }
 
         .select2-container--default .select2-selection--single {
-            height: 2.25rem;
+            height: 24px;
             border: 1px solid #d6d3d1;
             border-radius: .5rem;
             background: #fafaf9;
             display: flex;
-            align-items: center
+            align-items: center;
+            min-height: 24px
         }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             font-size: .75rem;
             color: #292524;
             padding-left: .75rem;
-            line-height: 2.25rem
+            line-height: 34px
         }
 
         .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 2.25rem;
+            height: 36px;
             right: .5rem
         }
 
@@ -136,15 +137,6 @@
         .select2-container--default .select2-results__option--highlighted {
             background: #7f1d1d;
             color: #fff
-        }
-
-
-
-        .select2-container .select2-selection--single .select2-selection__clear {
-            background-color: transparent;
-            border: none;
-            font-size: smaller;
-            color: #888888;
         }
 
         .select2-search--dropdown .select2-search__field {
@@ -163,6 +155,47 @@
         .select2-container--open .select2-selection--single {
             border-color: #7f1d1d;
             box-shadow: 0 0 0 3px rgba(127, 29, 29, .08)
+        }
+
+        /* Fix Select2 to match input field height exactly */
+        .select2-container .select2-selection--single {
+            height: 24px !important;
+            border: 1px solid #d6d3d1 !important;
+            border-radius: 0.5rem !important;
+            background: #fafaf9 !important;
+            padding: 0 !important
+        }
+
+        .select2-container .select2-selection--single .select2-selection__clear {
+            background-color: transparent;
+            border: none;
+            font-size: smaller;
+                color: #888888;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 26px;
+            position: absolute;
+            top: -4px;
+            right: 1px;
+            width: 20px;
+        }
+
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            padding: 0 0 0 12px !important;
+            line-height: 34px !important;
+            font-size: 10px !important;
+            color: #292524 !important
+        }
+
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 34px !important;
+            right: 8px !important
+        }
+
+        .select2-container .select2-selection--single .select2-selection__arrow b {
+            border-width: 4px 4px 0 4px !important;
+            margin-top: -2px !important
         }
 
         .upload-progress {
@@ -915,13 +948,13 @@
     </style>
 @endpush
 @section('content')
-    <div id="tempScanApp">
+    <div id="directScanApp">
         <div class="wizard-panel active" id="step1">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <div class="bg-white border border-stone-200 rounded-xl p-5 flex flex-col gap-4">
                     <div>
-                        <h2 class="text-sm font-semibold text-stone-800">Scan File</h2>
-                        <p class="text-xs text-stone-400 mt-0.5">Upload a new temp scan document</p>
+                        <h2 class="text-sm font-semibold text-stone-800">Direct Scan File</h2>
+                        <p class="text-xs text-stone-400 mt-0.5">Upload a new direct scan document</p>
                     </div>
                     <div class="wizard-steps bg-stone-50 rounded-lg border border-stone-100 px-3 py-2.5">
                         <div class="ws-item">
@@ -947,6 +980,26 @@
                                 style="width:100%" disabled>
                                 <option value="">Select Approver</option>
                             </select></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill Date/Voucher
+                                    Date</label><input type="date" id="bill-date" name="bill_date"
+                                    class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:bg-white outline-none transition-colors w-full">
+                            </div>
+                            <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill No/Voucher
+                                    No</label><input type="text" id="bill-no" name="bill_no"
+                                    placeholder="Enter bill/voucher number"
+                                    class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:bg-white outline-none transition-colors w-full">
+                            </div>
+                        </div>
+                        <div><label class="block text-xs font-medium text-stone-600 mb-1">Vendor Name/Exp
+                                Head</label><select id="sel-vendor" name="vendor_id" style="width:100%">
+                                <option value="">Select Vendor</option>
+                            </select></div>
+                        <div><label class="block text-xs font-medium text-stone-600 mb-1">Document Name <span
+                                    class="text-red-500">*</span></label><input type="text" id="document-name"
+                                name="document_name" placeholder="Auto-generated document name"
+                                class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:bg-white outline-none transition-colors"
+                                required></div>
                         <div><label class="block text-xs font-medium text-stone-600 mb-1">File <span
                                     class="text-red-500">*</span></label>
                             <div class="drop-zone" id="dropZone">
@@ -1001,13 +1054,13 @@
                                     </svg>
                                 </button>
                                 <div class="export-drop">
-                                    <a href="{{ route('workflow.temp-scan.export.excel') }}" id="exportExcel"><svg
+                                    <a href="{{ route('workflow.direct-scan.export.excel') }}" id="exportExcel"><svg
                                             class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9v10a2 2 0 01-2 2z" />
                                         </svg>Export Excel</a>
-                                    <a href="{{ route('workflow.temp-scan.export.pdf') }}" id="exportPdf"><svg
+                                    <a href="{{ route('workflow.direct-scan.export.pdf') }}" id="exportPdf"><svg
                                             class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1308,7 +1361,7 @@
     <script>
         $(function () {
             const CSRF = $('meta[name="csrf-token"]').attr('content');
-            const R = { locations: '{{route("workflow.temp-scan.locations")}}', approvers: '{{route("workflow.temp-scan.bill-approvers")}}', docTypes: '{{route("workflow.temp-scan.doc-types")}}', companies: '{{route("workflow.temp-scan.companies")}}', financialYears: '{{route("workflow.temp-scan.financial-years")}}', store: '{{route("workflow.temp-scan.store")}}', data: '{{route("workflow.temp-scan.data")}}', tabCounts: '{{route("workflow.temp-scan.tab-counts")}}', exportLogs: '{{route("workflow.temp-scan.export.logs")}}', supportStore: (id) => `/workflow/temp-scan/${id}/supporting`, supportList: (id) => `/workflow/temp-scan/${id}/support-list`, finalSubmit: (id) => `/workflow/temp-scan/${id}/final-submit`, resubmit: (id) => `/workflow/temp-scan/${id}/resubmit`, destroy: (id) => `/workflow/temp-scan/${id}`, supportDel: (id, sid) => `/workflow/temp-scan/${id}/support/${sid}`, scanDetail: (id) => `/workflow/temp-scan/${id}` };
+            const R = { locations: '{{route("workflow.direct-scan.locations")}}', approvers: '{{route("workflow.direct-scan.bill-approvers")}}', docTypes: '{{route("workflow.direct-scan.doc-types")}}', companies: '{{route("workflow.direct-scan.companies")}}', financialYears: '{{route("workflow.direct-scan.financial-years")}}', vendors: '{{route("workflow.direct-scan.vendors")}}', store: '{{route("workflow.direct-scan.store")}}', data: '{{route("workflow.direct-scan.data")}}', tabCounts: '{{route("workflow.direct-scan.tab-counts")}}', exportLogs: '{{route("workflow.direct-scan.export.logs")}}', supportStore: (id) => `/workflow/direct-scan/${id}/supporting`, supportList: (id) => `/workflow/direct-scan/${id}/support-list`, finalSubmit: (id) => `/workflow/direct-scan/${id}/final-submit`, resubmit: (id) => `/workflow/direct-scan/${id}/resubmit`, destroy: (id) => `/workflow/direct-scan/${id}`, supportDel: (id, sid) => `/workflow/direct-scan/${id}/support/${sid}`, scanDetail: (id) => `/workflow/direct-scan/${id}` };
             let activeScan = null;
             let currentTab = 'all';
             let currentFilters = { from_date: '', to_date: '' };
@@ -1317,18 +1370,25 @@
             function onLocationChange() { const loc = $(this).val(); const $a = $('#sel-approver'); if ($a.data('select2')) $a.select2('destroy'); $a.empty().append('<option value="">Select Approver</option>'); if (loc) { $a.select2({ placeholder: 'Search approver…', allowClear: true, minimumInputLength: 0, ajax: { url: R.approvers, dataType: 'json', delay: 250, cache: false, data: (p) => ({ q: p.term || '', page: p.page || 1, location_id: loc }), processResults: (d) => ({ results: d.results, pagination: d.pagination }) } }).prop('disabled', false) } else { initApprover() } }
             $('#sel-location').on('change.select2', onLocationChange);
             function initApprover() { const $a = $('#sel-approver'); if ($a.data('select2')) $a.select2('destroy'); $a.empty().append('<option value="">Select Approver</option>'); s2('#sel-approver', R.approvers); $a.prop('disabled', true) }
-            initApprover(); s2('#sel-doctype', R.docTypes);
+
+            function initVendor() { const $v = $('#sel-vendor'); if ($v.data('select2')) $v.select2('destroy'); $v.empty().append('<option value="">Select Vendor</option>'); s2('#sel-vendor', R.vendors); $v.on('change.select2', generateDocumentName) }
+
+            function generateDocumentName() { const billDate = $('#bill-date').val(); const vendorData = $('#sel-vendor').select2('data')[0]; const vendorText = vendorData?.firm_name_clean || ''; const billNo = $('#bill-no').val().trim(); let docName = ''; if (billDate || vendorText || billNo) { const dateStr = billDate ? billDate.replace(/-/g, '').substring(2) : ''; const vendorClean = vendorText ? vendorText.substring(0, 30) : ''; const billClean = billNo ? billNo.replace(/[^A-Za-z0-9]/g, '') : ''; const parts = [dateStr, vendorClean, billClean].filter(p => p); docName = parts.join('_') } $('#document-name').val(docName) }
+
+            $('#bill-date, #bill-no').on('input change', generateDocumentName);
+
+            initApprover(); initVendor(); s2('#sel-doctype', R.docTypes);
             function dropZone(zId, iId, lId) { const $z = $('#' + zId), $i = $('#' + iId), $l = $('#' + lId); $z.on('click', function (e) { if ($(e.target).is($i)) return; e.stopPropagation(); $i[0].click() }); $i.on('change', function () { if (this.files[0]) { $l.text(this.files[0].name); $z.addClass('has-file') } }); $z.on('dragover', (e) => { e.preventDefault(); $z.addClass('dragover') }); $z.on('dragleave', () => $z.removeClass('dragover')); $z.on('drop', (e) => { e.preventDefault(); $z.removeClass('dragover'); const f = e.originalEvent.dataTransfer.files[0]; if (f) { const dt = new DataTransfer(); dt.items.add(f); $i[0].files = dt.files; $l.text(f.name); $z.addClass('has-file') } }) }
             dropZone('dropZone', 'mainFile', 'dropLabel'); dropZone('supportDropZone', 'supportFile', 'supportDropLabel');
-            const dt = $('#scansTable').DataTable({ serverSide: true, processing: true, ajax: { url: R.data, type: 'GET', data: function (d) { d.tab = currentTab; d.from_date = currentFilters.from_date; d.to_date = currentFilters.to_date } }, order: [[3, 'desc']], pageLength: 10, dom: 'rt', columns: [{ data: 'DT_RowIndex', orderable: false, searchable: false }, { data: 'location_name', defaultContent: '—' }, { data: 'File', render: (d, t, r) => `<a href="${esc(r.File_Location)}" target="_blank" class="text-blue-600 hover:underline block truncate" title="${esc(d)}">${esc(d)}</a>` }, { data: 'Temp_Scan_Date', defaultContent: '—' }, { data: 'final_submit_badge', orderable: false, className: 'text-center' }, { data: 'bill_approved_badge', orderable: false, className: 'text-center' }, { data: 'approver_name', defaultContent: '—' }, { data: 'Bill_Approver_Remark', defaultContent: '—', render: (d) => d ? `<span title="${esc(d)}" class="block truncate">${esc(d)}</span>` : '—' }, { data: 'actions', orderable: false, searchable: false, className: 'text-center', render: (d, t, r) => buildBtns(r) }], language: { emptyTable: 'No scan files found', zeroRecords: 'No matching records', processing: '<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>' }, drawCallback: attachTblEvents });
+            const dt = $('#scansTable').DataTable({ serverSide: true, processing: true, ajax: { url: R.data, type: 'GET', data: function (d) { d.tab = currentTab; d.from_date = currentFilters.from_date; d.to_date = currentFilters.to_date } }, order: [[3, 'desc']], pageLength: 10, dom: 'rt', columns: [{ data: 'DT_RowIndex', orderable: false, searchable: false }, { data: 'location_name', defaultContent: '—' }, { data: 'File', render: (d, t, r) => `<a href="${esc(r.File_Location)}" target="_blank" class="text-blue-600 hover:underline block truncate" title="${esc(d)}">${esc(d)}</a>` }, { data: 'Scan_Date', defaultContent: '—' }, { data: 'final_submit_badge', orderable: false, className: 'text-center' }, { data: 'bill_approved_badge', orderable: false, className: 'text-center' }, { data: 'approver_name', defaultContent: '—' }, { data: 'Bill_Approver_Remark', defaultContent: '—', render: (d) => d ? `<span title="${esc(d)}" class="block truncate">${esc(d)}</span>` : '—' }, { data: 'actions', orderable: false, searchable: false, className: 'text-center', render: (d, t, r) => buildBtns(r) }], language: { emptyTable: 'No scan files found', zeroRecords: 'No matching records', processing: '<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>' }, drawCallback: attachTblEvents });
             $('.tab-btn').on('click', function () { const tab = $(this).data('tab'); currentTab = tab; $('.tab-btn').removeClass('active'); $(this).addClass('active'); dt.ajax.reload() });
             $('#btnApplyFilters').on('click', function () { currentFilters.from_date = $('#filterFromDate').val(); currentFilters.to_date = $('#filterToDate').val(); dt.ajax.reload() });
             $('#btnResetFilters').on('click', function () { $('#filterFromDate,#filterToDate').val(''); currentFilters = { from_date: '', to_date: '' }; dt.ajax.reload() });
             $('#dtLength').on('change', function () { dt.page.len(+$(this).val()).draw() });
             let st; $('#dtSearch').on('input', function () { clearTimeout(st); const v = $(this).val(); st = setTimeout(() => dt.search(v).draw(), 350) });
             dt.on('draw', function () { const $p = $('#scansTable_wrapper .dataTables_paginate').first(); const $i = $('#scansTable_wrapper .dataTables_info').first(); if ($p.length) $p.appendTo('#dtPaginate'); if ($i.length) $i.appendTo('#dtInfo'); updateTabBadges() });
-            async function updateTabBadges() { try { const userId = '{{Auth::id()}}'; const baseQuery = { Temp_Scan: 'Y', Temp_Scan_By: userId, Is_Deleted: 'N' }; const counts = await $.getJSON('{{route("workflow.temp-scan.tab-counts")}}'); $('#badge-all').text(counts.all || 0); $('#badge-pending').text(counts.pending || 0); $('#badge-approved').text(counts.approved || 0); $('#badge-rejected').text(counts.rejected || 0) } catch (e) { console.error('Failed to load tab counts', e) } }
-            function buildBtns(r) { const canDelete = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y' || r.Final_Submit !== 'Y'); const canAttachSupport = (r.Final_Submit !== 'Y'); const isRejected = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y'); let h = `<div class="dt-actions">`; h += `<button class="dt-btn blue btn-view-modal" title="View Scan" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>`; if (canAttachSupport) { h += `<button class="dt-btn blue btn-s2" title="Add Supporting Files" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}" data-date="${esc(r.Temp_Scan_Date)}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>` } if (isRejected) { h += `<button class="dt-btn blue btn-resubmit" title="Resubmit for Approval" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` } if (r.Final_Submit !== 'Y') { h += `<button class="dt-btn green btn-fs" title="Final Submit" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>` } if (canDelete) { h += `<button class="dt-btn red btn-del" title="Delete" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` } return h + '</div>' }
+            async function updateTabBadges() { try { const userId = '{{Auth::id()}}'; const baseQuery = { Direct_Scan: 'Y', Direct_Scan_By: userId, Is_Deleted: 'N' }; const counts = await $.getJSON('{{route("workflow.direct-scan.tab-counts")}}'); $('#badge-all').text(counts.all || 0); $('#badge-pending').text(counts.pending || 0); $('#badge-approved').text(counts.approved || 0); $('#badge-rejected').text(counts.rejected || 0) } catch (e) { console.error('Failed to load tab counts', e) } }
+            function buildBtns(r) { const canDelete = (r.Bill_Approved === 'R' || r.Direct_Scan_reject === 'Y' || r.Final_Submit !== 'Y'); const canAttachSupport = (r.Final_Submit !== 'Y'); const isRejected = (r.Bill_Approved === 'R' || r.Direct_Scan_reject === 'Y'); let h = `<div class="dt-actions">`; h += `<button class="dt-btn blue btn-view-modal" title="View Scan" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>`; if (canAttachSupport) { h += `<button class="dt-btn blue btn-s2" title="Add Supporting Files" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}" data-date="${esc(r.Scan_Date)}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>` } if (isRejected) { h += `<button class="dt-btn blue btn-resubmit" title="Resubmit for Approval" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` } if (r.Final_Submit !== 'Y') { h += `<button class="dt-btn green btn-fs" title="Final Submit" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>` } if (canDelete) { h += `<button class="dt-btn red btn-del" title="Delete" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` } return h + '</div>' }
             function attachTblEvents() { $('#scansTable').off('click', '.btn-view-modal').on('click', '.btn-view-modal', async function () { await openViewModal($(this).data('id')) }).off('click', '.btn-s2').on('click', '.btn-s2', function () { const $b = $(this); goStep2({ id: $b.data('id'), file: $b.data('file'), file_url: $b.data('url'), scan_date: $b.data('date') }) }).off('click', '.btn-resubmit').on('click', '.btn-resubmit', async function () { openResubmitModal($(this).data('id')) }).off('click', '.btn-fs').on('click', '.btn-fs', async function () { if (!confirm('Mark as final submitted?')) return; await $.ajax({ url: R.finalSubmit($(this).data('id')), method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }).off('click', '.btn-del').on('click', '.btn-del', async function () { if (!confirm('Delete this scan?')) return; await $.ajax({ url: R.destroy($(this).data('id')), method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }) }
             $('#btnExportToggle').on('click', function (e) { e.stopPropagation(); $('#exportMenu').toggleClass('open') });
             $(document).on('click', function (e) { if (!$(e.target).closest('#exportMenu').length) $('#exportMenu').removeClass('open') });
@@ -1338,9 +1398,9 @@
             $('#btnOpenLog').on('click', openLog); $('#btnCloseLog,#logCanvasBackdrop').on('click', closeLog);
             async function loadLogEntries() { $('#logBody').html('<p class="text-center text-xs text-stone-400 py-8">Loading…</p>'); try { const res = await $.getJSON(R.exportLogs); if (!res.data.length) { $('#logBody').html('<p class="text-center text-xs text-stone-400 py-8">No exports yet.</p>'); return } const rows = res.data.map(l => `<div class="log-row"><div class="min-w-0"><p class="text-xs font-medium text-stone-700 truncate" title="${esc(l.file_name)}">${esc(l.file_name)}</p><p class="text-[10px] text-stone-400 mt-0.5">${l.row_count} rows &bull; ${fmtDate(l.created_at)}</p></div><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${l.file_name.endsWith('.xlsx') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">${l.file_name.endsWith('.xlsx') ? 'Excel' : 'PDF'}</span></div>`).join(''); $('#logBody').html(rows) } catch (e) { $('#logBody').html('<p class="text-center text-xs text-red-500 py-8">Failed to load logs.</p>') } }
             function fmtDate(s) { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) }
-            $('#uploadForm').on('submit', async function (e) { e.preventDefault(); const loc = $("#sel-location").val(), apv = $("#sel-approver").val(), fl = $('#mainFile')[0].files[0]; if (!loc) { return alert2('uploadAlert', 'error', 'Please select a location.') } if (!apv) { return alert2('uploadAlert', 'error', 'Please select a bill approver.') } if (!fl) { return alert2('uploadAlert', 'error', 'Please select a file.') } const fd = new FormData(); fd.append('_token', CSRF); fd.append('location', loc); fd.append('bill_approver', apv); fd.append('main_file', fl); setUpState(true); try { const res = await $.ajax({ url: R.store, method: 'POST', data: fd, processData: false, contentType: false, xhr: () => { const x = new XMLHttpRequest(); x.upload.addEventListener('progress', (ev) => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); $('#uploadProgressBar').css('width', p + '%'); $('#uploadProgressText').text(`Uploading… ${p}%`) } }); return x } }); if (res.success) { dt.ajax.reload(null, false); resetUpForm(); goStep2(res.scan) } else alert2('uploadAlert', 'error', res.message || 'Upload failed.') } catch (err) { alert2('uploadAlert', 'error', err.responseJSON?.message || err.responseJSON?.errors?.main_file?.[0] || 'Upload failed.') } finally { setUpState(false) } });
+            $('#uploadForm').on('submit', async function (e) { e.preventDefault(); const loc = $("#sel-location").val(), apv = $("#sel-approver").val(), billDate = $("#bill-date").val(), vendorId = $("#sel-vendor").val(), billNo = $("#bill-no").val().trim(), docName = $("#document-name").val().trim(), fl = $('#mainFile')[0].files[0]; if (!loc) { return alert2('uploadAlert', 'error', 'Please select a location.') } if (!apv) { return alert2('uploadAlert', 'error', 'Please select a bill approver.') } if (!docName) { return alert2('uploadAlert', 'error', 'Document name is required.') } if (!fl) { return alert2('uploadAlert', 'error', 'Please select a file.') } const fd = new FormData(); fd.append('_token', CSRF); fd.append('location', loc); fd.append('bill_approver', apv); if (billDate) fd.append('bill_date', billDate); if (vendorId) fd.append('vendor_id', vendorId); if (billNo) fd.append('bill_no', billNo); fd.append('document_name', docName); fd.append('main_file', fl); setUpState(true); try { const res = await $.ajax({ url: R.store, method: 'POST', data: fd, processData: false, contentType: false, xhr: () => { const x = new XMLHttpRequest(); x.upload.addEventListener('progress', (ev) => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); $('#uploadProgressBar').css('width', p + '%'); $('#uploadProgressText').text(`Uploading… ${p}%`) } }); return x } }); if (res.success) { dt.ajax.reload(null, false); resetUpForm(); goStep2(res.scan) } else alert2('uploadAlert', 'error', res.message || 'Upload failed.') } catch (err) { alert2('uploadAlert', 'error', err.responseJSON?.message || err.responseJSON?.errors?.main_file?.[0] || 'Upload failed.') } finally { setUpState(false) } });
             function setUpState(on) { $('#uploadBtn').prop('disabled', on); $('#uploadProgressWrap').toggleClass('hidden', !on); if (!on) { $('#uploadProgressBar').css('width', '0%'); $('#uploadProgressText').text('Uploading…') } }
-            function resetUpForm() { if ($('#sel-location').data('select2')) $('#sel-location').select2('destroy'); $('#sel-location').empty().append('<option value="">Select Location</option>'); s2('#sel-location', R.locations); $('#sel-location').off('change.select2').on('change.select2', onLocationChange); initApprover(); $('#mainFile').val(''); $('#dropLabel').text('Drag & drop or click'); $('#dropZone').removeClass('has-file'); $('#uploadAlert').addClass('hidden') }
+            function resetUpForm() { if ($('#sel-location').data('select2')) $('#sel-location').select2('destroy'); $('#sel-location').empty().append('<option value="">Select Location</option>'); s2('#sel-location', R.locations); $('#sel-location').off('change.select2').on('change.select2', onLocationChange); initApprover(); initVendor(); $('#bill-date').val(''); $('#bill-no').val(''); $('#document-name').val(''); $('#mainFile').val(''); $('#dropLabel').text('Drag & drop or click'); $('#dropZone').removeClass('has-file'); $('#uploadAlert').addClass('hidden') }
             function loadViewer(url) { const $body = $('#fileViewerBody'); const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().endsWith('pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url); $('#viewerPlaceholder').remove(); $body.find('iframe,img').remove(); $('#viewerOpenLink').attr('href', url); if (isPdf) { $body.append(`<iframe src="${esc(url)}" title="Scan Preview"></iframe>`) } else if (isImg) { $body.append(`<img src="${esc(url)}" alt="Scan Preview">`) } else { $body.append(`<iframe src="${esc(url)}" title="Scan Preview"></iframe>`) } }
             function goStep2(scan) { activeScan = scan; $('#bannerScanId').text(`Scan #${scan.id}`); $('#bannerScanMeta').text(`${scan.file}  •  ${scan.scan_date || ''}`); $('#ws-dot-1').removeClass('active pending').addClass('done').html('✓'); $('#ws-lbl-1').removeClass('active pending').addClass('done'); $('#ws-line-1').addClass('done'); $('#ws-dot-2').removeClass('pending').addClass('active'); $('#ws-lbl-2').removeClass('pending').addClass('active'); $('#step1').removeClass('active'); $('#step2').addClass('active'); loadViewer(scan.file_url); loadSupport() }
             $('#btnBackToStep1').on('click', function () { activeScan = null; $('#step2').removeClass('active'); $('#step1').addClass('active'); $('#ws-dot-1').removeClass('done pending').addClass('active').html('1'); $('#ws-lbl-1').removeClass('done pending').addClass('active'); $('#ws-line-1').removeClass('done'); $('#ws-dot-2').removeClass('active done').addClass('pending'); $('#ws-lbl-2').removeClass('active done').addClass('pending'); $('#fileViewerBody').find('iframe,img').remove(); $('#fileViewerBody').append(`<div class="viewer-placeholder" id="viewerPlaceholder"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586 a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p class="text-xs">No file loaded</p></div>`); resetSupForm() });
@@ -1351,7 +1411,7 @@
             function renderSupport(files) { const $badge = $('#supportCountBadge'); if (files.length) { $badge.text(files.length).removeClass('hidden') } else { $badge.addClass('hidden') } if (!files.length) { $('#supportList').html(`<div class="flex flex-col items-center justify-center py-10 gap-2 text-stone-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8 a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><p class="text-xs">No supporting files yet</p></div>`); return } $('#supportList').html(files.map((f, i) => `<div class="sf-row" id="sf-${f.Support_Id}"><div class="flex items-center gap-2.5 min-w-0"><span class="text-[10px] text-stone-400 w-4 text-right shrink-0 font-medium">${i + 1}</span><div class="w-8 h-8 flex items-center justify-center bg-stone-100 rounded-lg text-stone-500 text-[9px] font-bold uppercase shrink-0 border border-stone-200">${esc(f.File_Ext || '?')}</div><div class="min-w-0"><p class="text-xs font-medium text-stone-700 truncate leading-tight">${esc(f.File)}</p>${f.doc_type_name ? `<p class="text-[10px] text-stone-400 leading-tight mt-0.5">${esc(f.doc_type_name)}</p>` : `<p class="text-[10px] text-stone-300 leading-tight mt-0.5 italic">No type</p>`}</div></div><div class="flex items-center gap-1.5 shrink-0"><a href="${esc(f.File_Location)}" target="_blank" class="w-6 h-6 flex items-center justify-center rounded text-blue-400 hover:bg-blue-50 transition-colors" title="View file"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4 M14 4h6m0 0v6m0-6L10 14"/></svg></a><button class="w-6 h-6 flex items-center justify-center rounded text-red-400 hover:bg-red-50 transition-colors btn-del-sup" data-sid="${f.Support_Id}" title="Remove"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858 L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div>`).join('')) }
             $(document).on('click', '.btn-del-sup', async function () { if (!activeScan || !confirm('Remove this supporting file?')) return; const sid = $(this).data('sid'); await $.ajax({ url: R.supportDel(activeScan.id, sid), method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } }); $(`#sf-${sid}`).slideUp(150, function () { $(this).remove(); const n = $('#supportList .sf-row').length; const $badge = $('#supportCountBadge'); if (n) { $badge.text(n) } else { $badge.addClass('hidden'); $('#supportList').html(`<div class="flex flex-col items-center justify-center py-10 gap-2 text-stone-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8 a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><p class="text-xs">No supporting files yet</p></div>`) } }) });
             $('#btnFinalSubmit').on('click', async function () { if (!activeScan || !confirm('Mark this scan as final submitted?')) return; await $.ajax({ url: R.finalSubmit(activeScan.id), method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false); $('#btnBackToStep1').click() });
-            async function openViewModal(scanId) { try { const [supportRes] = await Promise.all([$.getJSON(R.supportList(scanId))]); const scanData = dt.rows().data().toArray().find(r => r.Scan_Id == scanId); if (!scanData) { alert('Scan not found'); return } $('#modalScanTitle').text(`Scan #${scanId}`); $('#modalScanMeta').text(scanData.Temp_Scan_Date || '—'); const mainUrl = scanData.File_Location; $('#modalMainFile').html(`<div class="modal-file-item" data-url="${esc(mainUrl)}" data-name="${esc(scanData.File)}"><div class="modal-file-icon">${esc(scanData.File.split('.').pop().toUpperCase())}</div><div class="modal-file-name">${esc(scanData.File)}</div></div>`); if (supportRes.data.length) { $('#modalSupportingGroup').show(); $('#modalSupportingFiles').empty(); supportRes.data.forEach(f => { $('#modalSupportingFiles').append(`<div class="modal-file-item" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><div class="modal-file-icon">${esc(f.File_Ext || '?')}</div><div class="modal-file-name">${esc(f.File)}${f.doc_type_name ? ` <span class="text-[10px] text-stone-400">• ${esc(f.doc_type_name)}</span>` : ''}</div></div>`) }) } else { $('#modalSupportingGroup').hide() } $('#viewScanModal,#viewScanModalBackdrop').addClass('open'); loadModalViewer(mainUrl, scanData.File) } catch (e) { console.error(e); alert('Failed to load scan details') } }
+            async function openViewModal(scanId) { try { const [supportRes] = await Promise.all([$.getJSON(R.supportList(scanId))]); const scanData = dt.rows().data().toArray().find(r => r.Scan_Id == scanId); if (!scanData) { alert('Scan not found'); return } $('#modalScanTitle').text(`Scan #${scanId}`); $('#modalScanMeta').text(scanData.Scan_Date || '—'); const mainUrl = scanData.File_Location; $('#modalMainFile').html(`<div class="modal-file-item" data-url="${esc(mainUrl)}" data-name="${esc(scanData.File)}"><div class="modal-file-icon">${esc(scanData.File.split('.').pop().toUpperCase())}</div><div class="modal-file-name">${esc(scanData.File)}</div></div>`); if (supportRes.data.length) { $('#modalSupportingGroup').show(); $('#modalSupportingFiles').empty(); supportRes.data.forEach(f => { $('#modalSupportingFiles').append(`<div class="modal-file-item" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><div class="modal-file-icon">${esc(f.File_Ext || '?')}</div><div class="modal-file-name">${esc(f.File)}${f.doc_type_name ? ` <span class="text-[10px] text-stone-400">• ${esc(f.doc_type_name)}</span>` : ''}</div></div>`) }) } else { $('#modalSupportingGroup').hide() } $('#viewScanModal,#viewScanModalBackdrop').addClass('open'); loadModalViewer(mainUrl, scanData.File) } catch (e) { console.error(e); alert('Failed to load scan details') } }
             function loadModalViewer(url, name) { const $body = $('#modalViewerBody'); $body.find('iframe,img').remove(); $('#modalViewingFileName').text(name); const isPdf = url.toLowerCase().includes('.pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url); if (isPdf) { $body.append(`<iframe src="${esc(url)}"></iframe>`) } else if (isImg) { $body.append(`<img src="${esc(url)}" alt="${esc(name)}">`) } else { $body.append(`<iframe src="${esc(url)}"></iframe>`) } $('.modal-file-item').removeClass('active'); $(`.modal-file-item[data-url="${url}"]`).addClass('active') }
             $(document).on('click', '.modal-file-item', function () { loadModalViewer($(this).data('url'), $(this).data('name')) });
             $('#btnCloseModal,#viewScanModalBackdrop').on('click', function () { $('#viewScanModal,#viewScanModalBackdrop').removeClass('open'); $('#modalMainFile,#modalSupportingFiles').empty(); $('#modalSupportingGroup').hide() });

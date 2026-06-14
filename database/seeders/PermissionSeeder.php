@@ -166,6 +166,19 @@ class PermissionSeeder extends Seeder
                 'temp-scanning.delete',                 // destroy scan / support file
             ],
 
+            // ── Direct Scanning (Workflow) ──────────────────────────────────
+            // All workflow.direct-scan.* routes are in ALWAYS_ALLOW — access is
+            // gated by role ('Direct Scanning', 'Bill Approval', etc.) at the
+            // menu/nav level, not by granular permissions. This group exists
+            // purely so the Permissions panel UI can display it.
+            'Direct Scanning' => [
+                'direct-scanning.view',                 // index — view/upload direct scans
+                'direct-scanning.create',               // store main file + supporting files
+                'direct-scanning.delete',               // destroy scan / support file
+                'direct-scanning.final-submit',         // final submit action
+                'direct-scanning.resubmit',             // resubmit after rejection
+            ],
+
         ];
 
         // ── 3. Create groups & permissions ────────────────────────────────
