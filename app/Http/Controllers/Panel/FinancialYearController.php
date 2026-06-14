@@ -100,6 +100,23 @@ class FinancialYearController extends Controller
         FinancialYear::query()->update(['is_current' => false]);
         $financialYear->update(['is_current' => true]);
 
+        // Also update this user's session so it takes effect immediately
+        FinancialYear::setForSession($financialYear->id);
+
         return response()->json(['success' => true, 'message' => "{$financialYear->label} is now the active financial year."]);
+    }
+
+    /**
+     * POST /settings/financial-year/{financialYear}/switch
+     * Switch the current FY for this user's session only (no global DB change).
+     */
+    public function switchSession(FinancialYear $financialYear)
+    {
+        FinancialYear::setForSession($financialYear->id);
+
+        return response()->json([
+            'success' => true,
+            'fy' => ['id' => $financialYear->id, 'label' => $financialYear->label],
+        ]);
     }
 }

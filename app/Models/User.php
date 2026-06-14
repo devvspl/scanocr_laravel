@@ -28,6 +28,7 @@ class User extends Authenticatable
         'phone',
         'designation',
         'department',
+        'location_id',
         'signature_path',
         'created_by',
     ];
@@ -96,6 +97,19 @@ class User extends Authenticatable
     public function allowedCompanyIds(): array
     {
         return $this->companyAccess()->where('has_access', true)->pluck('company_id')->toArray();
+    }
+
+    /**
+     * Location access pivot
+     */
+    public function locationAccess()
+    {
+        return $this->hasMany(\App\Models\UserLocationAccess::class);
+    }
+
+    public function allowedLocationIds(): array
+    {
+        return $this->locationAccess()->where('has_access', true)->pluck('location_id')->toArray();
     }
 
     /**

@@ -196,10 +196,14 @@ class UserController extends Controller
         $allPermissions = Permission::orderBy('group')->orderBy('name')->get()
             ->groupBy(fn($p) => $p->group ?: 'Other');
 
+        // Include role names so the front-end can conditionally show Location access
+        $roleNames = $user->getRoleNames();
+
         return response()->json([
             'user'            => $user,
             'directPerms'     => $directPermissions,
             'allPermissions'  => $allPermissions,
+            'userRoles'       => $roleNames,
         ]);
     }
 
@@ -321,6 +325,55 @@ class UserController extends Controller
         ActivityLogger::log('updated', $user, [], ['company_access' => 'updated']);
 
         return response()->json(['success' => true, 'message' => 'Company access updated.']);
+    }
+
+    public function locationAccess(User $user)
+    {
+        // Only relevant when user has Bill Approval role
+        $allLocations = \App\Models\Location::active()
+            ->orderBy('location_name')
+            ->get(['location_id', 'location_name', 'location_code']);
+
+        $access      = \App\Models\UserLocationAccess::where('user_id', $user->id)
+            ->pluck('has_access', 'location_id');
+        $hasExplicit = $access->isNotEmpty();
+
+        $locations = $allLocations->map(function ($loc) use ($access, $hasExplicit) {
+            return [
+                'id'         => $loc->location_id,
+                'name'       => $loc->location_name,
+                'code'       => $loc->location_code,
+                'has_access' => $hasExplicit
+                    ? (bool) ($access[$loc->location_id] ?? false)
+                    : true, // default: all open
+            ];
+        });
+
+        return response()->json([
+            'user'      => ['id' => $user->id, 'name' => $user->name],
+            'locations' => $locations,
+        ]);
+    }
+
+    public function updateLocationAccess(Request $request, User $user)
+    {
+        $request->validate([
+            'access'               => 'array',
+            'access.*.id'          => 'required|exists:master_work_location,location_id',
+            'access.*.has_access'  => 'required|boolean',
+        ]);
+
+        $now = now();
+        foreach ($request->access as $item) {
+            \App\Models\UserLocationAccess::updateOrCreate(
+                ['user_id' => $user->id, 'location_id' => $item['id']],
+                ['has_access' => $item['has_access'], 'updated_at' => $now]
+            );
+        }
+
+        ActivityLogger::log('updated', $user, [], ['location_access' => 'updated']);
+
+        return response()->json(['success' => true, 'message' => 'Location access updated.']);
     }
 
     private function validateUser(Request $request, ?int $ignoreId = null): array

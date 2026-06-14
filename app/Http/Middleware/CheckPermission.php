@@ -20,6 +20,8 @@ class CheckPermission
         'settings.users.document-access.update',
         'settings.users.company-access',
         'settings.users.company-access.update',
+        'settings.users.location-access',
+        'settings.users.location-access.update',
         // Document AI — all gated by auth only, no granular permission checks
         'document-ai.playground',
         'document-ai.predict',
@@ -50,6 +52,23 @@ class CheckPermission
         'master.import.templates.delete',
         'master.import.api-connections.test',
         'master.import.preview',
+        // Workflow — Temp Scanning (gated by role, not granular permissions)
+        'workflow.temp-scan.index',
+        'workflow.temp-scan.store',
+        'workflow.temp-scan.data',
+        'workflow.temp-scan.locations',
+        'workflow.temp-scan.supporting',
+        'workflow.temp-scan.supporting.store',
+        'workflow.temp-scan.final-submit',
+        'workflow.temp-scan.replace',
+        'workflow.temp-scan.destroy',
+        'workflow.temp-scan.support.destroy',
+        'workflow.temp-scan.bill-approvers',
+        'workflow.temp-scan.doc-types',
+        'workflow.temp-scan.support-list',
+        'workflow.temp-scan.export.excel',
+        'workflow.temp-scan.export.pdf',
+        'workflow.temp-scan.export.logs',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];

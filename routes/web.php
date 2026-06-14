@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DocumentAiController;
@@ -146,6 +146,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/company/{company}', [CompanyController::class, 'update'])->name('settings.company.update');
     Route::delete('/settings/company/{company}', [CompanyController::class, 'destroy'])->name('settings.company.destroy');
     Route::post('/settings/company/{company}/default', [CompanyController::class, 'setDefault'])->name('settings.company.default');
+    Route::post('/settings/company/{company}/switch',  [CompanyController::class, 'switchSession'])->name('settings.company.switch');
 
     // Financial Year
     Route::get('/settings/financial-year', [FinancialYearController::class, 'index'])->name('settings.financial-year');
@@ -154,6 +155,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/financial-year/{financialYear}', [FinancialYearController::class, 'update'])->name('settings.financial-year.update');
     Route::delete('/settings/financial-year/{financialYear}', [FinancialYearController::class, 'destroy'])->name('settings.financial-year.destroy');
     Route::post('/settings/financial-year/{financialYear}/current', [FinancialYearController::class, 'setCurrent'])->name('settings.financial-year.current');
+    Route::post('/settings/financial-year/{financialYear}/switch',  [FinancialYearController::class, 'switchSession'])->name('settings.financial-year.switch');
 
     // Numbering
     Route::get('/settings/numbering', [NumberingController::class, 'index'])->name('settings.numbering');
@@ -200,6 +202,8 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/users/{user}/document-access', [UserController::class, 'updateDocumentAccess'])->name('settings.users.document-access.update');
     Route::get('/settings/users/{user}/company-access', [UserController::class, 'companyAccess'])->name('settings.users.company-access');
     Route::put('/settings/users/{user}/company-access', [UserController::class, 'updateCompanyAccess'])->name('settings.users.company-access.update');
+    Route::get('/settings/users/{user}/location-access', [UserController::class, 'locationAccess'])->name('settings.users.location-access');
+    Route::put('/settings/users/{user}/location-access', [UserController::class, 'updateLocationAccess'])->name('settings.users.location-access.update');
 
     // Roles
     Route::get('/settings/roles', [RoleController::class, 'index'])->name('settings.roles');
@@ -223,4 +227,33 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings/permission-groups', [PermissionGroupController::class, 'index'])->name('settings.permission-groups.index');
     Route::post('/settings/permission-groups', [PermissionGroupController::class, 'store'])->name('settings.permission-groups.store');
     Route::delete('/settings/permission-groups/{permissionGroup}', [PermissionGroupController::class, 'destroy'])->name('settings.permission-groups.destroy');
+
+    // ── Workflow ──────────────────────────────────────────────────────────────
+    Route::prefix('workflow')->name('workflow.')->group(function () {
+
+        // Temp Scanner
+        Route::prefix('temp-scan')->name('temp-scan.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Workflow\TempScannerController::class, 'index'])                     ->name('index');
+            Route::post('/',             [\App\Http\Controllers\Workflow\TempScannerController::class, 'store'])                     ->name('store');
+            // Select2 / DataTables endpoints
+            Route::get('/data',          [\App\Http\Controllers\Workflow\TempScannerController::class, 'data'])                     ->name('data');
+            Route::get('/locations',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'locationsSelect'])           ->name('locations');
+            Route::get('/bill-approvers',[\App\Http\Controllers\Workflow\TempScannerController::class, 'getBillApproversForLocation'])->name('bill-approvers');
+            Route::get('/doc-types',     [\App\Http\Controllers\Workflow\TempScannerController::class, 'docTypesSelect'])            ->name('doc-types');
+            // Export
+            Route::get('/export/excel',  [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportExcel'])           ->name('export.excel');
+            Route::get('/export/pdf',    [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportPdf'])             ->name('export.pdf');
+            Route::get('/export/logs',   [\App\Http\Controllers\Workflow\TempScannerController::class, 'exportLogs'])            ->name('export.logs');
+            // Scan-scoped
+            Route::get('/{scan}/support-list',       [\App\Http\Controllers\Workflow\TempScannerController::class, 'supportList'])       ->name('support-list');
+            Route::post('/{scan}/supporting',        [\App\Http\Controllers\Workflow\TempScannerController::class, 'storeSupporting'])   ->name('supporting.store');
+            Route::post('/{scan}/final-submit',      [\App\Http\Controllers\Workflow\TempScannerController::class, 'finalSubmit'])       ->name('final-submit');
+            Route::post('/{scan}/replace',           [\App\Http\Controllers\Workflow\TempScannerController::class, 'replaceFile'])       ->name('replace');
+            Route::delete('/{scan}',                 [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroy'])           ->name('destroy');
+            Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroySupport'])->name('support.destroy');
+        });
+
+    });
 });
+
+

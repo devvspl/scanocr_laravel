@@ -14,6 +14,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    @stack('head')
 </head>
 
 <body class="h-full font-sans antialiased bg-stone-100 text-stone-900" x-data="layoutApp()" x-init="init()">
@@ -56,46 +57,57 @@
                         'icon' =>
                             'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
                     ],
-                                       [
+                    [
                         'id' => 'temp-scanning',
                         'label' => 'Temp Scanning',
-                        'route' => '#',
+                        'route' => 'workflow.temp-scan.index',
+                        'role'  => 'Temp Scanning',
                         'icon' => 'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z',
+                        'children' => [
+                            ['section' => 'Temp Scan'],
+                            ['label' => 'Upload Scan',  'route' => 'workflow.temp-scan.index'],
+                        ],
                     ],
                     [
                         'id' => 'direct-scanning',
                         'label' => 'Direct Scanning',
                         'route' => '#',
+                        'role'  => 'Direct Scanning',
                         'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
                     ],
                     [
                         'id' => 'document-naming',
                         'label' => 'Document Naming',
                         'route' => '#',
+                        'role'  => 'Document Naming',
                         'icon' => 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2h2z',
                     ],
                     [
                         'id' => 'bill-approval',
                         'label' => 'Bill Approval',
                         'route' => '#',
+                        'role'  => 'Bill Approval',
                         'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
                     ],
                     [
                         'id' => 'classification',
                         'label' => 'Classification',
                         'route' => '#',
+                        'role'  => 'Classification',
                         'icon' => 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
                     ],
                     [
                         'id' => 'punching',
                         'label' => 'Punching',
                         'route' => '#',
+                        'role'  => 'Punching',
                         'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
                     ],
                     [
                         'id' => 'punch-approval',
                         'label' => 'Punch Approval',
                         'route' => '#',
+                        'role'  => 'Punch Approval',
                         'icon' => 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
                     ],
                     [
@@ -152,8 +164,18 @@
                     ],
                 ];
 
-                // Filter children: remove link items the user cannot access,
-                // and remove orphaned section headers (sections with no visible links after them).
+                // ── Top-level role gate ───────────────────────────────────────────────
+                // Items with a 'role' key are only shown to users who have that exact role.
+                // Items without a 'role' key are shown to all authenticated users.
+                $__authUser = auth()->user();
+                $railItems = array_values(array_filter($railItems, function ($item) use ($__authUser) {
+                    if (! isset($item['role'])) return true;
+                    return $__authUser?->hasRole($item['role']) ?? false;
+                }));
+
+                // ── Children permission filter ────────────────────────────────────────
+                // Remove link items the user cannot access, and remove orphaned section
+                // headers (sections with no visible links after them).
                 foreach ($railItems as &$item) {
                     if (empty($item['children'])) continue;
 
@@ -192,6 +214,15 @@
             @foreach ($railItems as $item)
                 @php
                     $isActive = $item['route'] !== '#' && (Request::routeIs($item['route']) || Request::routeIs($item['route'] . '.*'));
+                    // Also mark active for child routes (e.g. supporting page marks the parent tile active)
+                    if (!$isActive && !empty($item['children'])) {
+                        foreach ($item['children'] as $child) {
+                            if (!empty($child['route']) && (Request::routeIs($child['route']) || Request::routeIs($child['route'] . '.*'))) {
+                                $isActive = true;
+                                break;
+                            }
+                        }
+                    }
                     $hasChildren = !empty($item['children']);
                 @endphp
 
@@ -405,8 +436,9 @@
                         ? \App\Services\UserAccessService::allowedCompanies($__user->id, $__isSuperAdmin)
                         : collect();
 
-                    $__currentCompany = $__companies->firstWhere('is_default', true) ?? $__companies->first();
-                    $__currentFy      = \App\Models\FinancialYear::where('is_current', true)->first();
+                    $__currentCompany = \App\Models\Company::getDefault()
+                                        ?? $__companies->first();
+                    $__currentFy      = \App\Models\FinancialYear::getCurrent();
                     $__fys            = \App\Models\FinancialYear::orderByDesc('start_date')->get(['id', 'label', 'is_current']);
                 @endphp
                 <div x-data="{ cfOpen: false }" class="relative">
@@ -424,9 +456,10 @@
                             <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-1.5">Company</p>
                             <div class="space-y-0.5 max-h-32 overflow-y-auto">
                                 @foreach($__companies as $co)
-                                <button onclick="switchCompany({{ $co->id }})" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-stone-50 transition-colors {{ $co->is_default ? 'bg-red-50 text-red-700 font-semibold' : 'text-stone-700' }}">
+                                @php $__isActive = $__currentCompany && $__currentCompany->id === $co->id; @endphp
+                                <button onclick="switchCompany({{ $co->id }})" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-stone-50 transition-colors {{ $__isActive ? 'bg-red-50 text-red-700 font-semibold' : 'text-stone-700' }}">
                                     <span class="truncate">{{ $co->name }}</span>
-                                    @if($co->is_default)<svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>@endif
+                                    @if($__isActive)<svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>@endif
                                 </button>
                                 @endforeach
                             </div>
@@ -436,9 +469,10 @@
                             <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-1.5">Financial Year</p>
                             <div class="space-y-0.5 max-h-32 overflow-y-auto">
                                 @foreach($__fys as $fy)
-                                <button onclick="switchFY({{ $fy->id }})" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-stone-50 transition-colors {{ $fy->is_current ? 'bg-red-50 text-red-700 font-semibold' : 'text-stone-700' }}">
+                                @php $__isFyActive = $__currentFy && $__currentFy->id === $fy->id; @endphp
+                                <button onclick="switchFY({{ $fy->id }})" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-stone-50 transition-colors {{ $__isFyActive ? 'bg-red-50 text-red-700 font-semibold' : 'text-stone-700' }}">
                                     <span>{{ $fy->label }}</span>
-                                    @if($fy->is_current)<svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>@endif
+                                    @if($__isFyActive)<svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>@endif
                                 </button>
                                 @endforeach
                             </div>
@@ -549,7 +583,8 @@
         const SUBMENUS = @json($submenus);
 
         async function switchCompany(id) {
-            const res = await fetch(`/settings/company/${id}/default`, {
+            // Uses session-based switch — no global DB change, per-user only
+            const res = await fetch(`/settings/company/${id}/switch`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
             });
@@ -558,7 +593,8 @@
         }
 
         async function switchFY(id) {
-            const res = await fetch(`/settings/financial-year/${id}/current`, {
+            // Uses session-based switch — no global DB change, per-user only
+            const res = await fetch(`/settings/financial-year/${id}/switch`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
             });

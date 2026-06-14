@@ -322,10 +322,12 @@
                         <span>Company</span>
                     </div>
                     <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                          :class="companies.filter(c => c.has_access).length > 0
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-stone-200 text-stone-500'"
-                          x-text="companies.filter(c => c.has_access).length + '/' + companies.length">
+                          :class="loadingCompanies
+                            ? 'bg-stone-100 text-stone-400'
+                            : companies.filter(c => c.has_access).length > 0
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-stone-200 text-stone-500'"
+                          x-text="loadingCompanies ? '…' : (companies.filter(c => c.has_access).length + '/' + companies.length)">
                     </span>
                 </button>
 
@@ -346,12 +348,44 @@
                         <span>Document Types</span>
                     </div>
                     <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                          :class="docTypes.filter(d => d.can_view).length > 0
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-stone-200 text-stone-500'"
-                          x-text="docTypes.filter(d => d.can_view).length + '/' + docTypes.length">
+                          :class="loadingDocTypes
+                            ? 'bg-stone-100 text-stone-400'
+                            : docTypes.filter(d => d.can_view).length > 0
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-stone-200 text-stone-500'"
+                          x-text="loadingDocTypes ? '…' : (docTypes.filter(d => d.can_view).length + '/' + docTypes.length)">
                     </span>
                 </button>
+
+                {{-- Location Access — only for Bill Approval users --}}
+                <template x-if="hasBillApprovalRole">
+                    <div>
+                        <div class="px-3 py-2 shrink-0 border-y border-stone-100 mt-1">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Location Access</p>
+                        </div>
+                        <button
+                            @click="activePermGroup = '__location'; loadLocations()"
+                            :class="activePermGroup === '__location'
+                                ? 'bg-white border-r-2 border-red-700 text-red-700 font-semibold'
+                                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-800'"
+                            class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs text-left transition-colors shrink-0">
+                            <div class="flex items-center gap-2 truncate">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <span>Locations</span>
+                            </div>
+                            <span class="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                                  :class="loadingLocations
+                                    ? 'bg-stone-100 text-stone-400'
+                                    : locations.filter(l => l.has_access).length > 0
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-stone-200 text-stone-500'"
+                                  x-text="loadingLocations ? '…' : (locations.filter(l => l.has_access).length + '/' + locations.length)">
+                            </span>
+                        </button>
+                    </div>
+                </template>
 
                 {{-- 3. Permissions --}}
                 <div class="px-3 py-2 shrink-0 border-y border-stone-100 mt-1">
@@ -513,8 +547,70 @@
                     </div>
                 </div>
 
+                {{-- ── Location Access tab (Bill Approval users only) ── --}}
+                <div x-show="activePermGroup === '__location'">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-stone-800">Location Access</h4>
+                            <p class="text-xs text-stone-400 mt-0.5">
+                                Control which locations
+                                <span class="font-medium text-stone-600" x-text="selectedUser?.name"></span>
+                                can approve bills for
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="setAllLocationAccess(true)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                All
+                            </button>
+                            <button @click="setAllLocationAccess(false)"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                None
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Search --}}
+                    <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 mb-3 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700/10 transition">
+                        <svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" x-model="searchLocation" placeholder="Search locations…"
+                               class="flex-1 text-xs bg-transparent outline-none border-none p-0 text-stone-700 placeholder-stone-400">
+                        <button x-show="searchLocation" @click="searchLocation = ''" class="text-stone-300 hover:text-stone-500 transition shrink-0">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <template x-if="locations.length === 0">
+                        <div class="flex items-center justify-center h-32 text-sm text-stone-400">
+                            <svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            Loading…
+                        </div>
+                    </template>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <template x-for="loc in locations.filter(l => !searchLocation || l.name.toLowerCase().includes(searchLocation.toLowerCase()))" :key="loc.id">
+                            <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50 transition-colors"
+                                   :class="loc.has_access ? 'bg-red-50 border-red-200' : ''">
+                                <button type="button"
+                                        @click.prevent="loc.has_access = !loc.has_access"
+                                        :class="loc.has_access ? 'bg-red-700' : 'bg-stone-200'"
+                                        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-700/30">
+                                    <span :class="loc.has_access ? 'translate-x-5' : 'translate-x-1'"
+                                          class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform"></span>
+                                </button>
+                                <span class="flex-1 text-xs font-medium truncate"
+                                      :class="loc.has_access ? 'text-stone-800' : 'text-stone-500'"
+                                      x-text="loc.name">
+                                </span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
                 {{-- ── Permission groups ── --}}
-                <template x-if="permGroups.length === 0 && !['__company','__doc_access'].includes(activePermGroup)">
+                <template x-if="permGroups.length === 0 && !['__company','__doc_access','__location'].includes(activePermGroup)">
                     <div class="flex items-center justify-center h-40 text-sm text-stone-400">No permissions found</div>
                 </template>
 
@@ -588,8 +684,13 @@
                 <span class="font-semibold text-stone-600" x-text="docTypes.filter(d => d.can_view).length"></span>
                 of <span x-text="docTypes.length"></span> document types accessible
             </p>
+            {{-- Location access count --}}
+            <p class="text-xs text-stone-400" x-show="activePermGroup === '__location'">
+                <span class="font-semibold text-stone-600" x-text="locations.filter(l => l.has_access).length"></span>
+                of <span x-text="locations.length"></span> locations accessible
+            </p>
             {{-- Permissions count --}}
-            <p class="text-xs text-stone-400" x-show="!['__company','__doc_access'].includes(activePermGroup)">
+            <p class="text-xs text-stone-400" x-show="!['__company','__doc_access','__location'].includes(activePermGroup)">
                 <span class="font-semibold text-stone-600" x-text="selectedPerms.length"></span>
                 direct permission<span x-show="selectedPerms.length !== 1">s</span> assigned
             </p>
@@ -636,6 +737,12 @@ function usersPage() {
         docAccessTab: 'types',
         docTypes: [],
         companies: [],
+        locations: [],
+        hasBillApprovalRole: false,
+        loadingCompanies: false,
+        loadingDocTypes: false,
+        loadingLocations: false,
+        loadingPerms: false,
         editId: null,
         saving: false,
         mainUsers: [],
@@ -646,6 +753,7 @@ function usersPage() {
         activePermGroup: '',
         searchCompany: '',
         searchDocType: '',
+        searchLocation: '',
         searchPerm: '',
         toast: { show: false, type: 'success', message: '' },
         errors: {},
@@ -781,37 +889,91 @@ function usersPage() {
         },
 
         async openPermsPanel(id) {
-            const res  = await fetch(`/settings/users/${id}/permissions`, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            this.selectedUser      = data.user;
-            this.selectedPerms     = data.directPerms ?? [];
-            this.permGroups        = Object.entries(data.allPermissions).map(([name, perms]) => ({ name, permissions: perms }));
-            this.activePermGroup   = '__company';   // start on Company tab
-            this.docTypes          = [];
-            this.companies         = [];
-            this.searchCompany     = '';
-            this.searchDocType     = '';
-            this.searchPerm        = '';
-            this.permsOpen         = true;
-            this.loadCompanies();                   // pre-load companies immediately
+            // Guard: prevent multiple concurrent loads
+            if (this.loadingPerms) return;
+            this.loadingPerms = true;
+
+            try {
+                const res  = await fetch(`/settings/users/${id}/permissions`, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                this.selectedUser        = data.user;
+                this.selectedPerms       = data.directPerms ?? [];
+                this.permGroups          = Object.entries(data.allPermissions).map(([name, perms]) => ({ name, permissions: perms }));
+                this.hasBillApprovalRole = (data.userRoles ?? []).includes('Bill Approval');
+                this.activePermGroup     = '__company';
+                this.docTypes            = [];
+                this.companies           = [];
+                this.locations           = [];
+                this.loadingCompanies    = true;
+                this.loadingDocTypes     = true;
+                this.loadingLocations    = true;
+                this.searchCompany       = '';
+                this.searchDocType       = '';
+                this.searchLocation      = '';
+                this.searchPerm          = '';
+                this.permsOpen           = true;
+
+                // Pre-load all access data in parallel so badges show correct counts immediately
+                const uid = this.selectedUser.id;
+                const fetches = [
+                    fetch(`/settings/users/${uid}/company-access`,  { headers: { 'Accept': 'application/json' } })
+                        .then(r => r.json()).then(d => { this.companies = d.companies ?? []; this.loadingCompanies = false; }),
+                    fetch(`/settings/users/${uid}/document-access`, { headers: { 'Accept': 'application/json' } })
+                        .then(r => r.json()).then(d => { this.docTypes  = d.types     ?? []; this.loadingDocTypes  = false; }),
+                ];
+                if (this.hasBillApprovalRole) {
+                    fetches.push(
+                        fetch(`/settings/users/${uid}/location-access`, { headers: { 'Accept': 'application/json' } })
+                            .then(r => r.json()).then(d => { this.locations = d.locations ?? []; this.loadingLocations = false; })
+                    );
+                } else {
+                    this.loadingLocations = false;
+                }
+                await Promise.all(fetches);
+            } catch (e) {
+                _showGlobalToast('error', 'Failed to load permissions.');
+            } finally {
+                this.loadingPerms = false;
+            }
         },
 
         async loadDocTypes() {
             if (this.docTypes.length > 0 || !this.selectedUser) return;
+            this.loadingDocTypes = true;
             const res  = await fetch(`/settings/users/${this.selectedUser.id}/document-access`, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
-            this.docTypes = data.types;
+            this.docTypes        = data.types ?? [];
+            this.loadingDocTypes = false;
         },
 
         async loadCompanies() {
             if (this.companies.length > 0 || !this.selectedUser) return;
+            this.loadingCompanies = true;
             const res = await fetch(`/settings/users/${this.selectedUser.id}/company-access`, {
                 headers: { 'Accept': 'application/json' }
             });
             if (res.ok) {
-                const data = await res.json();
-                this.companies = data.companies;
+                const data        = await res.json();
+                this.companies    = data.companies ?? [];
             }
+            this.loadingCompanies = false;
+        },
+
+        async loadLocations() {
+            if (this.locations.length > 0 || !this.selectedUser) return;
+            this.loadingLocations = true;
+            const res = await fetch(`/settings/users/${this.selectedUser.id}/location-access`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (res.ok) {
+                const data        = await res.json();
+                this.locations    = data.locations ?? [];
+            }
+            this.loadingLocations = false;
+        },
+
+        setAllLocationAccess(val) {
+            this.locations = this.locations.map(l => ({ ...l, has_access: val }));
         },
 
         setAllDocAccess(val) {
@@ -870,6 +1032,14 @@ function usersPage() {
                     promises.push(fetch(`/settings/users/${uid}/company-access`, {
                         method: 'PUT', headers,
                         body: JSON.stringify({ access: this.companies.map(c => ({ id: c.id, has_access: c.has_access })) }),
+                    }));
+                }
+
+                // Save location access if loaded
+                if (this.locations.length > 0) {
+                    promises.push(fetch(`/settings/users/${uid}/location-access`, {
+                        method: 'PUT', headers,
+                        body: JSON.stringify({ access: this.locations.map(l => ({ id: l.id, has_access: l.has_access })) }),
                     }));
                 }
 
@@ -989,8 +1159,9 @@ function usersPage() {
                 await self.openRolesPanel($(this).data('id'));
             });
 
-            $('#users-table').on('click', '.btn-perms', async function () {
-                await self.openPermsPanel($(this).data('id'));
+            $('#users-table').on('click', '.btn-perms', function () {
+                const id = $(this).data('id');
+                self.openPermsPanel(id);   // guard inside prevents concurrent calls
             });
 
             $('#users-table').on('click', '.btn-doc-access', async function () {

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Schema;
  *     admin@acme.com → admin1@acme.com → admin2@acme.com …
  * • Maps scan_users.status 'A'/'D' → users.is_active 1/0.
  * • Password is carried over as-is (already hashed in the old system).
+ * • location_id: first numeric value from the comma-separated location_id string.
  * • Resets AUTO_INCREMENT to MAX(id)+1 afterwards.
  */
 return new class extends Migration
@@ -70,14 +71,27 @@ return new class extends Migration
             }
             // ─────────────────────────────────────────────────────────────
 
+            // ── Build location_id ─────────────────────────────────────────
+            // scan_users.location_id is a comma-separated string; take the first valid int
+            $rawLocation = trim($old->location_id ?? '');
+            $locationId  = null;
+            if ($rawLocation !== '') {
+                $first = (int) explode(',', $rawLocation)[0];
+                if ($first > 0) {
+                    $locationId = $first;
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+
             $rows[] = [
                 'id'                => $old->user_id,
                 'parent_id'         => null,
                 'name'              => trim($old->first_name . ' ' . $old->last_name),
                 'email'             => $email,
                 'phone'             => null,
-                'designation'       => $old->role ?? null,
+                'designation'       => null,
                 'department'        => ($old->department_id !== '0') ? $old->department_id : null,
+                'location_id'       => $locationId,
                 'created_by'        => null,
                 'email_verified_at' => $old->created_at ?? $now,
                 'is_active'         => (($old->status ?? 'A') === 'A') ? 1 : 0,

@@ -6,27 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Location extends Model
 {
+    protected $table      = 'master_work_location';
+    protected $primaryKey = 'location_id';
+
     protected $fillable = [
-        'name',
-        'code',
-        'state_name',
-        'state_code',
-        'is_group',
-        'is_active',
+        'location_name',
+        'location_code',
+        'status',
+        'created_by',
+        'updated_by',
+        'is_deleted',
     ];
 
-    protected $casts = [
-        'is_group'  => 'boolean',
-        'is_active' => 'boolean',
-    ];
-
+    /**
+     * Scope: only active (status = 'A') and not soft-deleted.
+     */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeNonGroup($query)
-    {
-        return $query->where('is_group', false);
+        return $query->where('status', 'A')->where('is_deleted', 'N');
     }
 }

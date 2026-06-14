@@ -111,9 +111,35 @@ class CompanyController extends Controller
         Company::where('is_default', true)->update(['is_default' => false]);
         $company->update(['is_default' => true]);
 
+        // Also update this user's session so it takes effect immediately
+        Company::setForSession($company->id);
+
         ActivityLogger::log('updated', $company, ['is_default' => false], ['is_default' => true]);
 
         return response()->json(['success' => true, 'message' => "{$company->name} is now the default company."]);
+    }
+
+    /**
+     * POST /settings/company/{company}/switch
+     * Switch the current company for this user's session only (no global DB change).
+     */
+    public function switchSession(Company $company)
+    {
+        // Verify user has access to this company
+        $user = auth()->user();
+        $isSuperAdmin = $user?->hasRole('Super Admin') ?? false;
+        $allowed = \App\Services\UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
+
+        if (! $allowed->contains('id', $company->id)) {
+            return response()->json(['success' => false, 'message' => 'Access denied.'], 403);
+        }
+
+        Company::setForSession($company->id);
+
+        return response()->json([
+            'success' => true,
+            'company' => ['id' => $company->id, 'name' => $company->name],
+        ]);
     }
 
     private function validateCompany(Request $request, ?int $ignoreId = null): array

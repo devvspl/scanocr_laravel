@@ -29,7 +29,31 @@ class Company extends Model
 
     public static function getDefault(): ?static
     {
+        // Per-user session override takes priority (set via company switcher)
+        $sessionId = session('selected_company_id');
+        if ($sessionId) {
+            $company = static::where('id', $sessionId)->where('is_active', true)->first();
+            if ($company) return $company;
+        }
+
+        // Fall back to the DB-flagged default, then first active
         return static::where('is_default', true)->where('is_active', true)->first()
             ?? static::where('is_active', true)->first();
+    }
+
+    /**
+     * Set the current company for this user's session only (no DB change).
+     */
+    public static function setForSession(int $companyId): void
+    {
+        session(['selected_company_id' => $companyId]);
+    }
+
+    /**
+     * Get the ID for the current session company (for convenience).
+     */
+    public static function currentId(): ?int
+    {
+        return static::getDefault()?->id;
     }
 }

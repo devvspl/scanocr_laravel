@@ -155,6 +155,17 @@ class PermissionSeeder extends Seeder
                 'permission-groups.manage',             // store/destroy permission groups
             ],
 
+            // ── Temp Scanning (Workflow) ───────────────────────────────────
+            // All workflow.temp-scan.* routes are in ALWAYS_ALLOW — access is
+            // gated by role ('Temp Scanner', 'Bill Approval', etc.) at the
+            // menu/nav level, not by granular permissions. This group exists
+            // purely so the Permissions panel UI can display it.
+            'Temp Scanning' => [
+                'temp-scanning.view',                   // index — view/upload temp scans
+                'temp-scanning.create',                 // store main file + supporting files
+                'temp-scanning.delete',                 // destroy scan / support file
+            ],
+
         ];
 
         // ── 3. Create groups & permissions ────────────────────────────────
