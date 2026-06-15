@@ -156,8 +156,6 @@
             border-color: #7f1d1d;
             box-shadow: 0 0 0 3px rgba(127, 29, 29, .08)
         }
-
-        /* Fix Select2 to match input field height exactly */
         .select2-container .select2-selection--single {
             height: 24px !important;
             border: 1px solid #d6d3d1 !important;
@@ -982,17 +980,17 @@
                             </select></div>
                         <div class="grid grid-cols-2 gap-3">
                             <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill Date/Voucher
-                                    Date</label><input type="date" id="bill-date" name="bill_date"
+                                    Date <span class="text-red-500">*</span></label><input type="date" id="bill-date" name="bill_date" required
                                     class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:bg-white outline-none transition-colors w-full">
                             </div>
                             <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill No/Voucher
-                                    No</label><input type="text" id="bill-no" name="bill_no"
+                                    No <span class="text-red-500">*</span></label><input type="text" id="bill-no" name="bill_no" required
                                     placeholder="Enter bill/voucher number"
                                     class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:bg-white outline-none transition-colors w-full">
                             </div>
                         </div>
                         <div><label class="block text-xs font-medium text-stone-600 mb-1">Vendor Name/Exp
-                                Head</label><select id="sel-vendor" name="vendor_id" style="width:100%">
+                                Head <span class="text-red-500">*</span></label><select id="sel-vendor" name="vendor_id" style="width:100%" required>
                                 <option value="">Select Vendor</option>
                             </select></div>
                         <div><label class="block text-xs font-medium text-stone-600 mb-1">Document Name <span

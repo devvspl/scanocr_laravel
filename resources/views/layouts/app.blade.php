@@ -546,7 +546,7 @@
             class="shrink-0 px-6 py-1 border-t border-stone-200
                    flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-400">
             <div class="flex items-center gap-2">
-                <span>© {{ date('Y') }} {{ config('app.name') }} Accounting. All rights reserved.</span>
+                <span>© {{ date('Y') }} {{ config('app.name') }} Application. All rights reserved.</span>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold text-[10px] leading-none">
                     <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/></svg>
                     v1.0 — First Release

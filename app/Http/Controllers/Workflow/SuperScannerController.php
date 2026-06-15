@@ -270,9 +270,9 @@ class SuperScannerController extends Controller
         $request->validate([
             'location'      => 'required|integer|exists:master_work_location,location_id',
             'bill_approver' => 'required|integer|exists:users,id',
-            'bill_date'     => 'nullable|date',
-            'vendor_id'     => 'nullable|integer|exists:master_firm,firm_id',
-            'bill_no'       => 'nullable|string|max:100',
+            'bill_date'     => 'required|date',
+            'vendor_id'     => 'required|integer|exists:master_firm,firm_id',
+            'bill_no'       => 'required|string|max:100',
             'document_name' => 'required|string|max:255',
             'main_file'     => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
         ]);
@@ -429,16 +429,15 @@ class SuperScannerController extends Controller
 
     public function usersSelect(Request $request)
     {
-        $companyId = (int) $request->query('company_id', 0);
-        $q         = $request->query('q', '');
-        $page      = max(1, (int) $request->query('page', 1));
-        $per       = 20;
+        $q    = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per  = 20;
 
         $query = User::where('is_active', true)->orderBy('name');
-        if ($companyId) {
-            $query->where('company_id', $companyId);
+        
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%");
         }
-        if ($q !== '') $query->where('name', 'like', "%{$q}%");
 
         $total   = $query->count();
         $results = $query->offset(($page - 1) * $per)->limit($per)->get(['id', 'name as text']);
@@ -665,4 +664,127 @@ class SuperScannerController extends Controller
             ->orderBy('c.name')
             ->get();
     }
+
+    /**
+     * GET /workflow/super-scanner/company/{company}/scan/{scan}/support-list (AJAX JSON)
+     * Returns the list of supporting files for a scan in company scanning.
+     */
+    public function companySupportList(Company $company, ScanFile $scan)
+    {
+        $this->authorizeCompany($company);
+
+        // Ensure scan belongs to this company
+        if ($scan->Group_Id !== $company->id) {
+            abort(403);
+        }
+
+        $files = DB::table('support_file as sf')
+            ->leftJoin('supp_document_type_master as dt', 'dt.DocTypeId', '=', 'sf.DocTypeId')
+            ->where('sf.Scan_Id', $scan->Scan_Id)
+            ->select(['sf.Support_Id', 'sf.File', 'sf.File_Ext', 'sf.File_Location', 'dt.DocTypeName as doc_type_name'])
+            ->get();
+
+        return response()->json(['data' => $files]);
+    }
+
+    /**
+     * POST /workflow/super-scanner/company/{company}/scan/{scan}/supporting (AJAX JSON)
+     * Upload one supporting file → S3, insert support_file row for company scanning.
+     */
+    public function companyStoreSupporting(Request $request, Company $company, ScanFile $scan, S3Service $s3)
+    {
+        $this->authorizeCompany($company);
+
+        // Ensure scan belongs to this company
+        if ($scan->Group_Id !== $company->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'support_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
+            'doc_type_id' => 'nullable|integer',
+        ]);
+
+        $file = $request->file('support_file');
+        $ext = $file->getClientOriginalExtension();
+        $newName = time() . '.' . $ext;
+
+        $result = $s3->upload($file, self::S3_DIRECT_FOLDER, $newName);
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'message' => 'S3 Upload Error: ' . $result['error']], 422);
+        }
+
+        $docTypeName = null;
+        $docTypeId = $request->input('doc_type_id');
+        if ($docTypeId) {
+            $docTypeName = DB::table('supp_document_type_master')->where('DocTypeId', $docTypeId)->value('DocTypeName');
+        }
+
+        $supportId = DB::table('support_file')->insertGetId([
+            'Scan_Id' => $scan->Scan_Id,
+            'File' => $newName,
+            'File_Ext' => $ext,
+            'File_Location' => $result['url'],
+            'File_Location1' => $result['key'],
+            'DocTypeId' => $docTypeId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'file' => [
+                'Support_Id' => $supportId,
+                'File' => $newName,
+                'File_Ext' => $ext,
+                'File_Location' => $result['url'],
+                'doc_type_name' => $docTypeName,
+            ],
+        ]);
+    }
+
+    /**
+     * DELETE /workflow/super-scanner/company/{company}/scan/{scan}/support/{supportId} (AJAX JSON)
+     * Delete a supporting file for company scanning.
+     */
+    public function companyDestroySupport(Company $company, ScanFile $scan, int $supportId)
+    {
+        $this->authorizeCompany($company);
+
+        // Ensure scan belongs to this company
+        if ($scan->Group_Id !== $company->id) {
+            abort(403);
+        }
+
+        DB::table('support_file')
+            ->where('Support_Id', $supportId)
+            ->where('Scan_Id', $scan->Scan_Id)
+            ->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * GET /workflow/super-scanner/select/doc-types?q=&page=
+     * Paginated, searchable doc-type list for Select2.
+     */
+    public function docTypesSelect(Request $request)
+    {
+        $q    = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per  = 20;
+
+        $query = DB::table('supp_document_type_master')
+            ->where('IsActive', 1)
+            ->orderBy('DocTypeName');
+
+        if ($q !== '') {
+            $query->where('DocTypeName', 'like', "%{$q}%");
+        }
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['DocTypeId as id', 'DocTypeName as text']);
+
+        return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
+    }
 }
+

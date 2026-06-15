@@ -264,7 +264,7 @@
             <div class="err-left-sub">@yield('description')</div>
         </div>
 
-        <div class="err-left-footer">© {{ date('Y') }} {{ config('app.name') }} Accounting</div>
+        <div class="err-left-footer">© {{ date('Y') }} {{ config('app.name') }} Application</div>
     </div>
 
     {{-- ── RIGHT PANE ── --}}

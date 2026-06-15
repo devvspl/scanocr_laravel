@@ -384,9 +384,9 @@ class DirectScannerController extends Controller
         $request->validate([
             'location' => 'required|integer|exists:master_work_location,location_id',
             'bill_approver' => 'required|integer|exists:users,id',
-            'bill_date' => 'nullable|date',
-            'vendor_id' => 'nullable|integer|exists:master_firm,firm_id',
-            'bill_no' => 'nullable|string|max:100',
+            'bill_date' => 'required|date',
+            'vendor_id' => 'required|integer|exists:master_firm,firm_id',
+            'bill_no' => 'required|string|max:100',
             'document_name' => 'required|string|max:255',
             'main_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
         ]);

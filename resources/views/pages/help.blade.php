@@ -149,7 +149,7 @@
     {{-- Footer --}}
     <footer class="py-6 text-center text-xs text-stone-400">
         <div class="flex items-center justify-center gap-4">
-            <span>© {{ date('Y') }} {{ config('app.name') }} Accounting</span>
+            <span>© {{ date('Y') }} {{ config('app.name') }} Application</span>
             <a href="{{ route('privacy') }}" class="hover:text-stone-600">Privacy</a>
             <a href="{{ route('terms') }}" class="hover:text-stone-600">Terms</a>
         </div>

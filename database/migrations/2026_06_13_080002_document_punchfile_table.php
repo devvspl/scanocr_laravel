@@ -236,7 +236,7 @@ return new class extends Migration
                 // Payment
                 $table->unsignedInteger('Payment_Amount')->nullable();
 
-                // Accounting
+                // Application
                 $table->string('account_group', 200)->nullable();
                 $table->string('account', 200)->nullable();
                 $table->string('favouring', 200)->nullable();
