@@ -166,6 +166,14 @@ class PermissionSeeder extends Seeder
                 'temp-scanning.delete',                 // destroy scan / support file
             ],
 
+            // ── Super Scanner (Workflow) ──────────────────────────────────
+            // All workflow.super-scanner.* routes are in ALWAYS_ALLOW — gated
+            // by 'Super Scanner' role at menu level.
+            'Super Scanner' => [
+                'super-scanner.view',                   // index — company-wise summary
+                'super-scanner.export',                 // export excel / pdf
+            ],
+
             // ── Direct Scanning (Workflow) ──────────────────────────────────
             // All workflow.direct-scan.* routes are in ALWAYS_ALLOW — access is
             // gated by role ('Direct Scanning', 'Bill Approval', etc.) at the

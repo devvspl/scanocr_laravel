@@ -254,6 +254,16 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\TempScannerController::class, 'destroySupport'])->name('support.destroy');
         });
 
+        // ── Super Scanner (summary dashboard for Super Scanner role) ──────────────
+        Route::prefix('super-scanner')->name('super-scanner.')->group(function () {
+            Route::get('/',               [\App\Http\Controllers\Workflow\SuperScannerController::class, 'index'])       ->name('index');
+            Route::get('/data',           [\App\Http\Controllers\Workflow\SuperScannerController::class, 'data'])        ->name('data');
+            Route::get('/totals',         [\App\Http\Controllers\Workflow\SuperScannerController::class, 'totals'])      ->name('totals');
+            Route::get('/detail',         [\App\Http\Controllers\Workflow\SuperScannerController::class, 'detail'])      ->name('detail');
+            Route::get('/export/excel',   [\App\Http\Controllers\Workflow\SuperScannerController::class, 'exportExcel']) ->name('export.excel');
+            Route::get('/export/pdf',     [\App\Http\Controllers\Workflow\SuperScannerController::class, 'exportPdf'])   ->name('export.pdf');
+        });
+
         // Direct Scanner
         Route::prefix('direct-scan')->name('direct-scan.')->group(function () {
             Route::get('/',              [\App\Http\Controllers\Workflow\DirectScannerController::class, 'index'])                     ->name('index');

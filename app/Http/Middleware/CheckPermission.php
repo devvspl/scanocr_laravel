@@ -52,6 +52,13 @@ class CheckPermission
         'master.import.templates.delete',
         'master.import.api-connections.test',
         'master.import.preview',
+        // Workflow — Super Scanner (gated by role)
+        'workflow.super-scanner.index',
+        'workflow.super-scanner.data',
+        'workflow.super-scanner.totals',
+        'workflow.super-scanner.detail',
+        'workflow.super-scanner.export.excel',
+        'workflow.super-scanner.export.pdf',
         // Workflow — Temp Scanning (gated by role, not granular permissions)
         'workflow.temp-scan.index',
         'workflow.temp-scan.store',
