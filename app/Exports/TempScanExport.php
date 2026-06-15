@@ -8,15 +8,19 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use Maatwebsite\Excel\Events\AfterSheet;
 
 class TempScanExport implements
     FromCollection,
     WithHeadings,
     WithStyles,
-    ShouldAutoSize
+    ShouldAutoSize,
+    WithEvents
 {
     public function __construct(private Collection $rows) {}
 
@@ -48,13 +52,51 @@ class TempScanExport implements
 
     public function styles(Worksheet $sheet): array
     {
+        $lastRow = $this->rows->count() + 1; // +1 for heading
+        $lastColumn = 'H'; // 8 columns (A to H)
+
+        // Apply borders to all data area
+        $sheet->getStyle("A1:{$lastColumn}{$lastRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ]);
+
         return [
+            // Header row style
             1 => [
                 'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
-                'fill'      => ['fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['argb' => 'FF7F1D1D']],
+                'fill'      => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF7F1D1D']
+                ],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ],
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                
+                // Add striped rows (alternating colors) - starting from row 2 (first data row)
+                $lastRow = $this->rows->count() + 1;
+                for ($row = 2; $row <= $lastRow; $row++) {
+                    if ($row % 2 == 0) { // Even rows
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                            'fill' => [
+                                'fillType'   => Fill::FILL_SOLID,
+                                'startColor' => ['argb' => 'FFF9FAFB'], // Light gray
+                            ],
+                        ]);
+                    }
+                }
+            },
         ];
     }
 }

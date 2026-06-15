@@ -61,7 +61,7 @@
             @endforeach
             <tr>
                 <td></td>
-                <td>GRAND TOTAL</td>
+                <td>Grand Total</td>
                 <td>{{ $rows->sum('old_total_scan') }}</td>
                 <td>{{ $rows->sum('old_pending') }}</td>
                 <td>{{ $rows->sum('old_approved') }}</td>
