@@ -266,7 +266,8 @@ const dt = $('#summaryTable').DataTable({
     dom: 'rt',
     columns: [
         { data: 'DT_RowIndex',   orderable: false, searchable: false, className: 'text-center', width: '40px' },
-        { data: 'company_name',  defaultContent: '—' },
+        { data: 'company_name',  defaultContent: '—',
+          render: (d,t,r) => t==='display' ? `<a href="/workflow/super-scanner/company/${r.company_id}" class="text-red-900 hover:text-red-700 font-medium hover:underline">${esc(d)}</a>` : d },
         { data: 'total_scan',    orderable: true,  className: 'text-center',
           render: (d,t,r) => t==='display' ? numCell(d, r.company_id, r.company_name, 'total_scan') : d },
         { data: 'pending',       orderable: true,  className: 'text-center',

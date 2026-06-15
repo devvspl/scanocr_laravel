@@ -262,6 +262,21 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/detail',         [\App\Http\Controllers\Workflow\SuperScannerController::class, 'detail'])      ->name('detail');
             Route::get('/export/excel',   [\App\Http\Controllers\Workflow\SuperScannerController::class, 'exportExcel']) ->name('export.excel');
             Route::get('/export/pdf',     [\App\Http\Controllers\Workflow\SuperScannerController::class, 'exportPdf'])   ->name('export.pdf');
+            
+            // Company-wise scanning management
+            Route::get('/company/{company}',                   [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyView'])              ->name('company');
+            Route::get('/company/{company}/scans-data',        [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyScansData'])         ->name('company.scans-data');
+            Route::get('/company/{company}/pending-naming',    [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyPendingNamingData']) ->name('company.pending-naming');
+            Route::get('/company/{company}/pending-verify',    [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyPendingVerifyData']) ->name('company.pending-verify');
+            Route::get('/company/{company}/tab-counts',        [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyTabCounts'])         ->name('company.tab-counts');
+            Route::post('/company/{company}/scan',             [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyScan'])              ->name('company.scan');
+            Route::post('/company/{company}/verify-document',  [\App\Http\Controllers\Workflow\SuperScannerController::class, 'verifyDocument'])           ->name('company.verify-document');
+            
+            // Select2 endpoints for company scanning
+            Route::get('/select/locations',       [\App\Http\Controllers\Workflow\SuperScannerController::class, 'locationsSelect'])      ->name('select.locations');
+            Route::get('/select/bill-approvers',  [\App\Http\Controllers\Workflow\SuperScannerController::class, 'billApproversSelect']) ->name('select.bill-approvers');
+            Route::get('/select/vendors',         [\App\Http\Controllers\Workflow\SuperScannerController::class, 'vendorsSelect'])        ->name('select.vendors');
+            Route::get('/select/users',           [\App\Http\Controllers\Workflow\SuperScannerController::class, 'usersSelect'])          ->name('select.users');
         });
 
         // Direct Scanner

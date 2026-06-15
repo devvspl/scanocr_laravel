@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Workflow;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\FinancialYear;
+use App\Models\Location;
+use App\Models\User;
+use App\Models\ScanFile;
 use App\Services\UserAccessService;
+use App\Services\S3Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +19,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SuperScannerController extends Controller
 {
+    private const S3_DIRECT_FOLDER = 'uploads/direct';
+
     /**
      * GET /workflow/super-scanner
-     * Company-wise scan summary table for Super Scanner role.
      */
     public function index()
     {
@@ -25,9 +30,424 @@ class SuperScannerController extends Controller
     }
 
     /**
-     * GET /workflow/super-scanner/data  (AJAX — server-side DataTables)
-     * Returns one row per company with aggregated scan counts.
+     * GET /workflow/super-scanner/{company}
+     * Company-wise detailed scanning management view.
      */
+    public function companyView(Company $company)
+    {
+        $user         = Auth::user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
+
+        if (!$companies->contains('id', $company->id)) {
+            abort(403);
+        }
+
+        return view('panel.workflow.super-scanner.company', compact('company'));
+    }
+
+    /**
+     * GET /workflow/super-scanner/{company}/scans-data  (AJAX DataTables)
+     * All scans for this company with tab + filter support.
+     */
+    public function companyScansData(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $fyId = FinancialYear::currentId();
+        $tab  = $request->input('tab', 'all');
+
+        $query = DB::table('scan_file as s')
+            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->leftJoin('users as u',   'u.id',  '=', 's.Temp_Scan_By')
+            ->leftJoin('users as apv', 'apv.id', '=', 's.Bill_Approver')
+            ->where('s.Group_Id', $company->id)
+            ->where('s.Temp_Scan', 'Y')
+            ->where('s.Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('s.year_id', $fyId))
+            ->select([
+                's.Scan_Id',
+                'l.location_name',
+                's.File',
+                's.File_Location',
+                's.File_Ext',
+                's.Temp_Scan_Date',
+                's.Scan_Complete',
+                's.document_verified',
+                's.Final_Submit',
+                's.Bill_Approved',
+                's.temp_scan_reject',
+                'u.name   as scanned_by',
+                'apv.name as approver_name',
+                's.Bill_Approver_Remark',
+            ]);
+
+        // Tab filter
+        switch ($tab) {
+            case 'pending':
+                $query->where('s.Bill_Approved', 'N')
+                      ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
+                break;
+            case 'approved':
+                $query->where('s.Bill_Approved', 'Y');
+                break;
+            case 'rejected':
+                $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')->orWhere('s.temp_scan_reject', 'Y'));
+                break;
+        }
+
+        // Scanned by filter
+        if ($request->filled('scanned_by')) {
+            $query->where('s.Temp_Scan_By', $request->input('scanned_by'));
+        }
+
+        // Date range filters
+        if ($request->filled('from_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '>=', $request->input('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '<=', $request->input('to_date'));
+        }
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('Temp_Scan_Date', fn($r) => $r->Temp_Scan_Date
+                ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y')
+                : '—')
+            ->addColumn('status_badge', function ($r) {
+                if ($r->temp_scan_reject === 'Y' || $r->Bill_Approved === 'R') {
+                    return '<span class="badge-rejected">Rejected</span>';
+                }
+                return match ($r->Bill_Approved) {
+                    'Y' => '<span class="badge-approved">Approved</span>',
+                    default => '<span class="badge-pending">Pending</span>',
+                };
+            })
+            ->addColumn('actions', fn($r) =>
+                '<div class="dt-actions" data-id="' . $r->Scan_Id . '" data-file="' . e($r->File) . '" data-url="' . e($r->File_Location) . '"></div>'
+            )
+            ->rawColumns(['status_badge', 'actions'])
+            ->make(true);
+    }
+
+    /**
+     * GET /workflow/super-scanner/{company}/pending-naming  (AJAX DataTables)
+     * Temp scanned, not yet named (Scan_Complete = N).
+     */
+    public function companyPendingNamingData(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $fyId = FinancialYear::currentId();
+
+        $query = DB::table('scan_file as s')
+            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->leftJoin('users as u', 'u.id', '=', 's.Temp_Scan_By')
+            ->where('s.Group_Id', $company->id)
+            ->where('s.Temp_Scan', 'Y')
+            ->where('s.Scan_Complete', 'N')
+            ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'))
+            ->where('s.Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('s.year_id', $fyId));
+
+        // Date filter
+        if ($request->filled('from_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '>=', $request->input('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '<=', $request->input('to_date'));
+        }
+
+        $query->select([
+            's.Scan_Id',
+            'l.location_name',
+            's.File',
+            's.File_Location',
+            's.File_Ext',
+            's.Temp_Scan_Date',
+            'u.name as scanned_by',
+        ]);
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('Temp_Scan_Date', fn($r) => $r->Temp_Scan_Date
+                ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y')
+                : '—')
+            ->addColumn('actions', fn($r) =>
+                '<div class="dt-actions" data-id="' . $r->Scan_Id . '" data-file="' . e($r->File) . '" data-url="' . e($r->File_Location) . '"></div>'
+            )
+            ->rawColumns(['actions'])
+            ->make(true);
+    }
+
+    /**
+     * GET /workflow/super-scanner/{company}/pending-verify  (AJAX DataTables)
+     * Temp scanned, named but not yet verified (document_verified = N).
+     */
+    public function companyPendingVerifyData(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $fyId = FinancialYear::currentId();
+
+        $query = DB::table('scan_file as s')
+            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->leftJoin('users as u', 'u.id', '=', 's.Temp_Scan_By')
+            ->where('s.Group_Id', $company->id)
+            ->where('s.Temp_Scan', 'Y')
+            ->where('s.Scan_Complete', 'Y')
+            ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'))
+            ->where(fn($q) => $q->whereNull('s.document_verified')->orWhere('s.document_verified', 'N'))
+            ->where('s.Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('s.year_id', $fyId));
+
+        // Date filter
+        if ($request->filled('from_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '>=', $request->input('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('s.Temp_Scan_Date', '<=', $request->input('to_date'));
+        }
+
+        $query->select([
+            's.Scan_Id',
+            'l.location_name',
+            's.File',
+            's.File_Location',
+            's.File_Ext',
+            's.Temp_Scan_Date',
+            's.Document_name',
+            'u.name as scanned_by',
+        ]);
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('Temp_Scan_Date', fn($r) => $r->Temp_Scan_Date
+                ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y')
+                : '—')
+            ->addColumn('actions', fn($r) =>
+                '<div class="dt-actions" data-id="' . $r->Scan_Id . '" data-file="' . e($r->File) . '" data-url="' . e($r->File_Location) . '"></div>'
+            )
+            ->rawColumns(['actions'])
+            ->make(true);
+    }
+
+    /**
+     * GET /workflow/super-scanner/{company}/tab-counts  (AJAX JSON)
+     */
+    public function companyTabCounts(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $fyId = FinancialYear::currentId();
+
+        $base = DB::table('scan_file')
+            ->where('Group_Id', $company->id)
+            ->where('Temp_Scan', 'Y')
+            ->where('Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('year_id', $fyId))
+            ->when($request->filled('from_date'), fn($q) => $q->whereDate('Temp_Scan_Date', '>=', $request->input('from_date')))
+            ->when($request->filled('to_date'),   fn($q) => $q->whereDate('Temp_Scan_Date', '<=', $request->input('to_date')));
+
+        return response()->json([
+            'all'              => (clone $base)->count(),
+            'pending'          => (clone $base)->where('Bill_Approved', 'N')->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))->count(),
+            'approved'         => (clone $base)->where('Bill_Approved', 'Y')->count(),
+            'rejected'         => (clone $base)->where(fn($q) => $q->where('Bill_Approved', 'R')->orWhere('temp_scan_reject', 'Y'))->count(),
+            'pending_naming'   => (clone $base)->where('Scan_Complete', 'N')->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))->count(),
+            'pending_verify'   => (clone $base)->where('Scan_Complete', 'Y')->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))->where(fn($q) => $q->whereNull('document_verified')->orWhere('document_verified', 'N'))->count(),
+        ]);
+    }
+
+    /**
+     * POST /workflow/super-scanner/{company}/scan  (AJAX JSON)
+     * Super Admin directly scans a document for a company.
+     */
+    public function companyScan(Request $request, Company $company, S3Service $s3)
+    {
+        $this->authorizeCompany($company);
+
+        $request->validate([
+            'location'      => 'required|integer|exists:master_work_location,location_id',
+            'bill_approver' => 'required|integer|exists:users,id',
+            'bill_date'     => 'nullable|date',
+            'vendor_id'     => 'nullable|integer|exists:master_firm,firm_id',
+            'bill_no'       => 'nullable|string|max:100',
+            'document_name' => 'required|string|max:255',
+            'main_file'     => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
+        ]);
+
+        $file    = $request->file('main_file');
+        $ext     = $file->getClientOriginalExtension();
+        $newName = time() . '.' . $ext;
+
+        $result = $s3->upload($file, self::S3_DIRECT_FOLDER, $newName);
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'message' => 'S3 Upload Error: ' . $result['error']], 422);
+        }
+
+        $scan = ScanFile::create([
+            'Group_Id'            => $company->id,
+            'year_id'             => FinancialYear::currentId(),
+            'Location'            => $request->input('location'),
+            'Bill_Approver'       => $request->input('bill_approver'),
+            'Scan_By'             => Auth::id(),
+            'Temp_Scan_By'        => Auth::id(),
+            'Temp_Scan'           => 'Y',
+            'bill_voucher_date'   => $request->input('bill_date'),
+            'firm_id'             => $request->input('vendor_id'),
+            'bill_no_voucher_no'  => $request->input('bill_no'),
+            'Document_name'       => $request->input('document_name'),
+            'Scan_Complete'       => 'N',
+            'DocType_Id'          => 0,
+            'department_id'       => 0,
+            'File'                => $newName,
+            'File_Ext'            => $ext,
+            'File_Location'       => $result['url'],
+            'File_Location1'      => $result['key'],
+            'Year'                => date('Y'),
+            'Scan_Date'           => now(),
+            'Temp_Scan_Date'      => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'scan'    => [
+                'id'            => $scan->Scan_Id,
+                'file'          => $scan->File,
+                'file_url'      => $scan->File_Location,
+                'document_name' => $scan->Document_name,
+                'scan_date'     => \Carbon\Carbon::parse($scan->Temp_Scan_Date)->format('d M Y H:i'),
+            ],
+        ]);
+    }
+
+    /**
+     * POST /workflow/super-scanner/{company}/verify-document  (AJAX JSON)
+     * Verify a scanned document and set received date.
+     */
+    public function verifyDocument(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $request->validate([
+            'scan_id'                => 'required|integer|exists:scan_file,Scan_Id',
+            'document_received_date' => 'required|date',
+        ]);
+
+        $scanId               = $request->input('scan_id');
+        $documentReceivedDate = $request->input('document_received_date');
+        $userId               = Auth::id();
+
+        // Ensure scan belongs to this company
+        $scan = DB::table('scan_file')
+            ->where('Scan_Id', $scanId)
+            ->where('Group_Id', $company->id)
+            ->first();
+
+        if (!$scan) {
+            abort(403);
+        }
+
+        DB::table('scan_file')
+            ->where('Scan_Id', $scanId)
+            ->update([
+                'document_verified'      => 'Y',
+                'document_verified_by'   => $userId,
+                'document_verified_date' => date('Y-m-d'),
+                'document_received_date' => $documentReceivedDate,
+            ]);
+
+        return response()->json(['success' => true, 'message' => 'Document verified successfully.']);
+    }
+
+    // ── Select2 endpoints ─────────────────────────────────────────────────────
+
+    public function locationsSelect(Request $request)
+    {
+        $q    = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per  = 20;
+
+        $query = Location::active()->orderBy('location_name');
+        if ($q !== '') {
+            $query->where(fn($qb) => $qb->where('location_name', 'like', "%{$q}%")->orWhere('location_code', 'like', "%{$q}%"));
+        }
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['location_id as id', 'location_name as text']);
+
+        return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
+    }
+
+    public function billApproversSelect(Request $request)
+    {
+        $locationId = (int) $request->query('location_id', 0);
+        $q          = $request->query('q', '');
+        $page       = max(1, (int) $request->query('page', 1));
+        $per        = 20;
+
+        $query = User::role('Bill Approval')->where('is_active', true)->orderBy('name');
+
+        if ($locationId) {
+            $query->where(fn($qb) =>
+                $qb->whereHas('locationAccess', fn($la) => $la->where('location_id', $locationId)->where('has_access', true))
+                   ->orWhereDoesntHave('locationAccess')
+            );
+        }
+
+        if ($q !== '') $query->where('name', 'like', "%{$q}%");
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['id', 'name as text']);
+
+        return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
+    }
+
+    public function vendorsSelect(Request $request)
+    {
+        $q    = $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
+        $per  = 20;
+
+        $query = \App\Models\MasterFirm::active()->vendors()->orderBy('firm_name');
+        if ($q !== '') {
+            $query->where(fn($sub) => $sub->where('firm_name', 'like', "%{$q}%")->orWhere('firm_code', 'like', "%{$q}%"));
+        }
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['firm_id as id', 'firm_name', 'firm_code'])
+            ->map(fn($f) => [
+                'id'             => $f->id,
+                'text'           => $f->firm_code ? "{$f->firm_name} ({$f->firm_code})" : $f->firm_name,
+                'firm_name_clean' => preg_replace('/[^A-Za-z0-9 ]/', '', strtoupper($f->firm_name)),
+            ]);
+
+        return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
+    }
+
+    public function usersSelect(Request $request)
+    {
+        $companyId = (int) $request->query('company_id', 0);
+        $q         = $request->query('q', '');
+        $page      = max(1, (int) $request->query('page', 1));
+        $per       = 20;
+
+        $query = User::where('is_active', true)->orderBy('name');
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
+        if ($q !== '') $query->where('name', 'like', "%{$q}%");
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['id', 'name as text']);
+
+        return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
+    }
+
+    // ── Existing summary methods ───────────────────────────────────────────────
+
     public function data(Request $request)
     {
         $user         = Auth::user();
@@ -35,12 +455,10 @@ class SuperScannerController extends Controller
         $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
         $companyIds   = $companies->pluck('id')->toArray();
 
-        $fyId       = FinancialYear::currentId();
-        $fromDate   = $request->input('from_date');
-        $toDate     = $request->input('to_date');
+        $fyId     = FinancialYear::currentId();
+        $fromDate = $request->input('from_date');
+        $toDate   = $request->input('to_date');
 
-        // Build a subquery for each metric using conditional aggregation.
-        // All counts are scoped to Temp_Scan = 'Y' and Is_Deleted = 'N'
         $rows = DB::table('companies as c')
             ->whereIn('c.id', $companyIds)
             ->where('c.is_active', true)
@@ -48,26 +466,18 @@ class SuperScannerController extends Controller
                 $join->on('s.Group_Id', '=', 'c.id')
                      ->where('s.Temp_Scan', '=', 'Y')
                      ->where('s.Is_Deleted', '=', 'N')
-                     ->when($fyId, fn($j) => $j->where('s.year_id', $fyId))
+                     ->when($fyId,     fn($j) => $j->where('s.year_id', $fyId))
                      ->when($fromDate, fn($j) => $j->whereDate('s.Temp_Scan_Date', '>=', $fromDate))
                      ->when($toDate,   fn($j) => $j->whereDate('s.Temp_Scan_Date', '<=', $toDate));
             })
             ->select([
                 'c.id   as company_id',
                 'c.name as company_name',
-
-                // ── Scanning Process ────────────────────────────────────────
-                DB::raw("COUNT(s.Scan_Id)                                                            AS total_scan"),
+                DB::raw("COUNT(s.Scan_Id) AS total_scan"),
                 DB::raw("SUM(CASE WHEN s.Bill_Approved = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) AS pending"),
-                DB::raw("SUM(CASE WHEN s.Bill_Approved = 'Y' THEN 1 ELSE 0 END)                      AS approved"),
+                DB::raw("SUM(CASE WHEN s.Bill_Approved = 'Y' THEN 1 ELSE 0 END) AS approved"),
                 DB::raw("SUM(CASE WHEN s.Bill_Approved = 'R' OR s.temp_scan_reject = 'Y' THEN 1 ELSE 0 END) AS rejected"),
-
-                // ── Pending for Naming ──────────────────────────────────────
-                // Temp_Scan=Y, Scan_Complete=N, temp_scan_reject=N
                 DB::raw("SUM(CASE WHEN s.Scan_Complete = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) AS pending_naming"),
-
-                // ── Pending for Verification ────────────────────────────────
-                // Temp_Scan=Y, Scan_Complete=Y, temp_scan_reject=N, document_verified=N
                 DB::raw("SUM(CASE WHEN s.Scan_Complete = 'Y' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') AND (s.document_verified IS NULL OR s.document_verified = 'N') THEN 1 ELSE 0 END) AS pending_verification"),
             ])
             ->groupBy('c.id', 'c.name')
@@ -76,15 +486,11 @@ class SuperScannerController extends Controller
 
         return DataTables::of($rows)
             ->addIndexColumn()
-            ->addColumn('actions', fn($r) => '')   // placeholder — rendered in JS
+            ->addColumn('actions', fn($r) => '')
             ->rawColumns(['actions'])
             ->make(true);
     }
 
-    /**
-     * GET /workflow/super-scanner/totals  (AJAX JSON)
-     * Grand-total row across all allowed companies.
-     */
     public function totals(Request $request)
     {
         $user         = Auth::user();
@@ -114,10 +520,6 @@ class SuperScannerController extends Controller
         ]);
     }
 
-    /**
-     * GET /workflow/super-scanner/detail  (AJAX — server-side DataTables)
-     * Returns scan records for a specific company + metric combination for the modal.
-     */
     public function detail(Request $request)
     {
         $user         = Auth::user();
@@ -131,34 +533,30 @@ class SuperScannerController extends Controller
         $fromDate  = $request->input('from_date');
         $toDate    = $request->input('to_date');
 
-        // Security: ensure requested company is within allowed list
         if ($companyId && !in_array($companyId, $companyIds, true)) {
             abort(403);
         }
 
         $query = DB::table('scan_file as s')
             ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
-            ->leftJoin('users as u',                'u.id',          '=', 's.Temp_Scan_By')
-            ->leftJoin('users as apv',              'apv.id',        '=', 's.Bill_Approver')
-            ->leftJoin('companies as c',            'c.id',          '=', 's.Group_Id')
+            ->leftJoin('users as u',   'u.id',  '=', 's.Temp_Scan_By')
+            ->leftJoin('users as apv', 'apv.id', '=', 's.Bill_Approver')
+            ->leftJoin('companies as c', 'c.id', '=', 's.Group_Id')
             ->where('s.Temp_Scan', 'Y')
             ->where('s.Is_Deleted', 'N')
-            ->when($fyId,      fn($q) => $q->where('s.year_id', $fyId))
-            ->when($fromDate,  fn($q) => $q->whereDate('s.Temp_Scan_Date', '>=', $fromDate))
-            ->when($toDate,    fn($q) => $q->whereDate('s.Temp_Scan_Date', '<=', $toDate));
+            ->when($fyId,     fn($q) => $q->where('s.year_id', $fyId))
+            ->when($fromDate, fn($q) => $q->whereDate('s.Temp_Scan_Date', '>=', $fromDate))
+            ->when($toDate,   fn($q) => $q->whereDate('s.Temp_Scan_Date', '<=', $toDate));
 
-        // Scope to company if provided
         if ($companyId) {
             $query->where('s.Group_Id', $companyId);
         } else {
             $query->whereIn('s.Group_Id', $companyIds);
         }
 
-        // Apply metric filter
         switch ($metric) {
             case 'pending':
-                $query->where('s.Bill_Approved', 'N')
-                      ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
+                $query->where('s.Bill_Approved', 'N')->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
                 break;
             case 'approved':
                 $query->where('s.Bill_Approved', 'Y');
@@ -167,70 +565,37 @@ class SuperScannerController extends Controller
                 $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')->orWhere('s.temp_scan_reject', 'Y'));
                 break;
             case 'pending_naming':
-                $query->where('s.Scan_Complete', 'N')
-                      ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
+                $query->where('s.Scan_Complete', 'N')->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
                 break;
             case 'pending_verification':
-                $query->where('s.Scan_Complete', 'Y')
-                      ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'))
-                      ->where(fn($q) => $q->whereNull('s.document_verified')->orWhere('s.document_verified', 'N'));
+                $query->where('s.Scan_Complete', 'Y')->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'))->where(fn($q) => $q->whereNull('s.document_verified')->orWhere('s.document_verified', 'N'));
                 break;
-            // 'total_scan' → no extra filter
         }
 
         $query->select([
-            's.Scan_Id',
-            'c.name as company_name',
-            'l.location_name',
-            's.File',
-            's.File_Location',
-            's.File_Ext',
-            's.Temp_Scan_Date',
-            's.Scan_Date',
-            's.Scan_Complete',
-            's.document_verified',
-            's.Final_Submit',
-            's.Bill_Approved',
-            's.temp_scan_reject',
-            'u.name   as scanned_by',
-            'apv.name as approver_name',
-            's.Bill_Approver_Remark',
+            's.Scan_Id', 'c.name as company_name', 'l.location_name', 's.File', 's.File_Location', 's.File_Ext',
+            's.Temp_Scan_Date', 's.Scan_Date', 's.Scan_Complete', 's.document_verified', 's.Final_Submit',
+            's.Bill_Approved', 's.temp_scan_reject', 'u.name as scanned_by', 'apv.name as approver_name', 's.Bill_Approver_Remark',
         ]);
 
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('Temp_Scan_Date', fn($r) => $r->Temp_Scan_Date
-                ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y')
-                : '—')
-            ->editColumn('Scan_Date', fn($r) => $r->Scan_Date
-                ? \Carbon\Carbon::parse($r->Scan_Date)->format('d M Y')
-                : '—')
+            ->editColumn('Temp_Scan_Date', fn($r) => $r->Temp_Scan_Date ? \Carbon\Carbon::parse($r->Temp_Scan_Date)->format('d M Y') : '—')
+            ->editColumn('Scan_Date',      fn($r) => $r->Scan_Date      ? \Carbon\Carbon::parse($r->Scan_Date)->format('d M Y')      : '—')
             ->addColumn('status_badge', function ($r) {
-                if ($r->temp_scan_reject === 'Y' || $r->Bill_Approved === 'R') {
-                    return '<span class="badge-rejected">Rejected</span>';
-                }
+                if ($r->temp_scan_reject === 'Y' || $r->Bill_Approved === 'R') return '<span class="badge-rejected">Rejected</span>';
                 return match ($r->Bill_Approved) {
                     'Y' => '<span class="badge-approved">Approved</span>',
                     default => '<span class="badge-pending">Pending</span>',
                 };
             })
             ->addColumn('file_preview', fn($r) =>
-                '<a href="' . e($r->File_Location) . '" target="_blank"
-                    class="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                    </svg>' . e($r->File) . '</a>'
+                '<a href="' . e($r->File_Location) . '" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">' . e($r->File) . '</a>'
             )
             ->rawColumns(['status_badge', 'file_preview'])
             ->make(true);
     }
 
-    /**
-     * GET /workflow/super-scanner/export/excel
-     */
     public function exportExcel(Request $request)
     {
         $data     = $this->summaryExportData($request);
@@ -238,9 +603,6 @@ class SuperScannerController extends Controller
         return Excel::download(new \App\Exports\SuperScannerExport($data), $fileName);
     }
 
-    /**
-     * GET /workflow/super-scanner/export/pdf
-     */
     public function exportPdf(Request $request)
     {
         $data     = $this->summaryExportData($request);
@@ -256,6 +618,17 @@ class SuperScannerController extends Controller
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    private function authorizeCompany(Company $company): void
+    {
+        $user         = Auth::user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
+
+        if (!$companies->contains('id', $company->id)) {
+            abort(403);
+        }
+    }
 
     private function summaryExportData(Request $request): \Illuminate\Support\Collection
     {
