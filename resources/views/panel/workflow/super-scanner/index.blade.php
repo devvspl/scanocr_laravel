@@ -22,6 +22,17 @@
 .num-cell.zero:hover{background:transparent;color:#d6d3d1}
 /* Grand total row */
 tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem;border-top:2px solid #e7e5e4}
+/* ── Table Footer ─────────────────────────────────────────────── */
+#summaryTable tfoot tr {
+    background:#fafaf9 !important;
+    border-top:2px solid #e7e5e4;
+}
+#summaryTable tfoot td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    font-weight: 600;
+    border-bottom: none;
+}
 /* ── Badges ──────────────────────────────────────────────────── */
 .badge{display:inline-flex;align-items:center;padding:.15rem .5rem;border-radius:9999px;font-size:.6rem;font-weight:600;white-space:nowrap}
 .badge-approved{background:#dcfce7;color:#15803d}.badge-pending{background:#fef9c3;color:#a16207}.badge-rejected{background:#fee2e2;color:#b91c1c}
@@ -117,7 +128,6 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
             <span>entries</span>
         </div>
         <div class="dt-search-wrap">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input type="text" class="dt-search-input" id="dtSearch" placeholder="Search company…">
         </div>
     </div>
@@ -129,7 +139,7 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
                 <tr class="group-header">
                     <th rowspan="2" style="vertical-align:middle">#</th>
                     <th rowspan="2" style="vertical-align:middle;text-align:left">Company</th>
-                    <th colspan="4" style="text-align:center;border-left:2px solid #e7e5e4">Scanning Process</th>
+                    <th colspan="4" style="text-align:center !important ;border-left:2px solid #e7e5e4">Scanning Process</th>
                     <th rowspan="2" style="vertical-align:middle;border-left:2px solid #e7e5e4">Pending<br>for Naming</th>
                     <th rowspan="2" style="vertical-align:middle;border-left:2px solid #e7e5e4">Pending for<br>Verification</th>
                 </tr>
@@ -141,30 +151,37 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
                 </tr>
             </thead>
             <tbody></tbody>
+            <tfoot>
+                <tr class="bg-stone-50 border-t-2 border-stone-200 font-semibold">
+                    <td class="py-3 px-4 text-center text-stone-600 text-xs uppercase tracking-wide" style="text-align: center;">—</td>
+                    <td class="py-3 px-4 text-left text-stone-600 text-xs uppercase tracking-wide font-bold">Grand Total</td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-total">—</span>
+                    </td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-pending">—</span>
+                    </td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-approved">—</span>
+                    </td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-rejected">—</span>
+                    </td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-naming">—</span>
+                    </td>
+                    <td class="py-3 px-4 text-center" style="text-align: center;">
+                        <span class="text-sm text-stone-800" id="gt-verify">—</span>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
-    {{-- Grand total + pagination bar --}}
+    {{-- Pagination bar --}}
     <div class="dt-ctrl-bar border-t border-stone-100 flex-shrink-0">
         <div id="dtInfo" class="dataTables_info"></div>
         <div id="dtPaginate"></div>
-    </div>
-
-    {{-- Grand total summary cards --}}
-    <div id="grandTotalBar" class="px-5 pb-4 pt-1 grid grid-cols-3 sm:grid-cols-6 gap-3 border-t border-stone-100">
-        @foreach([
-            ['id'=>'gt-total',    'label'=>'Total Scans',     'color'=>'stone'],
-            ['id'=>'gt-pending',  'label'=>'Pending',         'color'=>'yellow'],
-            ['id'=>'gt-approved', 'label'=>'Approved',        'color'=>'green'],
-            ['id'=>'gt-rejected', 'label'=>'Rejected',        'color'=>'red'],
-            ['id'=>'gt-naming',   'label'=>'Pend. Naming',    'color'=>'blue'],
-            ['id'=>'gt-verify',   'label'=>'Pend. Verify',    'color'=>'purple'],
-        ] as $card)
-        <div class="bg-stone-50 border border-stone-100 rounded-lg px-3 py-2.5 text-center">
-            <div class="text-lg font-bold text-stone-800" id="{{ $card['id'] }}">—</div>
-            <div class="text-[10px] text-stone-500 mt-0.5">{{ $card['label'] }}</div>
-        </div>
-        @endforeach
     </div>
 </div>
 
@@ -189,7 +206,6 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
                     <span>entries</span>
                 </div>
                 <div class="dt-search-wrap">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <input type="text" class="dt-search-input" id="modalDtSearch" placeholder="Search…">
                 </div>
             </div>

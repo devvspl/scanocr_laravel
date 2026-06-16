@@ -114,7 +114,7 @@ class DocumentAiController extends Controller
         // 5. Update prediction record with results
         $predTypeId  = $result['prediction']['basis_id'] ?? null;
         $confidence  = $result['prediction']['confidence'] ?? 0;
-        $ocrText     = $result['ocr_text'] ?? '';
+        $ocrText     = $this->cleanUtf8String($result['ocr_text'] ?? '');
 
         // 5b. Build reasoning data
         $reasoning = $this->buildReasoning($ocrText, $result['all_scores'] ?? []);
@@ -126,7 +126,7 @@ class DocumentAiController extends Controller
             'prediction_reasoning'    => $reasoning,
             'status'                  => 'predicted',
             'ocr_page_count'          => $result['page_count'] ?? 1,
-            'ocr_page_texts'          => $result['pages'] ?? [],
+            'ocr_page_texts'          => $this->cleanOcrPageTexts($result['pages'] ?? []),
         ]);
 
         // 7. Return JSON
@@ -167,17 +167,21 @@ class DocumentAiController extends Controller
             ? 'confirmed'
             : 'corrected';
 
+        // Clean user remark to prevent UTF-8 encoding issues
+        $userRemark = $request->user_remark ? $this->cleanUtf8String($request->user_remark) : null;
+
         $prediction->update([
             'confirmed_type_id' => $request->basis_id,
-            'user_remark'       => $request->user_remark,
+            'user_remark'       => $userRemark,
             'status'            => $status,
         ]);
 
         // Train AI: save OCR text as new training record
         if ($request->boolean('add_to_training') && !empty($prediction->ocr_text)) {
+            $sampleText = $this->cleanUtf8String(substr($prediction->ocr_text, 0, 5000));
             DocumentTrainingData::create([
                 'document_type_id' => $request->basis_id,
-                'sample_text'      => substr($prediction->ocr_text, 0, 5000),
+                'sample_text'      => $sampleText,
                 'keywords'         => null,
                 'status'           => 'active',
                 'created_by'       => auth()->id(),
@@ -236,9 +240,9 @@ class DocumentAiController extends Controller
 
         $training = DocumentTrainingData::create([
             'document_type_id' => $request->document_type_id,
-            'sample_text'      => $request->sample_text,
-            'keywords'         => $request->keywords,
-            'title_patterns'   => $request->title_patterns,
+            'sample_text'      => $this->cleanUtf8String($request->sample_text),
+            'keywords'         => $request->keywords ? $this->cleanUtf8String($request->keywords) : null,
+            'title_patterns'   => $request->title_patterns ? $this->cleanUtf8String($request->title_patterns) : null,
             'status'           => $request->status,
             'created_by'       => auth()->id(),
         ]);
@@ -264,7 +268,23 @@ class DocumentAiController extends Controller
             'status'         => 'nullable|in:active,inactive',
         ]);
 
-        $training->update($request->only(['sample_text', 'keywords', 'title_patterns', 'status']));
+        $updateData = [];
+        if ($request->has('sample_text') && $request->sample_text !== null) {
+            $updateData['sample_text'] = $this->cleanUtf8String($request->sample_text);
+        }
+        if ($request->has('keywords')) {
+            $updateData['keywords'] = $request->keywords ? $this->cleanUtf8String($request->keywords) : null;
+        }
+        if ($request->has('title_patterns')) {
+            $updateData['title_patterns'] = $request->title_patterns ? $this->cleanUtf8String($request->title_patterns) : null;
+        }
+        if ($request->has('status') && $request->status !== null) {
+            $updateData['status'] = $request->status;
+        }
+
+        if (!empty($updateData)) {
+            $training->update($updateData);
+        }
 
         return response()->json(['success' => true, 'message' => 'Updated.']);
     }
@@ -698,6 +718,8 @@ class DocumentAiController extends Controller
             $ocrText = pathinfo($storedPath, PATHINFO_FILENAME);
         }
 
+        // Clean the OCR text to ensure valid UTF-8
+        $ocrText = $this->cleanUtf8String($ocrText);
         $ocrLower = strtolower($ocrText);
         $ocrHeader = strtolower(substr($ocrText, 0, 500));
 
@@ -747,7 +769,7 @@ class DocumentAiController extends Controller
 
             $allScores[] = [
                 'basis_id'   => $basis['id'],
-                'basis_name' => $basis['name'],
+                'basis_name' => $this->cleanUtf8String($basis['name'] ?? ''),
                 'confidence' => round($finalScore, 2),
             ];
         }
@@ -803,7 +825,8 @@ class DocumentAiController extends Controller
                     $text .= ' ' . implode(' ', $fieldMatches[1] ?? []);
                     $text .= ' ' . implode(' ', $valueMatches[1] ?? []);
                 }
-                return trim($text);
+                // Clean extracted text to ensure valid UTF-8
+                return $this->cleanUtf8String(trim($text));
             }
         }
 
@@ -817,6 +840,8 @@ class DocumentAiController extends Controller
      */
     private function buildReasoning(string $ocrText, array $allScores): array
     {
+        // Clean the OCR text to ensure valid UTF-8 encoding
+        $ocrText = $this->cleanUtf8String($ocrText);
         $ocrLower = strtolower($ocrText);
         $ocrSnippet = substr($ocrText, 0, 500);
 
@@ -836,13 +861,14 @@ class DocumentAiController extends Controller
                 $keywords = array_map('trim', explode(',', $td->keywords));
                 foreach ($keywords as $kw) {
                     if ($kw && str_contains($ocrLower, strtolower($kw))) {
-                        $matchedKeywords[] = $kw;
+                        // Clean keywords as well to ensure valid UTF-8
+                        $matchedKeywords[] = $this->cleanUtf8String($kw);
                     }
                 }
             }
 
             $typeReasoning[] = [
-                'type_name'        => $score['basis_name'],
+                'type_name'        => $this->cleanUtf8String($score['basis_name'] ?? ''),
                 'confidence'       => $score['confidence'],
                 'matched_keywords' => array_unique($matchedKeywords),
                 'keyword_count'    => count(array_unique($matchedKeywords)),
@@ -855,5 +881,46 @@ class DocumentAiController extends Controller
             'ocr_length'     => strlen($ocrText),
             'type_reasoning' => $typeReasoning,
         ];
+    }
+
+    /**
+     * Clean string to ensure valid UTF-8 encoding for JSON serialization.
+     */
+    private function cleanUtf8String(string $input): string
+    {
+        // Remove invalid UTF-8 characters and control characters
+        $cleaned = mb_convert_encoding($input, 'UTF-8', 'UTF-8');
+        
+        // Remove non-printable characters except newline, tab, and carriage return
+        $cleaned = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $cleaned);
+        
+        // Ensure the string is valid UTF-8 and can be JSON encoded
+        if (json_encode($cleaned) === false) {
+            // If still can't encode, remove all non-ASCII characters as fallback
+            $cleaned = preg_replace('/[^\x20-\x7E\x0A\x0D\x09]/', '', $input);
+        }
+        
+        return $cleaned;
+    }
+
+    /**
+     * Clean OCR page texts array to ensure all strings are valid UTF-8.
+     */
+    private function cleanOcrPageTexts(array $pages): array
+    {
+        $cleanedPages = [];
+        foreach ($pages as $key => $page) {
+            if (is_string($page)) {
+                $cleanedPages[$key] = $this->cleanUtf8String($page);
+            } elseif (is_array($page)) {
+                // If page is an array with text content, clean recursively
+                $cleanedPages[$key] = array_map(function($item) {
+                    return is_string($item) ? $this->cleanUtf8String($item) : $item;
+                }, $page);
+            } else {
+                $cleanedPages[$key] = $page;
+            }
+        }
+        return $cleanedPages;
     }
 }

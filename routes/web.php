@@ -273,7 +273,9 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::post('/company/{company}/verify-document',  [\App\Http\Controllers\Workflow\SuperScannerController::class, 'verifyDocument'])           ->name('company.verify-document');
             Route::get('/company/{company}/scan/{scan:Scan_Id}/support-list', [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companySupportList'])    ->name('company.support-list');
             Route::post('/company/{company}/scan/{scan:Scan_Id}/supporting',  [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyStoreSupporting'])->name('company.supporting.store');
+            Route::post('/company/{company}/scan/{scan:Scan_Id}/final-submit', [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyFinalSubmit'])    ->name('company.final-submit');
             Route::delete('/company/{company}/scan/{scan:Scan_Id}/support/{supportId}', [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyDestroySupport'])->name('company.support.destroy');
+            Route::delete('/company/{company}/scan/{scan:Scan_Id}',           [\App\Http\Controllers\Workflow\SuperScannerController::class, 'companyDestroyScan'])   ->name('company.scan.destroy');
             Route::get('/select/doc-types',       [\App\Http\Controllers\Workflow\SuperScannerController::class, 'docTypesSelect'])        ->name('select.doc-types');
             
             // Select2 endpoints for company scanning

@@ -625,7 +625,18 @@ class SuperScannerController extends Controller
         $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
 
         if (!$companies->contains('id', $company->id)) {
-            abort(403);
+            // Better error message with debugging info
+            $message = "You do not have permission to perform this action. ";
+            if (config('app.debug')) {
+                $message .= sprintf(
+                    "(User: %d, Company: %d, SuperAdmin: %s, Allowed: [%s])",
+                    $user->id,
+                    $company->id,
+                    $isSuperAdmin ? 'Yes' : 'No',
+                    $companies->pluck('id')->implode(', ')
+                );
+            }
+            abort(403, $message);
         }
     }
 
@@ -697,7 +708,10 @@ class SuperScannerController extends Controller
 
         // Ensure scan belongs to this company
         if ($scan->Group_Id !== $company->id) {
-            abort(403);
+            return response()->json([
+                'success' => false, 
+                'message' => 'This scan does not belong to the specified company.'
+            ], 403);
         }
 
         $request->validate([
@@ -740,6 +754,48 @@ class SuperScannerController extends Controller
                 'doc_type_name' => $docTypeName,
             ],
         ]);
+    }
+
+    /**
+     * DELETE /workflow/super-scanner/company/{company}/scan/{scan} (AJAX JSON)
+     * Soft-delete a scan for company scanning.
+     */
+    public function companyDestroyScan(Company $company, ScanFile $scan)
+    {
+        $this->authorizeCompany($company);
+
+        if ($scan->Group_Id !== $company->id) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($scan) {
+            DB::table('support_file')->where('Scan_Id', $scan->Scan_Id)->delete();
+            $scan->update([
+                'Is_Deleted'  => 'Y',
+                'Delete_Date' => now(),
+                'Deleted_By'  => Auth::id(),
+            ]);
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * POST /workflow/super-scanner/company/{company}/scan/{scan}/final-submit (AJAX JSON)
+     * Final submit a scan for company scanning.
+     */
+    public function companyFinalSubmit(Company $company, ScanFile $scan)
+    {
+        $this->authorizeCompany($company);
+
+        // Ensure scan belongs to this company
+        if ($scan->Group_Id !== $company->id) {
+            abort(403);
+        }
+
+        $scan->update(['Final_Submit' => 'Y']);
+
+        return response()->json(['success' => true, 'message' => 'Scan submitted for final processing']);
     }
 
     /**

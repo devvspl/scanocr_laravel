@@ -394,7 +394,6 @@
         }
 
         .col-scroll {
-            max-height: calc(100vh - 180px);
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #d6d3d1 transparent
@@ -435,7 +434,7 @@
 
         @media(min-width:1024px) {
             .step2-grid {
-                grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr)
+                grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr)
             }
         }
 
@@ -557,6 +556,43 @@
             align-items: center;
             justify-content: center
         }
+
+        .dt-actions {
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+            justify-content: center
+        }
+
+        .dt-btn {
+            width: 1.65rem;
+            height: 1.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: .325rem;
+            transition: all .15s;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #a8a29e;
+            flex-shrink: 0
+        }
+
+        .dt-btn.blue:hover {
+            background: #eff6ff;
+            color: #2563eb
+        }
+
+        .dt-btn.green:hover {
+            background: #f0fdf4;
+            color: #16a34a
+        }
+
+        .dt-btn.red:hover {
+            background: #fef2f2;
+            color: #dc2626
+        }
     </style>
 @endpush
 
@@ -671,7 +707,7 @@
                             </div>
                         </div>
 
-                        <div id="scanAlert" class="hidden px-3.5 py-2.5 rounded-xl border text-xs mb-4"></div>
+                        <div id="scanAlert" class="hidden px-3.5 py-2.5 rounded-xl border text-xs font-medium mb-4"></div>
 
                         <form id="scanForm" class="flex flex-col gap-3.5">
                             @csrf
@@ -782,6 +818,8 @@
 
         {{-- Tab Content: Step 2 - Supporting Files --}}
         <div class="tab-content wizard-panel" id="scan-step-2" style="display:none">
+            <div class="p-5">
+            {{-- Step banner --}}
             <div
                 class="bg-white border border-stone-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 mb-4 flex-wrap">
                 <div class="flex items-center gap-3 min-w-0">
@@ -807,17 +845,25 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
+                    <button id="btnFinalSubmit"
+                        class="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Final Submit
+                    </button>
                     <button id="btnBackToScanForm"
                         class="h-8 px-3 border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
-                        Back to Form
+                        Back
                     </button>
                 </div>
             </div>
-            <div class="step2-grid">
-                <div class="file-viewer">
+            <div class="step2-grid p-5 pt-0">
+                <div class="file-viewer" style="min-height:520px">
                     <div class="file-viewer-toolbar">
                         <span class="text-[10px] font-semibold text-stone-300 uppercase tracking-wide">Scan Preview</span>
                         <a id="viewerOpenLink" href="#" target="_blank"
@@ -851,7 +897,7 @@
                             </div>
                             <h3 class="text-sm font-semibold text-stone-800">Add Supporting File</h3>
                         </div>
-                        <div id="supportAlert" class="hidden px-3 py-2 rounded-lg border text-xs"></div>
+                        <div id="supportAlert" class="hidden px-3 py-2 rounded-lg border text-xs font-medium"></div>
                         <form id="supportForm" class="flex flex-col gap-3">
                             @csrf
                             <div>
@@ -918,6 +964,7 @@
                     </div>
                 </div>
             </div>
+            </div>{{-- end p-5 --}}
         </div>
 
         {{-- Tab Content: Pending Naming --}}
@@ -1033,7 +1080,7 @@
     <div class="modal-container" id="verifyModal">
         <div class="bg-white rounded-xl p-5 max-w-md">
             <h3 class="text-sm font-semibold text-stone-800 mb-3">Verify Document</h3>
-            <div id="verifyAlert" class="hidden px-3 py-2 rounded-lg border text-xs mb-3"></div>
+            <div id="verifyAlert" class="hidden px-3 py-2 rounded-lg border text-xs font-medium mb-3"></div>
             <form id="verifyForm">
                 <input type="hidden" id="verify-scan-id">
                 <div class="mb-4">
@@ -1067,6 +1114,7 @@
                 tabCounts: `/workflow/super-scanner/company/${COMPANY_ID}/tab-counts`,
                 scan: `/workflow/super-scanner/company/${COMPANY_ID}/scan`,
                 verifyDocument: `/workflow/super-scanner/company/${COMPANY_ID}/verify-document`,
+                finalSubmit: `/workflow/super-scanner/company/${COMPANY_ID}/scan/SCAN_ID/final-submit`,
                 locations: '{{ route("workflow.super-scanner.select.locations") }}',
                 billApprovers: '{{ route("workflow.super-scanner.select.bill-approvers") }}',
                 vendors: '{{ route("workflow.super-scanner.select.vendors") }}',
@@ -1117,21 +1165,25 @@
             // ── Tabs ──────────────────────────────────────────────────────────────────
             $('.tab-btn').on('click', function () {
                 const $btn = $(this);
-                const tab = $btn.data('tab');
+                const tab  = $btn.data('tab');
                 const filter = $btn.data('filter') || '';
+
+                // hide step-2 if visible
+                $('#scan-step-2').hide();
+                // clear viewer
+                $('#fileViewerBody').find('iframe, img').remove();
+                $('#viewerPlaceholder').show();
+                currentScan = null;
+
                 $('.tab-btn').removeClass('active');
                 $btn.addClass('active');
                 $('.tab-content').hide();
                 $(`#tab-${tab}`).show();
-                currentTab = tab;
+                currentTab   = tab;
                 currentFilter = filter;
-                if (tab === 'scans') {
-                    scansTable.ajax.reload();
-                } else if (tab === 'pending-naming') {
-                    pendingNamingTable.ajax.reload();
-                } else if (tab === 'pending-verify') {
-                    pendingVerifyTable.ajax.reload();
-                }
+                if (tab === 'scans')          scansTable.ajax.reload(null, false);
+                else if (tab === 'pending-naming')  pendingNamingTable.ajax.reload(null, false);
+                else if (tab === 'pending-verify')  pendingVerifyTable.ajax.reload(null, false);
             });
 
             // Show Sacnning File tab by default
@@ -1234,8 +1286,40 @@
                     { data: 'status_badge', orderable: false },
                     { data: 'scanned_by', defaultContent: '—' },
                     { data: 'approver_name', defaultContent: '—' },
-                    { data: 'actions', orderable: false, searchable: false },
+                    { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
+                        const canDelete    = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y' || r.Final_Submit !== 'Y');
+                        const canSupport   = (r.Final_Submit !== 'Y');
+                        const scan_date    = r.Temp_Scan_Date || '';
+
+                        let h = '<div class="dt-actions">';
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                              </svg></button>`;
+                        if (canSupport) {
+                            h += `<button class="dt-btn blue btn-add-support" title="Add Supporting Files"
+                                    data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}" data-date="${scan_date}">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                  </svg></button>`;
+                        }
+                        if (r.Final_Submit !== 'Y') {
+                            h += `<button class="dt-btn green btn-final-submit" title="Final Submit" data-id="${r.Scan_Id}">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                  </svg></button>`;
+                        }
+                        if (canDelete) {
+                            h += `<button class="dt-btn red btn-delete-scan" title="Delete" data-id="${r.Scan_Id}">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                  </svg></button>`;
+                        }
+                        return h + '</div>';
+                    }},
                 ],
+                createdRow: function(row) { $(row).find('.dt-actions').parent().css('white-space','nowrap'); },
                 drawCallback: function () {
                     $('#scansTable_wrapper .dataTables_paginate').appendTo('#dtPaginate');
                     $('#scansTable_wrapper .dataTables_info').appendTo('#dtInfo');
@@ -1277,7 +1361,20 @@
                     { data: 'File', defaultContent: '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'scanned_by', defaultContent: '—' },
-                    { data: 'actions', orderable: false, searchable: false },
+                    { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
+                        let h = '<div class="dt-actions">';
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                              </svg></button>`;
+                        h += `<button class="dt-btn blue btn-add-support" title="Add Supporting Files"
+                                data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                              </svg></button>`;
+                        return h + '</div>';
+                    }},
                 ],
                 drawCallback: function () {
                     $('#pendingNamingTable_wrapper .dataTables_paginate').appendTo('#dtPaginatePN');
@@ -1319,7 +1416,19 @@
                     { data: 'Document_name', defaultContent: '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'scanned_by', defaultContent: '—' },
-                    { data: 'actions', orderable: false, searchable: false, render: (d, t, r) => `<button class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="openVerifyModal(${r.Scan_Id})">Verify</button>` },
+                    { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
+                        let h = '<div class="dt-actions">';
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                              </svg></button>`;
+                        h += `<button class="dt-btn green btn-verify-doc" title="Verify Document" data-id="${r.Scan_Id}">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                              </svg></button>`;
+                        return h + '</div>';
+                    }},
                 ],
                 drawCallback: function () {
                     $('#pendingVerifyTable_wrapper .dataTables_paginate').appendTo('#dtPaginatePV');
@@ -1372,7 +1481,8 @@
             // ── Go to Step 2 ──────────────────────────────────────────────────────────
             function goToStep2(scan) {
                 currentScan = scan;
-                $('#tab-scan-document').hide();
+                // hide all tab content, show step 2
+                $('.tab-content').hide();
                 $('#scan-step-2').show();
 
                 // Update banner
@@ -1380,30 +1490,47 @@
                 $('#step2ScanMeta').text(`Scanned: ${scan.scan_date}`);
 
                 // Load file in viewer
-                loadFileViewer(scan.file_url, scan.file);
+                if (scan.file_url) {
+                    loadFileViewer(scan.file_url, scan.file || '');
+                }
+
+                // Re-initialise select2 on doc-type (it was on a hidden element before)
+                if ($('#sel-doctype').data('select2')) {
+                    $('#sel-doctype').select2('destroy');
+                }
+                s2('#sel-doctype', R.docTypes);
 
                 // Load supporting files list
                 loadSupportingFiles();
 
                 // Reset support form
                 $('#supportForm')[0].reset();
-                if ($('#sel-doctype').data('select2')) $('#sel-doctype').val(null).trigger('change');
                 $('#supportDropZone').removeClass('has-file');
                 $('#supportDropLabel').text('Drag & drop or click');
+                $('#supportProgressWrap').addClass('hidden');
+                $('#supportProgressBar').css('width', '0%');
+                $('#supportAlert').addClass('hidden');
             }
 
             // ── Load File Viewer ──────────────────────────────────────────────────────
             function loadFileViewer(url, filename) {
-                $('#viewerPlaceholder').hide();
-                $('#viewerOpenLink').attr('href', url);
-                const ext = filename.split('.').pop().toLowerCase();
                 const $body = $('#fileViewerBody');
                 $body.find('iframe, img').remove();
 
+                if (!url) {
+                    $('#viewerPlaceholder').show();
+                    $('#viewerOpenLink').attr('href', '#');
+                    return;
+                }
+
+                $('#viewerPlaceholder').hide();
+                $('#viewerOpenLink').attr('href', url);
+                const ext = (filename || url).split('.').pop().toLowerCase();
+
                 if (ext === 'pdf') {
-                    $body.append(`<iframe src="${url}"></iframe>`);
+                    $body.append(`<iframe src="${url}" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:#1c1917"></iframe>`);
                 } else {
-                    $body.append(`<img src="${url}" alt="${filename}">`);
+                    $body.append(`<img src="${url}" alt="scan" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1917">`);
                 }
             }
 
@@ -1499,8 +1626,16 @@
                         loadSupportingFiles();
                     },
                     error: (x) => {
-                        const msg = x.responseJSON?.message || 'Upload failed';
+                        let msg = 'Upload failed';
+                        
+                        if (x.status === 403) {
+                            msg = 'Access denied. Please check your permissions for this company.';
+                        } else if (x.responseJSON?.message) {
+                            msg = x.responseJSON.message;
+                        }
+                        
                         showAlert('#supportAlert', 'error', msg);
+                        console.error('Supporting file upload error:', x);
                     },
                     complete: () => {
                         $btn.prop('disabled', false).html('<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Upload File');
@@ -1528,23 +1663,49 @@
                 });
             };
 
+            // ── Final Submit (Step 2 banner button) ───────────────────────────────────
+            $('#btnFinalSubmit').on('click', function() {
+                if (!currentScan || !confirm('Are you sure you want to submit this scan for final processing?')) return;
+
+                const $btn = $(this);
+                $btn.prop('disabled', true).html('<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="3" stroke="currentColor" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg> Submitting...');
+
+                $.ajax({
+                    url: R.finalSubmit.replace('SCAN_ID', currentScan.id),
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF },
+                    success: () => {
+                        // Navigate back via tab trigger then show toast
+                        $('.tab-btn[data-tab="scan-document"]').trigger('click');
+                        showToast('Scan submitted for final processing', 'success');
+                        scansTable.ajax.reload(null, false);
+                        recentScansTable.ajax.reload(null, false);
+                        loadTabCounts();
+                    },
+                    error: (x) => {
+                        alert2('supportAlert', 'error', x.responseJSON?.message || 'Final submit failed');
+                    },
+                    complete: () => {
+                        $btn.prop('disabled', false).html('<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Final Submit');
+                    }
+                });
+            });
+
             // ── Back to Scan Form ─────────────────────────────────────────────────────
             $('#btnBackToScanForm').on('click', function () {
                 $('#scan-step-2').hide();
-                $('#tab-scan-document').show();
+                // Clear viewer
+                $('#fileViewerBody').find('iframe, img').remove();
+                $('#viewerPlaceholder').show();
                 currentScan = null;
 
-                // Reset form
-                $('#scanForm')[0].reset();
-                if ($('#sel-location').data('select2')) $('#sel-location').val(null).trigger('change');
-                if ($('#sel-approver').data('select2')) $('#sel-approver').val(null).trigger('change');
-                if ($('#sel-vendor').data('select2')) $('#sel-vendor').val(null).trigger('change');
-                $('#dropZone').removeClass('has-file');
-                $('#dropLabel').text('Drag & drop or click');
+                // If we came from the scan-document tab, go back there
+                // Otherwise restore the scan-document tab as default
+                $('.tab-btn[data-tab="scan-document"]').trigger('click');
 
                 // Reload tables
-                scansTable.ajax.reload();
-                recentScansTable.ajax.reload();
+                scansTable.ajax.reload(null, false);
+                recentScansTable.ajax.reload(null, false);
                 loadTabCounts();
             });
 
@@ -1614,17 +1775,106 @@
                     });
             });
 
-            // ── Alert helper ──────────────────────────────────────────────────────────
+            // ── Action Button Events ──────────────────────────────────────────────────
+
+            // View Scan — open in new tab
+            $(document).on('click', '.btn-view-scan', function () {
+                const url = $(this).data('url');
+                if (url) window.open(url, '_blank');
+            });
+
+            // Add Supporting Files — jump to Step 2
+            $(document).on('click', '.btn-add-support', function () {
+                const $b = $(this);
+                goToStep2({
+                    id:            $b.data('id'),
+                    file:          $b.data('file') || '',
+                    file_url:      $b.data('url')  || '',
+                    document_name: `Scan #${$b.data('id')}`,
+                    scan_date:     $b.data('date') || '',
+                });
+            });
+
+            // Final Submit from table row
+            $(document).on('click', '.btn-final-submit', function () {
+                const scanId = $(this).data('id');
+                if (!confirm('Mark this scan as final submitted?')) return;
+                $.ajax({
+                    url: `/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}/final-submit`,
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF },
+                    success: () => {
+                        showToast('Scan marked as final submitted', 'success');
+                        scansTable.ajax.reload(null, false);
+                        loadTabCounts();
+                    },
+                    error: (x) => showToast(x.responseJSON?.message || 'Failed to submit scan', 'error'),
+                });
+            });
+
+            // Delete Scan from table row
+            $(document).on('click', '.btn-delete-scan', function () {
+                const scanId = $(this).data('id');
+                if (!confirm('Delete this scan? This cannot be undone.')) return;
+                $.ajax({
+                    url: `/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}`,
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': CSRF },
+                    success: () => {
+                        showToast('Scan deleted successfully', 'success');
+                        scansTable.ajax.reload(null, false);
+                        recentScansTable.ajax.reload(null, false);
+                        loadTabCounts();
+                    },
+                    error: (x) => showToast(x.responseJSON?.message || 'Failed to delete scan', 'error'),
+                });
+            });
+
+            // Verify Document button in pending-verify table
+            $(document).on('click', '.btn-verify-doc', function () {
+                openVerifyModal($(this).data('id'));
+            });
+
+            // ── Alert helper (matches direct-scan alert2 style) ───────────────────────
+            function alert2(id, type, msg) {
+                const $e = $('#' + id).removeClass(
+                    'hidden border-red-200 bg-red-50 text-red-700 border-green-200 bg-green-50 text-green-700'
+                );
+                $e.addClass(type === 'error'
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : 'border-green-200 bg-green-50 text-green-700'
+                ).text(msg).removeClass('hidden');
+                setTimeout(() => $e.addClass('hidden'), 6000);
+            }
+
+            // keep showAlert as alias (used in several places via CSS selector)
             function showAlert(selector, type, msg) {
-                const $a = $(selector);
-                $a.removeClass('hidden border-green-200 bg-green-50 text-green-800 border-red-200 bg-red-50 text-red-800');
-                if (type === 'success') {
-                    $a.addClass('border-green-200 bg-green-50 text-green-800');
-                } else {
-                    $a.addClass('border-red-200 bg-red-50 text-red-800');
-                }
-                $a.text(msg).removeClass('hidden');
-                setTimeout(() => $a.addClass('hidden'), 5000);
+                alert2(selector.replace('#', ''), type, msg);
+            }
+
+            // ── Toast helper (for table row actions, no inline alert available) ────────
+            function showToast(msg, type) {
+                const isSuccess = type === 'success';
+                const $t = $(`<div style="
+                    position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+                    display:flex;align-items:center;gap:.5rem;
+                    padding:.55rem 1rem;border-radius:.5rem;
+                    background:${isSuccess ? '#f0fdf4' : '#fef2f2'};
+                    color:${isSuccess ? '#15803d' : '#b91c1c'};
+                    border:1px solid ${isSuccess ? '#bbf7d0' : '#fecaca'};
+                    font-size:.72rem;font-weight:600;
+                    box-shadow:0 4px 16px rgba(0,0,0,.1);
+                    opacity:0;transition:opacity .2s">
+                    <svg style="width:14px;height:14px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ${isSuccess
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+                    </svg>
+                    ${msg}
+                </div>`);
+                $('body').append($t);
+                setTimeout(() => $t.css('opacity', 1), 10);
+                setTimeout(() => { $t.css('opacity', 0); setTimeout(() => $t.remove(), 250); }, 3500);
             }
         });
     </script>
