@@ -127,6 +127,12 @@ class PermissionSeeder extends Seeder
                 'ext-field-mappings.delete',            // destroy
             ],
 
+            // ── Bill Date Sync ────────────────────────────────────────────
+            'Bill Date Sync' => [
+                'bill-date-sync.view',                  // GET /settings/bill-date-sync
+                // POST .../process → action "process" not in ACTION_MAP → middleware passes through
+            ],
+
             // ── Users ─────────────────────────────────────────────────────
             'Users' => [
                 'users.view',                           // index, data, show

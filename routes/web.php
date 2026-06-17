@@ -17,6 +17,7 @@ use App\Http\Controllers\Panel\PermissionController;
 use App\Http\Controllers\Panel\PermissionGroupController;
 use App\Http\Controllers\Panel\ProfileController;
 use App\Http\Controllers\Panel\RoleController;
+use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\ExtMasterController;
 use App\Http\Controllers\Panel\UserController;
@@ -227,6 +228,11 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings/permission-groups', [PermissionGroupController::class, 'index'])->name('settings.permission-groups.index');
     Route::post('/settings/permission-groups', [PermissionGroupController::class, 'store'])->name('settings.permission-groups.store');
     Route::delete('/settings/permission-groups/{permissionGroup}', [PermissionGroupController::class, 'destroy'])->name('settings.permission-groups.destroy');
+
+    // Bill Date Sync
+    Route::get('/settings/bill-date-sync', [ScanFileBillDateSyncController::class, 'index'])->name('settings.bill-date-sync');
+    Route::post('/settings/bill-date-sync/process', [ScanFileBillDateSyncController::class, 'process'])->name('settings.bill-date-sync.process');
+    Route::get('/settings/bill-date-sync/export', [ScanFileBillDateSyncController::class, 'export'])->name('settings.bill-date-sync.export');
 
     // ── Workflow ──────────────────────────────────────────────────────────────
     Route::prefix('workflow')->name('workflow.')->group(function () {

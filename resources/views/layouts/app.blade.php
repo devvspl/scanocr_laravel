@@ -171,6 +171,8 @@
                             ['section' => 'Ext Master'],
                             ['label' => 'API Control',     'route' => 'settings.ext-api-control',   'permission' => 'ext-api-control.view'],
                             ['label' => 'Field Mappings',  'route' => 'settings.ext-field-mappings','permission' => 'ext-field-mappings.view'],
+                            ['section' => 'Tools'],
+                            ['label' => 'Bill Date Sync', 'route' => 'settings.bill-date-sync', 'permission' => 'bill-date-sync.view'],
                             ['section' => 'Users & Access'],
                             ['label' => 'Users',       'route' => 'settings.users',       'permission' => 'users.view'],
                             ['label' => 'Roles',       'route' => 'settings.roles',       'permission' => 'roles.view'],
