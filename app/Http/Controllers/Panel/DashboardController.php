@@ -4,18 +4,26 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
-use App\Models\DocumentPrediction;
-use App\Models\DocumentType;
 use App\Models\FinancialYear;
+use App\Models\ScanFile;
 use App\Models\User;
+use App\Services\UserAccessService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $company   = Company::getDefault();
-        $currentFY = FinancialYear::where('is_current', true)->first();
+        $user         = Auth::user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $company      = Company::getDefault();
+        $currentFY    = FinancialYear::where('is_current', true)->first();
+        $fyId         = FinancialYear::currentId();
+        $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
+        $companyIds   = $companies->pluck('id')->toArray();
 
+        // Financial Year Progress
         $fyProgress = null;
         if ($currentFY) {
             $total   = max($currentFY->start_date->diffInDays($currentFY->end_date), 1);
@@ -23,46 +31,105 @@ class DashboardController extends Controller
             $fyProgress = round(($elapsed / $total) * 100);
         }
 
-        $totalUsers       = User::where('is_active', true)->count();
-        $totalPredictions = DocumentPrediction::count();
-        $todayPredictions = DocumentPrediction::whereDate('created_at', today())->count();
-        $totalDocTypes    = DocumentType::where('is_active', true)->count();
+        // Core Workflow Statistics
+        $totalUsers = User::where('is_active', true)->count();
+        $totalCompanies = count($companyIds);
+        
+        // Scanning Overview
+        $scanQuery = DB::table('scan_file')
+            ->whereIn('Group_Id', $companyIds)
+            ->where('Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('year_id', $fyId));
 
-        $predictionsByStatus = DocumentPrediction::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
+        $totalScans = (clone $scanQuery)->count();
+        $todayScans = (clone $scanQuery)->whereDate('Temp_Scan_Date', today())->count();
 
-        $recentPredictions = DocumentPrediction::with('predictedType')
-            ->latest()
+        // Workflow Status Breakdown
+        $workflowStats = [
+            // Temp Scanning (Temp_Scan = Y)
+            'temp_total'    => (clone $scanQuery)->where('Temp_Scan', 'Y')->count(),
+            'temp_pending'  => (clone $scanQuery)->where('Temp_Scan', 'Y')
+                ->where('Bill_Approved', 'N')
+                ->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))
+                ->count(),
+            'temp_approved' => (clone $scanQuery)->where('Temp_Scan', 'Y')
+                ->where('Bill_Approved', 'Y')
+                ->count(),
+            'temp_rejected' => (clone $scanQuery)->where('Temp_Scan', 'Y')
+                ->where(fn($q) => $q->where('Bill_Approved', 'R')->orWhere('temp_scan_reject', 'Y'))
+                ->count(),
+
+            // Direct Scanning (Temp_Scan = N or NULL)
+            'direct_total'    => (clone $scanQuery)->where(fn($q) => $q->where('Temp_Scan', 'N')->orWhereNull('Temp_Scan'))->count(),
+            'direct_pending'  => (clone $scanQuery)->where(fn($q) => $q->where('Temp_Scan', 'N')->orWhereNull('Temp_Scan'))
+                ->where('Bill_Approved', 'N')
+                ->count(),
+            'direct_approved' => (clone $scanQuery)->where(fn($q) => $q->where('Temp_Scan', 'N')->orWhereNull('Temp_Scan'))
+                ->where('Bill_Approved', 'Y')
+                ->count(),
+            'direct_rejected' => (clone $scanQuery)->where(fn($q) => $q->where('Temp_Scan', 'N')->orWhereNull('Temp_Scan'))
+                ->where('Bill_Approved', 'R')
+                ->count(),
+
+            // Processing Stages
+            'pending_naming'       => (clone $scanQuery)->where('Scan_Complete', 'N')->count(),
+            'pending_verification' => (clone $scanQuery)->where('Scan_Complete', 'Y')
+                ->where(fn($q) => $q->whereNull('document_verified')->orWhere('document_verified', 'N'))
+                ->count(),
+            'final_submitted'      => (clone $scanQuery)->where('Final_Submit', 'Y')->count(),
+        ];
+
+        // Recent Scanning Activity
+        $recentScans = DB::table('scan_file as s')
+            ->leftJoin('companies as c', 'c.id', '=', 's.Group_Id')
+            ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->leftJoin('users as u', 'u.id', '=', 's.Temp_Scan_By')
+            ->whereIn('s.Group_Id', $companyIds)
+            ->where('s.Is_Deleted', 'N')
+            ->orderBy('s.Temp_Scan_Date', 'desc')
             ->limit(8)
+            ->select([
+                's.Scan_Id',
+                's.File',
+                's.File_Ext',
+                's.Temp_Scan',
+                's.Bill_Approved',
+                's.temp_scan_reject',
+                's.Temp_Scan_Date',
+                'c.name as company_name',
+                'l.location_name',
+                'u.name as scanned_by'
+            ])
             ->get();
 
-        $monthlyTrend = collect(range(5, 0))->map(function ($i) {
+        // Monthly Scanning Trend (Last 6 Months)
+        $monthlyTrend = collect(range(5, 0))->map(function ($i) use ($scanQuery) {
             $date = now()->subMonths($i);
             return [
                 'month' => $date->format('M'),
-                'count' => DocumentPrediction::whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
+                'count' => (clone $scanQuery)
+                    ->whereYear('Temp_Scan_Date', $date->year)
+                    ->whereMonth('Temp_Scan_Date', $date->month)
                     ->count(),
             ];
         });
 
-        $avgConfidence = DocumentPrediction::whereNotNull('confidence_score')
-            ->avg('confidence_score');
-
-        $topDocTypes = DocumentPrediction::whereNotNull('predicted_type_id')
-            ->join('document_types', 'document_predictions.predicted_type_id', '=', 'document_types.id')
-            ->selectRaw('document_types.label, COUNT(*) as count')
-            ->groupBy('document_types.label')
-            ->orderByDesc('count')
+        // Top Scanning Companies
+        $topCompanies = DB::table('scan_file as s')
+            ->join('companies as c', 'c.id', '=', 's.Group_Id')
+            ->whereIn('s.Group_Id', $companyIds)
+            ->where('s.Is_Deleted', 'N')
+            ->when($fyId, fn($q) => $q->where('s.year_id', $fyId))
+            ->selectRaw('c.name as company_name, COUNT(*) as scan_count')
+            ->groupBy('c.id', 'c.name')
+            ->orderByDesc('scan_count')
             ->limit(5)
             ->get();
 
         return view('dashboard', compact(
-            'company', 'currentFY', 'fyProgress',
-            'totalUsers', 'totalPredictions', 'todayPredictions', 'totalDocTypes',
-            'predictionsByStatus', 'recentPredictions', 'monthlyTrend',
-            'avgConfidence', 'topDocTypes'
+            'company', 'currentFY', 'fyProgress', 'totalUsers', 'totalCompanies',
+            'totalScans', 'todayScans', 'workflowStats', 'recentScans', 
+            'monthlyTrend', 'topCompanies'
         ));
     }
 }

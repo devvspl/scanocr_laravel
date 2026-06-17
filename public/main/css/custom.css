@@ -303,6 +303,7 @@ input[type="radio"] {
     display: flex;
     flex-direction: column;
     margin-left: 72px;
+    padding-top: 56px;
     transition: margin-left .22s cubic-bezier(.4, 0, .2, 1);
 }
 
@@ -319,8 +320,10 @@ input[type="radio"] {
 }
 
 #topbar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 72px;
+    right: 0;
     z-index: 20;
     height: 56px;
     background: rgba(255, 255, 255, .96);
@@ -331,6 +334,17 @@ input[type="radio"] {
     gap: 8px;
     padding: 0 16px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+    transition: left .22s cubic-bezier(.4, 0, .2, 1);
+}
+
+#main-wrap.shifted #topbar {
+    left: 264px;
+}
+
+@media (max-width: 1023px) {
+    #topbar {
+        left: 0 !important;
+    }
 }
 
 .dataTables_wrapper {
