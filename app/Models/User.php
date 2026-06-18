@@ -28,6 +28,8 @@ class User extends Authenticatable
         'phone',
         'designation',
         'department',
+        'employee_id',
+        'is_core_user',
         'location_id',
         'signature_path',
         'created_by',
@@ -52,8 +54,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
+            'is_core_user'      => 'boolean',
         ];
     }
 

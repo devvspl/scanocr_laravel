@@ -1,6 +1,7 @@
 ﻿<?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\TokenLoginController;
 use App\Http\Controllers\DocumentAiController;
 use App\Http\Controllers\Panel\CompanyController;
 use App\Http\Controllers\Panel\DashboardController;
@@ -33,8 +34,9 @@ Route::get('/terms', [PublicController::class, 'terms'])->name('terms');
 Route::get('/privacy', [PublicController::class, 'privacy'])->name('privacy');
 Route::get('/help', [PublicController::class, 'help'])->name('help');
 
-// Public API — Form Structure Share (token-based, no auth)
-Route::get('/api/forms/{token}', [\App\Http\Controllers\Api\PageShareController::class, 'show'])->name('api.forms.show');
+// ── JWT Token Login — accepts GET or POST, separate from normal auth flow ──
+// GET /token-login?token=<jwt>
+Route::match(['get', 'post'], '/token-login', [TokenLoginController::class, 'login'])->name('token-login');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

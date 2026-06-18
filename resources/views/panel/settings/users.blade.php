@@ -24,6 +24,11 @@
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
+                <select id="filter-core-user" class="h-7 px-2.5 text-[11px] border border-stone-200 rounded-md text-stone-600 bg-stone-50 focus:outline-none focus:border-red-700 focus:ring-1 focus:ring-red-700/10">
+                    <option value="">All Users</option>
+                    <option value="1">Core Users</option>
+                    <option value="0">Non-Core</option>
+                </select>
             </div>
             <button @click="openPanel()" class="tb-btn tb-btn-add">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
@@ -37,9 +42,11 @@
                     <th class="td-center" style="width:50px;">#</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Employee ID</th>
                     <th>Type</th>
                     <th>Parent User</th>
                     <th>Roles</th>
+                    <th class="td-center">Core User</th>
                     <th class="td-center">Status</th>
                     <th class="td-center" style="width:100px;">Actions</th>
                 </tr></thead>
@@ -112,6 +119,10 @@
                     <input type="text" x-model="form.department" placeholder="e.g. Finance" class="form-input">
                 </div>
                 <div>
+                    <label class="form-label">Employee ID</label>
+                    <input type="text" x-model="form.employee_id" placeholder="e.g. EMP001" class="form-input">
+                </div>
+                <div>
                     <label class="form-label">Parent User</label>
                     <select x-model="form.parent_id" class="form-input">
                         <option value="">— None (Main User) —</option>
@@ -166,6 +177,12 @@
                     <div class="w-9 h-5 bg-stone-200 peer-focus:ring-2 peer-focus:ring-red-700/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-700"></div>
                 </label>
                 <span class="text-sm text-stone-600 font-medium">Active</span>
+                <span class="text-stone-200 select-none">|</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="form.is_core_user" class="sr-only peer">
+                    <div class="w-9 h-5 bg-stone-200 peer-focus:ring-2 peer-focus:ring-red-700/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-700"></div>
+                </label>
+                <span class="text-sm text-stone-600 font-medium">Core User</span>
             </div>
             <div class="flex items-center gap-2">
                 <button @click="closePanel()" class="tb-btn tb-btn-edit">Cancel</button>
@@ -768,7 +785,8 @@ function usersPage() {
         resetForm() {
             this.form = {
                 name: '', email: '', phone: '', designation: '',
-                department: '', parent_id: '', password: '',
+                department: '', employee_id: '', is_core_user: false,
+                parent_id: '', password: '',
                 password_confirmation: '', roles: [], is_active: true
             };
         },
@@ -796,6 +814,8 @@ function usersPage() {
                     phone:                 data.phone                 ?? '',
                     designation:           data.designation           ?? '',
                     department:            data.department            ?? '',
+                    employee_id:           data.employee_id           ?? '',
+                    is_core_user:          !! data.is_core_user,
                     parent_id:             data.parent_id             ?? '',
                     password:              '',
                     password_confirmation: '',
@@ -828,7 +848,7 @@ function usersPage() {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ ...this.form, is_active: this.form.is_active ? 1 : 0 }),
+                    body: JSON.stringify({ ...this.form, is_active: this.form.is_active ? 1 : 0, is_core_user: this.form.is_core_user ? 1 : 0 }),
                 });
                 const json = await res.json();
                 if (!res.ok) {
@@ -1075,8 +1095,9 @@ function usersPage() {
                 ajax: {
                     url: '{{ route("settings.users.data") }}',
                     data(d) {
-                        d.type   = $('#filter-type').val();
-                        d.status = $('#filter-status').val();
+                        d.type         = $('#filter-type').val();
+                        d.status       = $('#filter-status').val();
+                        d.is_core_user = $('#filter-core-user').val();
                     },
                 },
                 columns: [
@@ -1095,6 +1116,12 @@ function usersPage() {
                         }
                     },
                     { data: 'email', render: v => `<span class="text-xs text-stone-500">${v}</span>` },
+                    {
+                        data: 'employee_id_val', orderable: false,
+                        render: v => v
+                            ? `<code class="text-xs bg-stone-100 px-1.5 py-0.5 rounded font-mono text-stone-600">${v}</code>`
+                            : '<span class="text-stone-300">—</span>',
+                    },
                     {
                         data: 'user_type', orderable: false,
                         render(v) {
@@ -1116,6 +1143,12 @@ function usersPage() {
                                 `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-600 mr-1">${r}</span>`
                             ).join('');
                         }
+                    },
+                    {
+                        data: 'is_core_user_val', orderable: false, className: 'td-center',
+                        render: v => v
+                            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700">Core</span>'
+                            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-stone-100 text-stone-400">—</span>',
                     },
                     {
                         data: 'is_active', className: 'td-center',
@@ -1149,7 +1182,7 @@ function usersPage() {
 
             window._usersTable = table;
 
-            $('#filter-type, #filter-status').on('change', () => table.ajax.reload(null, false));
+            $('#filter-type, #filter-status, #filter-core-user').on('change', () => table.ajax.reload(null, false));
 
             $('#users-table').on('click', '.btn-edit', async function () {
                 await self.openPanel($(this).data('id'));

@@ -16,6 +16,7 @@ class CheckPermission
         'settings.update',
         'settings.permission-groups.index',
         'settings.users.sub-users',
+        'token-login',
         'settings.users.document-access',
         'settings.users.document-access.update',
         'settings.users.company-access',

@@ -23,7 +23,7 @@ class UserController extends Controller
     public function data(Request $request)
     {
         $query = User::with(['parent', 'creator', 'roles'])
-            ->select(['id', 'name', 'email', 'phone', 'designation', 'department', 'parent_id', 'is_active', 'created_by', 'created_at']);
+            ->select(['id', 'name', 'email', 'phone', 'designation', 'department', 'employee_id', 'is_core_user', 'parent_id', 'is_active', 'created_by', 'created_at']);
 
         // Filter by user type
         if ($request->filled('type')) {
@@ -39,6 +39,11 @@ class UserController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
+        // Filter by core user flag
+        if ($request->filled('is_core_user')) {
+            $query->where('is_core_user', (int) $request->is_core_user);
+        }
+
         return DataTables::of($query)
             ->addColumn('user_type', function ($user) {
                 return $user->isMainUser() ? 'Main User' : 'Sub User';
@@ -48,6 +53,12 @@ class UserController extends Controller
             })
             ->addColumn('roles_list', function ($user) {
                 return $user->roles->pluck('name')->join(', ') ?: 'No roles assigned';
+            })
+            ->addColumn('employee_id_val', function ($user) {
+                return $user->employee_id ?? '';
+            })
+            ->addColumn('is_core_user_val', function ($user) {
+                return (int) $user->is_core_user;
             })
             ->addColumn('status', function ($user) {
                 return $user->is_active 
@@ -379,13 +390,15 @@ class UserController extends Controller
     private function validateUser(Request $request, ?int $ignoreId = null): array
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($ignoreId)],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'name'        => ['required', 'string', 'max:255'],
+            'email'       => ['required', 'email', 'max:255', Rule::unique('users')->ignore($ignoreId)],
+            'phone'       => ['nullable', 'string', 'max:20'],
             'designation' => ['nullable', 'string', 'max:100'],
-            'department' => ['nullable', 'string', 'max:100'],
-            'parent_id' => ['nullable', 'exists:users,id'],
-            'is_active' => ['nullable', 'boolean'],
+            'department'  => ['nullable', 'string', 'max:100'],
+            'employee_id' => ['nullable', 'string', 'max:100'],
+            'is_core_user'=> ['nullable', 'boolean'],
+            'parent_id'   => ['nullable', 'exists:users,id'],
+            'is_active'   => ['nullable', 'boolean'],
         ];
 
         // Password is required for new users, optional for updates
@@ -396,7 +409,8 @@ class UserController extends Controller
         }
 
         $data = $request->validate($rules);
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active']    = $request->boolean('is_active', true);
+        $data['is_core_user'] = $request->boolean('is_core_user', false);
 
         return $data;
     }
