@@ -1182,6 +1182,10 @@ function usersPage() {
 
             window._usersTable = table;
 
+            // Prevent browser autofill on the DataTables search input
+            $('#users-table_filter input').attr('autocomplete', 'off').val('');
+            table.search('').draw();
+
             $('#filter-type, #filter-status, #filter-core-user').on('change', () => table.ajax.reload(null, false));
 
             $('#users-table').on('click', '.btn-edit', async function () {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Workflow;
 
+use App\Helpers\BillDateValidator;
 use App\Http\Controllers\Controller;
 use App\Models\ScanFile;
 use App\Models\User;
@@ -287,11 +288,11 @@ class TempScannerController extends Controller
      */
     public function store(Request $request, S3Service $s3)
     {
-        $request->validate([
-            'location' => 'required|integer|exists:master_work_location,location_id',
-            'bill_approver' => 'required|integer|exists:users,id',
-            'main_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
-        ]);
+        $request->validate(array_merge([
+            'location'     => 'required|integer|exists:master_work_location,location_id',
+            'bill_approver'=> 'required|integer|exists:users,id',
+            'main_file'    => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
+        ], BillDateValidator::rules()));
 
         $user = Auth::user();
         $file = $request->file('main_file');
@@ -307,19 +308,20 @@ class TempScannerController extends Controller
         $scan = ScanFile::create([
             'Group_Id' => Company::currentId(),
             'year_id' => FinancialYear::currentId(),
-            'Location' => $request->input('location'),
-            'Bill_Approver' => $request->input('bill_approver'),
-            'Temp_Scan_By' => $user->id,
-            'Temp_Scan' => 'Y',
-            'Scan_Complete' => 'N',
-            'DocType_Id' => 0,
-            'department_id' => 0,
-            'File' => $newName,
-            'File_Ext' => $ext,
-            'File_Location' => $result['url'],
-            'File_Location1' => $result['key'],
-            'Year' => date('Y'),
-            'Temp_Scan_Date' => now(),
+            'Location'          => $request->input('location'),
+            'Bill_Approver'     => $request->input('bill_approver'),
+            'bill_voucher_date' => $request->input('bill_date'),
+            'Temp_Scan_By'      => $user->id,
+            'Temp_Scan'         => 'Y',
+            'Scan_Complete'     => 'N',
+            'DocType_Id'        => 0,
+            'department_id'     => 0,
+            'File'              => $newName,
+            'File_Ext'          => $ext,
+            'File_Location'     => $result['url'],
+            'File_Location1'    => $result['key'],
+            'Year'              => date('Y'),
+            'Temp_Scan_Date'    => now(),
         ]);
 
         return response()->json([

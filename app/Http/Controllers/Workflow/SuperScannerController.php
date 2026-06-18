@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Workflow;
 
+use App\Helpers\BillDateValidator;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\FinancialYear;
@@ -267,15 +268,14 @@ class SuperScannerController extends Controller
     {
         $this->authorizeCompany($company);
 
-        $request->validate([
+        $request->validate(array_merge([
             'location'      => 'required|integer|exists:master_work_location,location_id',
             'bill_approver' => 'required|integer|exists:users,id',
-            'bill_date'     => 'required|date',
             'vendor_id'     => 'required|integer|exists:master_firm,firm_id',
             'bill_no'       => 'required|string|max:100',
             'document_name' => 'required|string|max:255',
             'main_file'     => 'required|file|mimes:jpg,jpeg,png,pdf|max:15360',
-        ]);
+        ], BillDateValidator::rules()));
 
         $file    = $request->file('main_file');
         $ext     = $file->getClientOriginalExtension();

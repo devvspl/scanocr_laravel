@@ -726,7 +726,11 @@
                                     <label class="block text-xs font-medium text-stone-600 mb-1">Bill Date <span
                                             class="text-red-500">*</span></label>
                                     <input type="date" id="bill-date" name="bill_date" required
-                                        class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-white focus:border-stone-800 outline-none transition-colors w-full">
+                                        class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-white focus:border-stone-800 outline-none transition-colors w-full"
+                                        @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
+                                            min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
+                                            max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}"
+                                        @endif>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-stone-600 mb-1">Bill No <span
@@ -1471,8 +1475,32 @@
                         setTimeout(() => goToStep2(res.scan), 1000);
                     },
                     error: (x) => {
-                        const msg = x.responseJSON?.message || 'Scan failed';
-                        showAlert('#scanAlert', 'error', msg);
+                        let errorMsg = 'Scan failed';
+                        if (x.responseJSON) {
+                            if (x.responseJSON.message) {
+                                errorMsg = x.responseJSON.message;
+                            } else if (x.responseJSON.errors) {
+                                const errors = x.responseJSON.errors;
+                                if (errors.bill_date && errors.bill_date[0]) {
+                                    errorMsg = errors.bill_date[0];
+                                } else if (errors.main_file && errors.main_file[0]) {
+                                    errorMsg = errors.main_file[0];
+                                } else if (errors.location && errors.location[0]) {
+                                    errorMsg = errors.location[0];
+                                } else if (errors.bill_approver && errors.bill_approver[0]) {
+                                    errorMsg = errors.bill_approver[0];
+                                } else if (errors.vendor_id && errors.vendor_id[0]) {
+                                    errorMsg = errors.vendor_id[0];
+                                } else if (errors.bill_no && errors.bill_no[0]) {
+                                    errorMsg = errors.bill_no[0];
+                                } else if (errors.document_name && errors.document_name[0]) {
+                                    errorMsg = errors.document_name[0];
+                                } else {
+                                    errorMsg = Object.values(errors).flat()[0] || 'Validation failed.';
+                                }
+                            }
+                        }
+                        showAlert('#scanAlert', 'error', errorMsg);
                     },
                     complete: () => $btn.prop('disabled', false).html('<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Scan Document')
                 });
