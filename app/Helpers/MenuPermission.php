@@ -13,6 +13,14 @@ class MenuPermission
         'logout', 'master', 'master.tab', 'master.page-builder.get-columns',
         'settings', 'settings.update', 'settings.permission-groups.index',
         'settings.users.sub-users',
+        'settings.core-api-sync',
+        'settings.core-api-sync.data',
+        'settings.core-api-sync.fetch',
+        'settings.core-api-sync.sync',
+        'settings.core-api-sync.table-data',
+        'settings.core-api-sync.modal-data',
+        'settings.core-api-sync.empty',
+        'settings.core-api-sync.drop',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];

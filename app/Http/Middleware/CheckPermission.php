@@ -115,6 +115,15 @@ class CheckPermission
         'workflow.direct-scan.replace',
         'workflow.direct-scan.destroy',
         'workflow.direct-scan.support.destroy',
+        // Core API Sync — gated at page level only
+        'settings.core-api-sync',
+        'settings.core-api-sync.data',
+        'settings.core-api-sync.fetch',
+        'settings.core-api-sync.sync',
+        'settings.core-api-sync.table-data',
+        'settings.core-api-sync.modal-data',
+        'settings.core-api-sync.empty',
+        'settings.core-api-sync.drop',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];

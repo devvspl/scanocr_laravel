@@ -19,6 +19,7 @@ use App\Http\Controllers\Panel\ProfileController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
+use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\PublicController;
@@ -233,6 +234,16 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings/bill-date-sync', [ScanFileBillDateSyncController::class, 'index'])->name('settings.bill-date-sync');
     Route::post('/settings/bill-date-sync/process', [ScanFileBillDateSyncController::class, 'process'])->name('settings.bill-date-sync.process');
     Route::get('/settings/bill-date-sync/export', [ScanFileBillDateSyncController::class, 'export'])->name('settings.bill-date-sync.export');
+
+    // Core API Sync
+    Route::get('/settings/core-api-sync', [CoreApiSyncController::class, 'index'])->name('settings.core-api-sync');
+    Route::get('/settings/core-api-sync/data', [CoreApiSyncController::class, 'data'])->name('settings.core-api-sync.data');
+    Route::post('/settings/core-api-sync/fetch', [CoreApiSyncController::class, 'fetchApiList'])->name('settings.core-api-sync.fetch');
+    Route::post('/settings/core-api-sync/sync', [CoreApiSyncController::class, 'sync'])->name('settings.core-api-sync.sync');
+    Route::post('/settings/core-api-sync/table-data', [CoreApiSyncController::class, 'tableData'])->name('settings.core-api-sync.table-data');
+    Route::get('/settings/core-api-sync/modal-data', [CoreApiSyncController::class, 'modalData'])->name('settings.core-api-sync.modal-data');
+    Route::post('/settings/core-api-sync/empty', [CoreApiSyncController::class, 'emptyTable'])->name('settings.core-api-sync.empty');
+    Route::post('/settings/core-api-sync/drop', [CoreApiSyncController::class, 'dropTable'])->name('settings.core-api-sync.drop');
 
     // ── Workflow ──────────────────────────────────────────────────────────────
     Route::prefix('workflow')->name('workflow.')->group(function () {
