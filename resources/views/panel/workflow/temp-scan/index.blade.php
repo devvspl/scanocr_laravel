@@ -981,7 +981,7 @@
                                 <option value="">Select Approver</option>
                             </select></div>
                         <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill Date/Voucher Date<span
-                                    class="text-red-500">*</span></label><input type="date" id="bill_date" name="bill_date"
+                                    class="text-red-500">*</span></label><input type="date" id="bill_date" name="bill_date" required
                                 class="w-full h-8 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:ring focus:ring-stone-800 focus:ring-opacity-10 outline-none"
                                 @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
                                     min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
@@ -1073,13 +1073,11 @@
                     <div class="filter-bar">
                         <div class="flex items-center gap-2">
                             <label class="text-[11px] font-semibold text-stone-600 uppercase">From</label>
-                            <input type="date" id="filterFromDate" class="filter-input" style="width:140px"
-                                onfocus="this.showPicker()">
+                            <input type="date" id="filterFromDate" class="filter-input" style="width:140px">
                         </div>
                         <div class="flex items-center gap-2">
                             <label class="text-[11px] font-semibold text-stone-600 uppercase">To</label>
-                            <input type="date" id="filterToDate" class="filter-input" style="width:140px"
-                                onfocus="this.showPicker()">
+                            <input type="date" id="filterToDate" class="filter-input" style="width:140px">
                         </div>
                         <button id="btnApplyFilters" class="filter-btn filter-btn-primary">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1379,7 +1377,74 @@
             $('#btnOpenLog').on('click', openLog); $('#btnCloseLog,#logCanvasBackdrop').on('click', closeLog);
             async function loadLogEntries() { $('#logBody').html('<p class="text-center text-xs text-stone-400 py-8">Loading…</p>'); try { const res = await $.getJSON(R.exportLogs); if (!res.data.length) { $('#logBody').html('<p class="text-center text-xs text-stone-400 py-8">No exports yet.</p>'); return } const rows = res.data.map(l => `<div class="log-row"><div class="min-w-0"><p class="text-xs font-medium text-stone-700 truncate" title="${esc(l.file_name)}">${esc(l.file_name)}</p><p class="text-[10px] text-stone-400 mt-0.5">${l.row_count} rows &bull; ${fmtDate(l.created_at)}</p></div><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${l.file_name.endsWith('.xlsx') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">${l.file_name.endsWith('.xlsx') ? 'Excel' : 'PDF'}</span></div>`).join(''); $('#logBody').html(rows) } catch (e) { $('#logBody').html('<p class="text-center text-xs text-red-500 py-8">Failed to load logs.</p>') } }
             function fmtDate(s) { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) }
-            $('#uploadForm').on('submit', async function (e) { e.preventDefault(); const loc = $("#sel-location").val(), apv = $("#sel-approver").val(), billDate = $('#bill_date').val(), fl = $('#mainFile')[0].files[0]; if (!loc) { return alert2('uploadAlert', 'error', 'Please select a location.') } if (!apv) { return alert2('uploadAlert', 'error', 'Please select a bill approver.') } if (!billDate) { return alert2('uploadAlert', 'error', 'Please select a bill date.') } if (!fl) { return alert2('uploadAlert', 'error', 'Please select a file.') } const fd = new FormData(); fd.append('_token', CSRF); fd.append('location', loc); fd.append('bill_approver', apv); fd.append('bill_date', billDate); fd.append('main_file', fl); setUpState(true); try { const res = await $.ajax({ url: R.store, method: 'POST', data: fd, processData: false, contentType: false, xhr: () => { const x = new XMLHttpRequest(); x.upload.addEventListener('progress', (ev) => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); $('#uploadProgressBar').css('width', p + '%'); $('#uploadProgressText').text(`Uploading… ${p}%`) } }); return x } }); if (res.success) { dt.ajax.reload(null, false); resetUpForm(); goStep2(res.scan) } else alert2('uploadAlert', 'error', res.message || 'Upload failed.') } catch (err) { let errorMsg = 'Upload failed.'; if (err.responseJSON) { if (err.responseJSON.message) { errorMsg = err.responseJSON.message; } else if (err.responseJSON.errors) { const errors = err.responseJSON.errors; if (errors.bill_date && errors.bill_date[0]) { errorMsg = errors.bill_date[0]; } else if (errors.main_file && errors.main_file[0]) { errorMsg = errors.main_file[0]; } else if (errors.location && errors.location[0]) { errorMsg = errors.location[0]; } else if (errors.bill_approver && errors.bill_approver[0]) { errorMsg = errors.bill_approver[0]; } else { errorMsg = Object.values(errors).flat()[0] || 'Validation failed.'; } } } alert2('uploadAlert', 'error', errorMsg); } finally { setUpState(false) } });
+            function getUserFriendlyErrorMessage(errorMsg) {
+                // Convert technical validation messages to user-friendly ones
+                if (!errorMsg) return 'An error occurred. Please try again.';
+                
+                const friendlyMessages = {
+                    // Bill date validation messages
+                    'The bill date field must be a date before or equal to': 'Bill date must be within the current financial year period. Please select a date before',
+                    'The bill date field must be a date after or equal to': 'Bill date must be within the current financial year period. Please select a date after',
+                    'The bill date field is required': 'Please select a bill date.',
+                    'The bill date does not match the format': 'Please enter a valid date format.',
+                    'No active financial year is configured': 'System configuration error: No active financial year found. Please contact your administrator.',
+                    
+                    // File validation messages
+                    'The main file field is required': 'Please select a file to upload.',
+                    'The main file must be a file': 'Please select a valid file.',
+                    'The main file may not be greater than': 'File size is too large. Maximum allowed size is 15 MB.',
+                    'The main file must be a file of type': 'Invalid file format. Please upload JPG, PNG, or PDF files only.',
+                    
+                    // Location validation messages
+                    'The location field is required': 'Please select a location.',
+                    'The selected location is invalid': 'Selected location is not valid. Please choose a different location.',
+                    
+                    // Bill approver validation messages
+                    'The bill approver field is required': 'Please select a bill approver.',
+                    'The selected bill approver is invalid': 'Selected bill approver is not valid. Please choose a different approver.',
+                    
+                    // Vendor validation messages
+                    'The vendor id field is required': 'Please select a vendor.',
+                    'The selected vendor id is invalid': 'Selected vendor is not valid. Please choose a different vendor.',
+                    
+                    // Bill number validation messages
+                    'The bill no field is required': 'Please enter a bill number.',
+                    'The bill no may not be greater than': 'Bill number is too long. Maximum 100 characters allowed.',
+                    
+                    // Document name validation messages
+                    'The document name field is required': 'Please enter a document name.',
+                    'The document name may not be greater than': 'Document name is too long. Maximum 255 characters allowed.'
+                };
+                
+                // Check for partial matches and return friendly message
+                for (const [key, friendlyMsg] of Object.entries(friendlyMessages)) {
+                    if (errorMsg.toLowerCase().includes(key.toLowerCase())) {
+                        // For date range messages, extract the actual date
+                        if (key.includes('before or equal to') || key.includes('after or equal to')) {
+                            const dateMatch = errorMsg.match(/(\d{4}-\d{2}-\d{2})/);
+                            if (dateMatch) {
+                                const date = new Date(dateMatch[1]).toLocaleDateString('en-GB', {
+                                    day: '2-digit', 
+                                    month: 'short', 
+                                    year: 'numeric'
+                                });
+                                return friendlyMsg + ' ' + date + '.';
+                            }
+                        }
+                        return friendlyMsg;
+                    }
+                }
+                
+                // If no specific match found, return a generic friendly message
+                if (errorMsg.toLowerCase().includes('validation')) {
+                    return 'Please check your input and try again.';
+                }
+                
+                // Return original message if it's already user-friendly
+                return errorMsg;
+            }
+            
+            $('#uploadForm').on('submit', async function (e) { e.preventDefault(); const loc = $("#sel-location").val(), apv = $("#sel-approver").val(), billDate = $('#bill_date').val(), fl = $('#mainFile')[0].files[0]; if (!loc) { return alert2('uploadAlert', 'error', 'Please select a location.') } if (!apv) { return alert2('uploadAlert', 'error', 'Please select a bill approver.') } if (!billDate) { return alert2('uploadAlert', 'error', 'Please select a bill date.') } if (!fl) { return alert2('uploadAlert', 'error', 'Please select a file.') } const fd = new FormData(); fd.append('_token', CSRF); fd.append('location', loc); fd.append('bill_approver', apv); fd.append('bill_date', billDate); fd.append('main_file', fl); setUpState(true); try { const res = await $.ajax({ url: R.store, method: 'POST', data: fd, processData: false, contentType: false, xhr: () => { const x = new XMLHttpRequest(); x.upload.addEventListener('progress', (ev) => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); $('#uploadProgressBar').css('width', p + '%'); $('#uploadProgressText').text(`Uploading… ${p}%`) } }); return x } }); if (res.success) { dt.ajax.reload(null, false); resetUpForm(); goStep2(res.scan) } else alert2('uploadAlert', 'error', getUserFriendlyErrorMessage(res.message) || 'Upload failed.') } catch (err) { let errorMsg = 'Upload failed.'; if (err.responseJSON) { if (err.responseJSON.message) { errorMsg = err.responseJSON.message; } else if (err.responseJSON.errors) { const errors = err.responseJSON.errors; if (errors.bill_date && errors.bill_date[0]) { errorMsg = errors.bill_date[0]; } else if (errors.main_file && errors.main_file[0]) { errorMsg = errors.main_file[0]; } else if (errors.location && errors.location[0]) { errorMsg = errors.location[0]; } else if (errors.bill_approver && errors.bill_approver[0]) { errorMsg = errors.bill_approver[0]; } else { errorMsg = Object.values(errors).flat()[0] || 'Validation failed.'; } } } alert2('uploadAlert', 'error', getUserFriendlyErrorMessage(errorMsg)); } finally { setUpState(false) } });
             function setUpState(on) { $('#uploadBtn').prop('disabled', on); $('#uploadProgressWrap').toggleClass('hidden', !on); if (!on) { $('#uploadProgressBar').css('width', '0%'); $('#uploadProgressText').text('Uploading…') } }
             function resetUpForm() { if ($('#sel-location').data('select2')) $('#sel-location').select2('destroy'); $('#sel-location').empty().append('<option value="">Select Location</option>'); s2('#sel-location', R.locations); $('#sel-location').off('change.select2').on('change.select2', onLocationChange); initApprover(); $('#bill_date').val(''); $('#mainFile').val(''); $('#dropLabel').text('Drag & drop or click'); $('#dropZone').removeClass('has-file'); $('#uploadAlert').addClass('hidden') }
             function loadViewer(url) { const $body = $('#fileViewerBody'); const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().endsWith('pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url); $('#viewerPlaceholder').remove(); $body.find('iframe,img').remove(); $('#viewerOpenLink').attr('href', url); if (isPdf) { $body.append(`<iframe src="${esc(url)}" title="Scan Preview"></iframe>`) } else if (isImg) { $body.append(`<img src="${esc(url)}" alt="Scan Preview">`) } else { $body.append(`<iframe src="${esc(url)}" title="Scan Preview"></iframe>`) } }

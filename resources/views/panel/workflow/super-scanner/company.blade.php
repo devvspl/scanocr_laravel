@@ -725,7 +725,7 @@
                                 <div>
                                     <label class="block text-xs font-medium text-stone-600 mb-1">Bill Date <span
                                             class="text-red-500">*</span></label>
-                                    <input type="date" id="bill-date" name="bill_date" required
+                                    <input type="date" id="bill-date" onfocus="this.showPicker()"  name="bill_date" required
                                         class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-white focus:border-stone-800 outline-none transition-colors w-full"
                                         @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
                                             min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
@@ -1455,6 +1455,73 @@
                 pendingVerifyTable.ajax.reload();
             });
 
+            function getUserFriendlyErrorMessage(errorMsg) {
+                // Convert technical validation messages to user-friendly ones
+                if (!errorMsg) return 'An error occurred. Please try again.';
+                
+                const friendlyMessages = {
+                    // Bill date validation messages
+                    'The bill date field must be a date before or equal to': 'Bill date must be within the current financial year period. Please select a date before',
+                    'The bill date field must be a date after or equal to': 'Bill date must be within the current financial year period. Please select a date after',
+                    'The bill date field is required': 'Please select a bill date.',
+                    'The bill date does not match the format': 'Please enter a valid date format.',
+                    'No active financial year is configured': 'System configuration error: No active financial year found. Please contact your administrator.',
+                    
+                    // File validation messages
+                    'The main file field is required': 'Please select a file to upload.',
+                    'The main file must be a file': 'Please select a valid file.',
+                    'The main file may not be greater than': 'File size is too large. Maximum allowed size is 15 MB.',
+                    'The main file must be a file of type': 'Invalid file format. Please upload JPG, PNG, or PDF files only.',
+                    
+                    // Location validation messages
+                    'The location field is required': 'Please select a location.',
+                    'The selected location is invalid': 'Selected location is not valid. Please choose a different location.',
+                    
+                    // Bill approver validation messages
+                    'The bill approver field is required': 'Please select a bill approver.',
+                    'The selected bill approver is invalid': 'Selected bill approver is not valid. Please choose a different approver.',
+                    
+                    // Vendor validation messages
+                    'The vendor id field is required': 'Please select a vendor.',
+                    'The selected vendor id is invalid': 'Selected vendor is not valid. Please choose a different vendor.',
+                    
+                    // Bill number validation messages
+                    'The bill no field is required': 'Please enter a bill number.',
+                    'The bill no may not be greater than': 'Bill number is too long. Maximum 100 characters allowed.',
+                    
+                    // Document name validation messages
+                    'The document name field is required': 'Please enter a document name.',
+                    'The document name may not be greater than': 'Document name is too long. Maximum 255 characters allowed.'
+                };
+                
+                // Check for partial matches and return friendly message
+                for (const [key, friendlyMsg] of Object.entries(friendlyMessages)) {
+                    if (errorMsg.toLowerCase().includes(key.toLowerCase())) {
+                        // For date range messages, extract the actual date
+                        if (key.includes('before or equal to') || key.includes('after or equal to')) {
+                            const dateMatch = errorMsg.match(/(\d{4}-\d{2}-\d{2})/);
+                            if (dateMatch) {
+                                const date = new Date(dateMatch[1]).toLocaleDateString('en-GB', {
+                                    day: '2-digit', 
+                                    month: 'short', 
+                                    year: 'numeric'
+                                });
+                                return friendlyMsg + ' ' + date + '.';
+                            }
+                        }
+                        return friendlyMsg;
+                    }
+                }
+                
+                // If no specific match found, return a generic friendly message
+                if (errorMsg.toLowerCase().includes('validation')) {
+                    return 'Please check your input and try again.';
+                }
+                
+                // Return original message if it's already user-friendly
+                return errorMsg;
+            }
+
             // ── Scan Document Form ────────────────────────────────────────────────────
             $('#scanForm').on('submit', function (e) {
                 e.preventDefault();
@@ -1500,7 +1567,7 @@
                                 }
                             }
                         }
-                        showAlert('#scanAlert', 'error', errorMsg);
+                        showAlert('#scanAlert', 'error', getUserFriendlyErrorMessage(errorMsg));
                     },
                     complete: () => $btn.prop('disabled', false).html('<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Scan Document')
                 });
