@@ -136,6 +136,9 @@ class CompanyController extends Controller
 
         Company::setForSession($company->id);
 
+        // Persist so this company is restored on the user's next login
+        auth()->user()->update(['last_company_id' => $company->id]);
+
         return response()->json([
             'success' => true,
             'company' => ['id' => $company->id, 'name' => $company->name],

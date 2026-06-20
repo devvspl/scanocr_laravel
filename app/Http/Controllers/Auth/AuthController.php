@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
+use App\Models\FinancialYear;
+use App\Models\LoginLog;
 use App\Models\User;
 use App\Mail\OtpMail;
 use App\Mail\WelcomeMail;
+use App\Services\UserAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -80,8 +84,9 @@ class AuthController extends Controller
         Cache::forget('register_otp_' . $request->email);
 
         Auth::login($user);
+        $this->bootstrapSession($user, request());
 
-        return redirect()->route('dashboard')->with('success', 'Registration verified successfully! Welcome to ScanOCR.');
+        return redirect($this->getRedirectRoute($user))->with('success', 'Registration verified successfully! Welcome to ScanOCR.');
     }
 
     public function showLoginForm()
@@ -134,8 +139,9 @@ class AuthController extends Controller
             // ── Direct login — OTP disabled ───────────────────────────────
             Auth::login($user, $remember);
             $request->session()->regenerate();
+            $this->bootstrapSession($user, $request);
 
-            return redirect()->intended(route('dashboard'))->with('success', 'Logged in successfully!');
+            return redirect()->intended($this->getRedirectRoute($user))->with('success', 'Logged in successfully!');
         }
 
         return back()->withErrors([
@@ -173,12 +179,14 @@ class AuthController extends Controller
 
         Cache::forget('login_otp_' . $request->email);
         $request->session()->regenerate();
+        $this->bootstrapSession($user, $request);
 
-        return redirect()->intended(route('dashboard'))->with('success', 'Logged in successfully!');
+        return redirect()->intended($this->getRedirectRoute($user))->with('success', 'Logged in successfully!');
     }
 
     public function logout(Request $request)
     {
+        LoginLog::recordLogout(Auth::id());
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -287,5 +295,94 @@ class AuthController extends Controller
         Mail::to($request->email)->send(new OtpMail($otp, 'reset'));
         
         return back()->with('success', 'A new OTP has been sent to your email.');
+    }
+
+    /**
+     * Set the correct active company for this user's session and record the login.
+     *
+     * The company is resolved as:
+     *  1. The user's first explicitly allowed company (from UserCompanyAccess)
+     *  2. Fallback: the global default company
+     *
+     * This ensures users never land on a company they don't have access to,
+     * regardless of what was stored in a previous session.
+     */
+    private function bootstrapSession(User $user, Request $request): void
+    {
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $allowed      = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
+
+        // ── Restore company ───────────────────────────────────────────────────
+        // Priority: last explicitly chosen company (if still allowed) → first allowed → global default
+        $companyId = null;
+
+        if ($user->last_company_id) {
+            // Verify the saved company is still in the user's allowed list
+            $stillAllowed = $allowed->firstWhere('id', $user->last_company_id);
+            if ($stillAllowed) {
+                $companyId = $user->last_company_id;
+            }
+        }
+
+        if (! $companyId) {
+            $company   = $allowed->first() ?? Company::where('is_default', true)->where('is_active', true)->first();
+            $companyId = $company?->id;
+        }
+
+        if ($companyId) {
+            Company::setForSession($companyId);
+        }
+
+        // ── Restore financial year ────────────────────────────────────────────
+        // Priority: last explicitly chosen FY (if it still exists) → global current
+        if ($user->last_fy_id && FinancialYear::find($user->last_fy_id)) {
+            FinancialYear::setForSession($user->last_fy_id);
+        }
+        // If no saved FY, the existing getCurrent() fallback in FinancialYear handles it automatically
+
+        // ── Record login activity ─────────────────────────────────────────────
+        LoginLog::recordLogin(
+            $user,
+            $companyId,
+            $request->ip() ?? 'unknown',
+            $request->userAgent() ?? ''
+        );
+    }
+
+    /**
+     * Determine the appropriate landing page for a user based on their roles.
+     *
+     * Rules:
+     *  - Super Admin                               → dashboard (always)
+     *  - Exactly ONE workflow role and no others   → that role's dedicated page
+     *  - Multiple roles of any kind                → dashboard (they need full navigation)
+     *  - Any other single non-workflow role        → dashboard (fallback)
+     */
+    private function getRedirectRoute(User $user): string
+    {
+        // Super Admin always lands on the dashboard regardless of other roles
+        if ($user->hasRole('Super Admin')) {
+            return route('dashboard');
+        }
+
+        $workflowRoleMap = [
+            'Temp Scanning'   => route('workflow.temp-scan.index'),
+            'Direct Scanning' => route('workflow.direct-scan.index'),
+            'Super Scanner'   => route('workflow.super-scanner.index'),
+        ];
+
+        // Collect which workflow roles this user actually has
+        $assignedWorkflowRoles = array_values(array_filter(
+            array_keys($workflowRoleMap),
+            fn($role) => $user->hasRole($role)
+        ));
+
+        // Only redirect away from dashboard when the user has exactly one role
+        // total and it is a workflow role — multi-role users need full navigation
+        if ($user->roles->count() === 1 && count($assignedWorkflowRoles) === 1) {
+            return $workflowRoleMap[$assignedWorkflowRoles[0]];
+        }
+
+        return route('dashboard');
     }
 }

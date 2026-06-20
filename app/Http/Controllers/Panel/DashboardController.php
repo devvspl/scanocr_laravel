@@ -17,6 +17,24 @@ class DashboardController extends Controller
     {
         $user         = Auth::user();
         $isSuperAdmin = $user->hasRole('Super Admin');
+
+        // Workflow-only role users have no business on the dashboard.
+        // Only redirect when the user has exactly one role and it is a workflow role —
+        // multi-role users (e.g. Temp Scanning + Direct Scanning) need the full nav panel.
+        $workflowRedirects = [
+            'Temp Scanning'   => 'workflow.temp-scan.index',
+            'Direct Scanning' => 'workflow.direct-scan.index',
+            'Super Scanner'   => 'workflow.super-scanner.index',
+        ];
+
+        if (!$isSuperAdmin && $user->roles->count() === 1) {
+            foreach ($workflowRedirects as $role => $routeName) {
+                if ($user->hasRole($role)) {
+                    return redirect()->route($routeName);
+                }
+            }
+        }
+
         $company      = Company::getDefault();
         $currentFY    = FinancialYear::where('is_current', true)->first();
         $fyId         = FinancialYear::currentId();

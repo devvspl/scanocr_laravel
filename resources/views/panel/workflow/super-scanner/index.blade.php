@@ -72,6 +72,21 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
 #detailTable tbody td{padding:.5rem .75rem;border-bottom:1px solid #f0eeec;font-size:.72rem;color:#292524;vertical-align:middle}
 #detailTable tbody tr:hover td{background:#fafaf9}
 #detailTable_wrapper>.dataTables_length,#detailTable_wrapper>.dataTables_filter,#detailTable_wrapper>.dataTables_info,#detailTable_wrapper>.dataTables_paginate{display:none !important}
+/* ── File Viewer Modal ─────────────────────────────────────── */
+.modal-tabs-bar{display:flex;align-items:center;gap:0;padding:0 1rem;background:#fafaf9;border-bottom:1px solid #e7e5e4;flex-shrink:0;flex-wrap:wrap;position:relative}
+.modal-tab{padding:.55rem .85rem;font-size:.68rem;font-weight:600;color:#78716c;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
+.modal-tab:hover{color:#292524}
+.modal-tab.active{color:#7f1d1d;border-bottom-color:#7f1d1d}
+.modal-tab-files{display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:#fff;border-bottom:1px solid #e7e5e4;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:.4rem .75rem;max-height:150px;overflow-y:auto}
+.modal-tab-files.open{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
+.modal-tab-files .file-link{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:.35rem;cursor:pointer;font-size:.67rem;color:#292524;transition:background .12s;border:1px solid #e7e5e4;background:#fafaf9;white-space:nowrap}
+.modal-tab-files .file-link:hover{background:#f5f5f4;border-color:#d6d3d1}
+.modal-tab-files .file-link.active{background:#fef2f2;color:#7f1d1d;font-weight:600;border-color:#7f1d1d}
+.modal-tab-files .file-ext{width:1.1rem;height:1.1rem;display:flex;align-items:center;justify-content:center;background:#f5f5f4;border-radius:.2rem;font-size:6px;font-weight:700;color:#78716c;text-transform:uppercase;flex-shrink:0;border:1px solid #e7e5e4}
+.modal-viewer-section{flex:1;min-height:0;display:flex;flex-direction:column;background:#1c1917}
+.modal-viewer-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;background:rgba(0,0,0,.4);flex-shrink:0}
+.modal-viewer-body{flex:1;position:relative;min-height:400px}
+.modal-viewer-body iframe,.modal-viewer-body img{position:absolute;inset:0;width:100%;height:100%;border:none;object-fit:contain;background:#1c1917}
 </style>
 @endpush
 
@@ -235,6 +250,29 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
     </div>
 </div>
 
+{{-- ── File Viewer Modal ─────────────────────────────────── --}}
+<div class="modal-backdrop" id="viewScanModalBackdrop"></div>
+<div class="modal-container" id="viewScanModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <div>
+                <h3 class="text-sm font-semibold text-stone-800" id="viewModalTitle">—</h3>
+                <p class="text-xs text-stone-400 mt-0.5" id="viewModalMeta">—</p>
+            </div>
+            <button id="btnCloseViewModal" class="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column">
+            <div class="modal-tabs-bar" id="viewModalTabsBar"></div>
+            <div class="modal-viewer-section">
+                <div class="modal-viewer-toolbar"><span id="viewModalFileName" class="text-[10px] font-semibold text-stone-300">Main Scan</span></div>
+                <div class="modal-viewer-body" id="viewModalViewerBody"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -279,7 +317,7 @@ const dt = $('#summaryTable').DataTable({
     },
     order: [[1, 'asc']],
     pageLength: 25,
-    dom: 'rt',
+    dom: 'rtp',
     columns: [
         { data: 'DT_RowIndex',   orderable: false, searchable: false, className: 'text-center', width: '40px' },
         { data: 'company_name',  defaultContent: '—',
@@ -366,13 +404,14 @@ function openDetailModal(companyId, companyName, metric) {
             data: d => Object.assign(d, currentFilters, { company_id: companyId, metric }),
         },
         pageLength: 10,
-        dom: 'rt',
+        dom: 'rtp',
         order: [[4, 'desc']],
         columns: [
             { data: 'DT_RowIndex',    orderable: false, searchable: false, width: '36px', className:'text-center' },
             { data: 'company_name',   defaultContent:'—' },
             { data: 'location_name',  defaultContent:'—' },
-            { data: 'file_preview',   orderable: false, searchable: false },
+            { data: 'file_preview',   orderable: false, searchable: false,
+          render: (d,t,r) => t==='display' ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}">${esc(r.File)}</a>` : r.File },
             { data: 'Scan_Date',      defaultContent:'—' },
             { data: 'Temp_Scan_Date', defaultContent:'—' },
             { data: 'status_badge',   orderable: false, searchable: false, className:'text-center' },
@@ -421,6 +460,80 @@ $('#btnExportPdf').on('click', function(e){
     e.preventDefault();
     window.location.href = buildExportUrl(R.pdf);
     $('#exportMenu').removeClass('open');
+});
+
+// ── File Viewer Modal (tabbed view with supporting files) ─────────────────
+const SUPPORT_URL = (scanId) => `/workflow/temp-scan/${scanId}/support-list`;
+
+$(document).on('click', '.btn-view-scan', async function(e) {
+    e.preventDefault();
+    const scanId = $(this).data('id');
+    const mainUrl = $(this).data('url');
+    const mainName = $(this).data('file');
+
+    window.__ssModalMainUrl = mainUrl;
+    window.__ssModalMainName = mainName;
+
+    $('#viewModalTitle').text(`Scan #${scanId}`);
+    $('#viewModalMeta').text(mainName);
+
+    let tabsHtml = `<button class="modal-tab active" data-tab="main" data-url="${esc(mainUrl)}" data-name="${esc(mainName)}">Main Scan</button>`;
+
+    try {
+        const res = await $.getJSON(SUPPORT_URL(scanId));
+        if (res.data && res.data.length) {
+            const grouped = {};
+            res.data.forEach(f => { const g = f.doc_type_name || 'Other'; if (!grouped[g]) grouped[g] = []; grouped[g].push(f) });
+            Object.keys(grouped).forEach(gn => {
+                tabsHtml += `<button class="modal-tab" data-tab="group" data-group="${esc(gn)}">${esc(gn)} (${grouped[gn].length})</button>`;
+            });
+            window.__ssModalGroups = grouped;
+        } else {
+            window.__ssModalGroups = {};
+        }
+    } catch(err) {
+        window.__ssModalGroups = {};
+    }
+
+    $('#viewModalTabsBar').html(tabsHtml + '<div class="modal-tab-files" id="ssTabFilesPanel"></div>');
+    $('#viewScanModal,#viewScanModalBackdrop').addClass('open');
+    ssLoadViewer(mainUrl, mainName);
+});
+
+$(document).on('click', '#viewScanModal .modal-tab[data-tab="main"]', function() {
+    $('#viewScanModal .modal-tab').removeClass('active'); $(this).addClass('active');
+    $('#ssTabFilesPanel').removeClass('open').empty();
+    ssLoadViewer($(this).data('url'), $(this).data('name'));
+});
+
+$(document).on('click', '#viewScanModal .modal-tab[data-tab="group"]', function() {
+    const gn = $(this).data('group');
+    const files = window.__ssModalGroups[gn] || [];
+    $('#viewScanModal .modal-tab').removeClass('active'); $(this).addClass('active');
+    let html = '';
+    files.forEach(f => { html += `<div class="file-link" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><span class="file-ext">${esc(f.File_Ext || '?')}</span><span>${esc(f.File)}</span></div>` });
+    $('#ssTabFilesPanel').html(html).addClass('open');
+});
+
+$(document).on('click', '#ssTabFilesPanel .file-link', function() {
+    const url = $(this).data('url'); const name = $(this).data('name');
+    $('#ssTabFilesPanel .file-link').removeClass('active'); $(this).addClass('active');
+    ssLoadViewer(url, name);
+});
+
+function ssLoadViewer(url, name) {
+    const $body = $('#viewModalViewerBody'); $body.find('iframe,img').remove();
+    $('#viewModalFileName').text(name);
+    const isPdf = url.toLowerCase().includes('.pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url);
+    if (isPdf) { $body.append(`<iframe src="${esc(url)}"></iframe>`) }
+    else if (isImg) { $body.append(`<img src="${esc(url)}" alt="${esc(name)}">`) }
+    else { $body.append(`<iframe src="${esc(url)}"></iframe>`) }
+}
+
+$('#btnCloseViewModal,#viewScanModalBackdrop').on('click', function() {
+    $('#viewScanModal,#viewScanModalBackdrop').removeClass('open');
+    $('#viewModalTabsBar').empty(); $('#viewModalViewerBody').find('iframe,img').remove();
+    window.__ssModalMainUrl = null; window.__ssModalMainName = null; window.__ssModalGroups = {};
 });
 
 });

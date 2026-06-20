@@ -15,12 +15,6 @@
     <h2 class="mt-2 text-center text-3xl font-extrabold tracking-tight text-stone-900 dark:text-white">
         Welcome back
     </h2>
-    <p class="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
-        Don't have an account?
-        <a href="{{ route('register') }}" class="font-medium text-red-900 hover:text-red-800 dark:text-red-400 transition-colors">
-            Create an account free
-        </a>
-    </p>
 </div>
 
 <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

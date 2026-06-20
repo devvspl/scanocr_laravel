@@ -40,8 +40,8 @@ Route::get('/help', [PublicController::class, 'help'])->name('help');
 Route::match(['get', 'post'], '/token-login', [TokenLoginController::class, 'login'])->name('token-login');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    // Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    // Route::post('/register', [AuthController::class, 'register']);
     Route::get('/register/verify', [AuthController::class, 'showVerifyRegisterForm'])->name('register.verify.form');
     Route::post('/register/verify', [AuthController::class, 'verifyRegister'])->name('register.verify.submit');
     Route::post('/register/otp/resend', [AuthController::class, 'resendRegisterOtp'])->name('register.otp.resend');

@@ -480,7 +480,7 @@ class TempScannerController extends Controller
     }
 
     /**
-     * Shared query for exports — returns the same data as data() but as a Collection.
+     * Shared query for exports — mirrors the data() filters exactly.
      */
     private function exportQuery(): \Illuminate\Support\Collection
     {
@@ -489,6 +489,8 @@ class TempScannerController extends Controller
         return DB::table('scan_file as s')
             ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
             ->leftJoin('users as u', 'u.id', '=', 's.Bill_Approver')
+            ->where('s.Group_Id', Company::currentId())
+            ->where('s.year_id', FinancialYear::currentId())
             ->where('s.Temp_Scan', 'Y')
             ->where('s.Temp_Scan_By', $userId)
             ->where('s.Is_Deleted', 'N')
@@ -501,6 +503,7 @@ class TempScannerController extends Controller
                 's.Temp_Scan_Date',
                 's.Final_Submit',
                 's.Bill_Approved',
+                's.temp_scan_reject',
                 'u.name as approver_name',
                 's.Bill_Approver_Remark',
             ])

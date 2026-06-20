@@ -33,6 +33,8 @@ class User extends Authenticatable
         'location_id',
         'signature_path',
         'created_by',
+        'last_company_id',
+        'last_fy_id',
     ];
 
     /**

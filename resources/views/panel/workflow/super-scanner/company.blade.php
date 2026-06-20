@@ -593,6 +593,22 @@
             background: #fef2f2;
             color: #dc2626
         }
+
+        /* ── File Viewer Modal ─────────────────────────────── */
+        .vm-tabs-bar{display:flex;align-items:center;gap:0;padding:0 1rem;background:#fafaf9;border-bottom:1px solid #e7e5e4;flex-shrink:0;flex-wrap:wrap;position:relative}
+        .vm-tab{padding:.55rem .85rem;font-size:.68rem;font-weight:600;color:#78716c;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
+        .vm-tab:hover{color:#292524}
+        .vm-tab.active{color:#7f1d1d;border-bottom-color:#7f1d1d}
+        .vm-tab-files{display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:#fff;border-bottom:1px solid #e7e5e4;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:.4rem .75rem;max-height:150px;overflow-y:auto}
+        .vm-tab-files.open{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
+        .vm-tab-files .file-link{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:.35rem;cursor:pointer;font-size:.67rem;color:#292524;transition:background .12s;border:1px solid #e7e5e4;background:#fafaf9;white-space:nowrap}
+        .vm-tab-files .file-link:hover{background:#f5f5f4;border-color:#d6d3d1}
+        .vm-tab-files .file-link.active{background:#fef2f2;color:#7f1d1d;font-weight:600;border-color:#7f1d1d}
+        .vm-tab-files .file-ext{width:1.1rem;height:1.1rem;display:flex;align-items:center;justify-content:center;background:#f5f5f4;border-radius:.2rem;font-size:6px;font-weight:700;color:#78716c;text-transform:uppercase;flex-shrink:0;border:1px solid #e7e5e4}
+        .vm-viewer-section{flex:1;min-height:0;display:flex;flex-direction:column;background:#1c1917}
+        .vm-viewer-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;background:rgba(0,0,0,.4);flex-shrink:0}
+        .vm-viewer-body{flex:1;position:relative;min-height:400px}
+        .vm-viewer-body iframe,.vm-viewer-body img{position:absolute;inset:0;width:100%;height:100%;border:none;object-fit:contain;background:#1c1917}
     </style>
 @endpush
 
@@ -1104,6 +1120,29 @@
         </div>
     </div>
 
+    {{-- File Viewer Modal --}}
+    <div class="modal-backdrop" id="viewScanModalBackdrop"></div>
+    <div class="modal-container" id="viewScanModal">
+        <div style="background:#fff;border-radius:1rem;box-shadow:0 20px 50px rgba(0,0,0,.25);width:100%;max-width:1100px;max-height:90vh;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e7e5e4;flex-shrink:0">
+                <div>
+                    <h3 class="text-sm font-semibold text-stone-800" id="viewModalTitle">—</h3>
+                    <p class="text-xs text-stone-400 mt-0.5" id="viewModalMeta">—</p>
+                </div>
+                <button id="btnCloseViewModal" class="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+                <div class="vm-tabs-bar" id="viewModalTabsBar"></div>
+                <div class="vm-viewer-section">
+                    <div class="vm-viewer-toolbar"><span id="viewModalFileName" class="text-[10px] font-semibold text-stone-300">Main Scan</span></div>
+                    <div class="vm-viewer-body" id="viewModalViewerBody"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -1281,11 +1320,11 @@
                 },
                 order: [[3, 'desc']],
                 pageLength: 25,
-                dom: 'rt',
+                dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'location_name', defaultContent: '—' },
-                    { data: 'File', defaultContent: '—' },
+                    { data: 'File', defaultContent: '—', render: (d, t, r) => d ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${d}" data-url="${r.File_Location || ''}">${d}</a>` : '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'status_badge', orderable: false },
                     { data: 'scanned_by', defaultContent: '—' },
@@ -1296,7 +1335,7 @@
                         const scan_date    = r.Temp_Scan_Date || '';
 
                         let h = '<div class="dt-actions">';
-                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}">
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -1358,16 +1397,16 @@
                 },
                 order: [[3, 'desc']],
                 pageLength: 25,
-                dom: 'rt',
+                dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'location_name', defaultContent: '—' },
-                    { data: 'File', defaultContent: '—' },
+                    { data: 'File', defaultContent: '—', render: (d, t, r) => d ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${d}" data-url="${r.File_Location || ''}">${d}</a>` : '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'scanned_by', defaultContent: '—' },
                     { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
                         let h = '<div class="dt-actions">';
-                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}">
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -1412,17 +1451,17 @@
                 },
                 order: [[4, 'desc']],
                 pageLength: 25,
-                dom: 'rt',
+                dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'location_name', defaultContent: '—' },
-                    { data: 'File', defaultContent: '—' },
+                    { data: 'File', defaultContent: '—', render: (d, t, r) => d ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${d}" data-url="${r.File_Location || ''}">${d}</a>` : '—' },
                     { data: 'Document_name', defaultContent: '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'scanned_by', defaultContent: '—' },
                     { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
                         let h = '<div class="dt-actions">';
-                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-url="${r.File_Location || ''}">
+                        h += `<button class="dt-btn blue btn-view-scan" title="View Scan" data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}">
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -1815,11 +1854,11 @@
                 },
                 order: [[3, 'desc']],
                 pageLength: 10,
-                dom: 'rt',
+                dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'location_name', defaultContent: '—' },
-                    { data: 'File', defaultContent: '—', render: (d) => d ? d.substring(0, 20) + (d.length > 20 ? '...' : '') : '—' },
+                    { data: 'File', defaultContent: '—', render: (d, t, r) => d ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${d}" data-url="${r.File_Location || ''}">${d.substring(0, 20)}${d.length > 20 ? '...' : ''}</a>` : '—' },
                     { data: 'Temp_Scan_Date', defaultContent: '—' },
                     { data: 'status_badge', orderable: false },
                 ],
@@ -1872,10 +1911,78 @@
 
             // ── Action Button Events ──────────────────────────────────────────────────
 
-            // View Scan — open in new tab
-            $(document).on('click', '.btn-view-scan', function () {
+            // View Scan — open tabbed file viewer modal
+            $(document).on('click', '.btn-view-scan', async function () {
+                const scanId = $(this).data('id');
                 const url = $(this).data('url');
-                if (url) window.open(url, '_blank');
+                const file = $(this).data('file') || url.split('/').pop();
+                if (!url) return;
+
+                window.__vmMainUrl = url;
+                window.__vmMainName = file;
+                $('#viewModalTitle').text(`Scan #${scanId || ''}`);
+                $('#viewModalMeta').text(file);
+
+                function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+                let tabsHtml = `<button class="vm-tab active" data-tab="main" data-url="${esc(url)}" data-name="${esc(file)}">Main Scan</button>`;
+                window.__vmGroups = {};
+
+                if (scanId) {
+                    try {
+                        const res = await $.getJSON(`/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}/support-list`);
+                        if (res.data && res.data.length) {
+                            const grouped = {};
+                            res.data.forEach(f => { const g = f.doc_type_name || 'Other'; if (!grouped[g]) grouped[g] = []; grouped[g].push(f) });
+                            Object.keys(grouped).forEach(gn => {
+                                tabsHtml += `<button class="vm-tab" data-tab="group" data-group="${esc(gn)}">${esc(gn)} (${grouped[gn].length})</button>`;
+                            });
+                            window.__vmGroups = grouped;
+                        }
+                    } catch(e) {}
+                }
+
+                $('#viewModalTabsBar').html(tabsHtml + '<div class="vm-tab-files" id="vmFilesPanel"></div>');
+                $('#viewScanModal,#viewScanModalBackdrop').addClass('open');
+                vmLoadViewer(url, file);
+            });
+
+            $(document).on('click', '.vm-tab[data-tab="main"]', function () {
+                $('.vm-tab').removeClass('active'); $(this).addClass('active');
+                $('#vmFilesPanel').removeClass('open').empty();
+                vmLoadViewer($(this).data('url'), $(this).data('name'));
+            });
+
+            $(document).on('click', '.vm-tab[data-tab="group"]', function () {
+                const gn = $(this).data('group');
+                const files = window.__vmGroups[gn] || [];
+                $('.vm-tab').removeClass('active'); $(this).addClass('active');
+                function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+                let html = '';
+                files.forEach(f => { html += `<div class="file-link" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><span class="file-ext">${esc(f.File_Ext || '?')}</span><span>${esc(f.File)}</span></div>` });
+                $('#vmFilesPanel').html(html).addClass('open');
+            });
+
+            $(document).on('click', '#vmFilesPanel .file-link', function () {
+                const url = $(this).data('url'); const name = $(this).data('name');
+                $('#vmFilesPanel .file-link').removeClass('active'); $(this).addClass('active');
+                vmLoadViewer(url, name);
+            });
+
+            function vmLoadViewer(url, name) {
+                const $body = $('#viewModalViewerBody'); $body.find('iframe,img').remove();
+                $('#viewModalFileName').text(name);
+                const isPdf = url.toLowerCase().includes('.pdf');
+                const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url);
+                if (isPdf) { $body.append(`<iframe src="${url}"></iframe>`) }
+                else if (isImg) { $body.append(`<img src="${url}" alt="${name}">`) }
+                else { $body.append(`<iframe src="${url}"></iframe>`) }
+            }
+
+            $('#btnCloseViewModal,#viewScanModalBackdrop').on('click', function () {
+                $('#viewScanModal,#viewScanModalBackdrop').removeClass('open');
+                $('#viewModalTabsBar').empty(); $('#viewModalViewerBody').find('iframe,img').remove();
+                window.__vmMainUrl = null; window.__vmMainName = null; window.__vmGroups = {};
             });
 
             // Add Supporting Files — jump to Step 2

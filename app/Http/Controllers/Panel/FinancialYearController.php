@@ -114,6 +114,9 @@ class FinancialYearController extends Controller
     {
         FinancialYear::setForSession($financialYear->id);
 
+        // Persist so this FY is restored on the user's next login
+        auth()->user()->update(['last_fy_id' => $financialYear->id]);
+
         return response()->json([
             'success' => true,
             'fy' => ['id' => $financialYear->id, 'label' => $financialYear->label],

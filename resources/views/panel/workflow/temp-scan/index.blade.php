@@ -727,8 +727,7 @@
             min-height: 0;
             display: flex;
             flex-direction: column;
-            background: #1c1917;
-            border-top: 1px solid #e7e5e4
+            background: #1c1917
         }
 
         .modal-viewer-toolbar {
@@ -757,78 +756,117 @@
             background: #1c1917
         }
 
-        .modal-files-section {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid #e7e5e4;
+        .modal-tabs-bar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0 1rem;
             background: #fafaf9;
-            max-height: 180px;
-            overflow-y: auto;
-            flex-shrink: 0
+            border-bottom: 1px solid #e7e5e4;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            position: relative
         }
 
-        .modal-file-group {
-            margin-bottom: 1rem
+        .modal-tab {
+            padding: .55rem .85rem;
+            font-size: .68rem;
+            font-weight: 600;
+            color: #78716c;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap
         }
 
-        .modal-file-group:last-child {
-            margin-bottom: 0
+        .modal-tab:hover {
+            color: #292524
         }
 
-        .modal-file-group-title {
-            font-size: .7rem;
+        .modal-tab.active {
+            color: #7f1d1d;
+            border-bottom-color: #7f1d1d
+        }
+
+        .modal-tab-files {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: #fff;
+            border-bottom: 1px solid #e7e5e4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+            padding: .4rem .75rem;
+            max-height: 150px;
+            overflow-y: auto
+        }
+
+        .modal-tab-files.open {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .3rem
+        }
+
+        .modal-tab-files .file-group-label {
+            font-size: .6rem;
             font-weight: 700;
             color: #78716c;
             text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-bottom: .5rem
+            letter-spacing: .03em;
+            padding: .25rem 0;
+            margin-top: .35rem
         }
 
-        .modal-file-item {
-            display: flex;
+        .modal-tab-files .file-group-label:first-child {
+            margin-top: 0
+        }
+
+        .modal-tab-files .file-link {
+            display: inline-flex;
             align-items: center;
-            gap: .5rem;
-            padding: .4rem .75rem;
-            border-radius: .5rem;
+            gap: .35rem;
+            padding: .25rem .55rem;
+            border-radius: .35rem;
             cursor: pointer;
-            transition: all .15s;
-            margin-bottom: .2rem
+            font-size: .67rem;
+            color: #292524;
+            transition: background .12s;
+            border: 1px solid #e7e5e4;
+            background: #fafaf9;
+            white-space: nowrap
         }
 
-        .modal-file-item:hover {
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .08)
+        .modal-tab-files .file-link:hover {
+            background: #f5f5f4;
+            border-color: #d6d3d1
         }
 
-        .modal-file-item.active {
-            background: #fff;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
-            border-left: 3px solid #7f1d1d
+        .modal-tab-files .file-link.active {
+            background: #fef2f2;
+            color: #7f1d1d;
+            font-weight: 600;
+            border-color: #7f1d1d
         }
 
-        .modal-file-icon {
-            width: 1.75rem;
-            height: 1.75rem;
+        .modal-tab-files .file-ext {
+            width: 1.1rem;
+            height: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #f5f5f4;
-            border-radius: .375rem;
-            color: #78716c;
-            font-size: 9px;
+            border-radius: .2rem;
+            font-size: 6px;
             font-weight: 700;
+            color: #78716c;
             text-transform: uppercase;
             flex-shrink: 0;
             border: 1px solid #e7e5e4
-        }
-
-        .modal-file-name {
-            flex: 1;
-            min-width: 0;
-            font-size: .72rem;
-            color: #292524;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
         }
 
         /* ── Tabs ──────────────────────────────────────── */
@@ -981,7 +1019,7 @@
                                 <option value="">Select Approver</option>
                             </select></div>
                         <div><label class="block text-xs font-medium text-stone-600 mb-1">Bill Date/Voucher Date<span
-                                    class="text-red-500">*</span></label><input type="date" id="bill_date" name="bill_date" required
+                                    class="text-red-500">*</span></label><input type="date" id="bill_date" onfocus="if (this.showPicker) this.showPicker(); else this.click();"  name="bill_date" required
                                 class="w-full h-8 px-3 text-xs border border-stone-300 rounded-lg bg-stone-50 focus:border-stone-800 focus:ring focus:ring-stone-800 focus:ring-opacity-10 outline-none"
                                 @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
                                     min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
@@ -1091,6 +1129,7 @@
                     <div class="dt-ctrl-bar border-b border-stone-100 flex-shrink-0">
                         <div class="flex items-center gap-2 text-xs text-stone-500"><span>Show</span><select
                                 class="dt-length-sel" id="dtLength">
+                                <option value="5">5</option>
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
@@ -1307,20 +1346,11 @@
                     </svg></button>
             </div>
             <div class="modal-body">
+                <div class="modal-tabs-bar" id="modalTabsBar"></div>
                 <div class="modal-viewer-section">
                     <div class="modal-viewer-toolbar"><span id="modalViewingFileName"
                             class="text-[10px] font-semibold text-stone-300">Main Scan</span></div>
                     <div class="modal-viewer-body" id="modalViewerBody"></div>
-                </div>
-                <div class="modal-files-section" id="modalFilesSection">
-                    <div class="modal-file-group">
-                        <div class="modal-file-group-title">Main Scan</div>
-                        <div id="modalMainFile"></div>
-                    </div>
-                    <div class="modal-file-group" id="modalSupportingGroup" style="display:none">
-                        <div class="modal-file-group-title">Supporting Files</div>
-                        <div id="modalSupportingFiles"></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1359,7 +1389,7 @@
             initApprover(); s2('#sel-doctype', R.docTypes);
             function dropZone(zId, iId, lId) { const $z = $('#' + zId), $i = $('#' + iId), $l = $('#' + lId); $z.on('click', function (e) { if ($(e.target).is($i)) return; e.stopPropagation(); $i[0].click() }); $i.on('change', function () { if (this.files[0]) { $l.text(this.files[0].name); $z.addClass('has-file') } }); $z.on('dragover', (e) => { e.preventDefault(); $z.addClass('dragover') }); $z.on('dragleave', () => $z.removeClass('dragover')); $z.on('drop', (e) => { e.preventDefault(); $z.removeClass('dragover'); const f = e.originalEvent.dataTransfer.files[0]; if (f) { const dt = new DataTransfer(); dt.items.add(f); $i[0].files = dt.files; $l.text(f.name); $z.addClass('has-file') } }) }
             dropZone('dropZone', 'mainFile', 'dropLabel'); dropZone('supportDropZone', 'supportFile', 'supportDropLabel');
-            const dt = $('#scansTable').DataTable({ serverSide: true, processing: true, ajax: { url: R.data, type: 'GET', data: function (d) { d.tab = currentTab; d.from_date = currentFilters.from_date; d.to_date = currentFilters.to_date } }, order: [[3, 'desc']], pageLength: 10, dom: 'rt', columns: [{ data: 'DT_RowIndex', orderable: false, searchable: false }, { data: 'location_name', defaultContent: '—' }, { data: 'File', render: (d, t, r) => `<a href="${esc(r.File_Location)}" target="_blank" class="text-blue-600 hover:underline block truncate" title="${esc(d)}">${esc(d)}</a>` }, { data: 'Temp_Scan_Date', defaultContent: '—' }, { data: 'final_submit_badge', orderable: false, className: 'text-center' }, { data: 'bill_approved_badge', orderable: false, className: 'text-center' }, { data: 'approver_name', defaultContent: '—' }, { data: 'Bill_Approver_Remark', defaultContent: '—', render: (d) => d ? `<span title="${esc(d)}" class="block truncate">${esc(d)}</span>` : '—' }, { data: 'actions', orderable: false, searchable: false, className: 'text-center', render: (d, t, r) => buildBtns(r) }], language: { emptyTable: 'No scan files found', zeroRecords: 'No matching records', processing: '<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>' }, drawCallback: attachTblEvents });
+            const dt = $('#scansTable').DataTable({ serverSide: true, processing: true, ajax: { url: R.data, type: 'GET', data: function (d) { d.tab = currentTab; d.from_date = currentFilters.from_date; d.to_date = currentFilters.to_date } }, order: [[3, 'desc']], pageLength: 5, dom: 'rtp', columns: [{ data: 'DT_RowIndex', orderable: false, searchable: false }, { data: 'location_name', defaultContent: '—' }, { data: 'File', render: (d, t, r) => `<a href="javascript:void(0)" class="text-blue-600 hover:underline block truncate btn-file-view" data-id="${r.Scan_Id}" title="${esc(d)}">${esc(d)}</a>` }, { data: 'Temp_Scan_Date', defaultContent: '—' }, { data: 'final_submit_badge', orderable: false, className: 'text-center' }, { data: 'bill_approved_badge', orderable: false, className: 'text-center' }, { data: 'approver_name', defaultContent: '—' }, { data: 'Bill_Approver_Remark', defaultContent: '—', render: (d) => d ? `<span title="${esc(d)}" class="block truncate">${esc(d)}</span>` : '—' }, { data: 'actions', orderable: false, searchable: false, className: 'text-center', render: (d, t, r) => buildBtns(r) }], language: { emptyTable: 'No scan files found', zeroRecords: 'No matching records', processing: '<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>' }, drawCallback: attachTblEvents });
             $('.tab-btn').on('click', function () { const tab = $(this).data('tab'); currentTab = tab; $('.tab-btn').removeClass('active'); $(this).addClass('active'); dt.ajax.reload() });
             $('#btnApplyFilters').on('click', function () { currentFilters.from_date = $('#filterFromDate').val(); currentFilters.to_date = $('#filterToDate').val(); dt.ajax.reload() });
             $('#btnResetFilters').on('click', function () { $('#filterFromDate,#filterToDate').val(''); currentFilters = { from_date: '', to_date: '' }; dt.ajax.reload() });
@@ -1368,7 +1398,7 @@
             dt.on('draw', function () { const $p = $('#scansTable_wrapper .dataTables_paginate').first(); const $i = $('#scansTable_wrapper .dataTables_info').first(); if ($p.length) $p.appendTo('#dtPaginate'); if ($i.length) $i.appendTo('#dtInfo'); updateTabBadges() });
             async function updateTabBadges() { try { const userId = '{{Auth::id()}}'; const baseQuery = { Temp_Scan: 'Y', Temp_Scan_By: userId, Is_Deleted: 'N' }; const counts = await $.getJSON('{{route("workflow.temp-scan.tab-counts")}}'); $('#badge-all').text(counts.all || 0); $('#badge-pending').text(counts.pending || 0); $('#badge-approved').text(counts.approved || 0); $('#badge-rejected').text(counts.rejected || 0) } catch (e) { console.error('Failed to load tab counts', e) } }
             function buildBtns(r) { const canDelete = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y' || r.Final_Submit !== 'Y'); const canAttachSupport = (r.Final_Submit !== 'Y'); const isRejected = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y'); let h = `<div class="dt-actions">`; h += `<button class="dt-btn blue btn-view-modal" title="View Scan" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>`; if (canAttachSupport) { h += `<button class="dt-btn blue btn-s2" title="Add Supporting Files" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}" data-date="${esc(r.Temp_Scan_Date)}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>` } if (isRejected) { h += `<button class="dt-btn blue btn-resubmit" title="Resubmit for Approval" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` } if (r.Final_Submit !== 'Y') { h += `<button class="dt-btn green btn-fs" title="Final Submit" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>` } if (canDelete) { h += `<button class="dt-btn red btn-del" title="Delete" data-id="${r.Scan_Id}"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` } return h + '</div>' }
-            function attachTblEvents() { $('#scansTable').off('click', '.btn-view-modal').on('click', '.btn-view-modal', async function () { await openViewModal($(this).data('id')) }).off('click', '.btn-s2').on('click', '.btn-s2', function () { const $b = $(this); goStep2({ id: $b.data('id'), file: $b.data('file'), file_url: $b.data('url'), scan_date: $b.data('date') }) }).off('click', '.btn-resubmit').on('click', '.btn-resubmit', async function () { openResubmitModal($(this).data('id')) }).off('click', '.btn-fs').on('click', '.btn-fs', async function () { if (!confirm('Mark as final submitted?')) return; await $.ajax({ url: R.finalSubmit($(this).data('id')), method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }).off('click', '.btn-del').on('click', '.btn-del', async function () { if (!confirm('Delete this scan?')) return; await $.ajax({ url: R.destroy($(this).data('id')), method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }) }
+            function attachTblEvents() { $('#scansTable').off('click', '.btn-view-modal').on('click', '.btn-view-modal', async function () { await openViewModal($(this).data('id')) }).off('click', '.btn-file-view').on('click', '.btn-file-view', async function (e) { e.preventDefault(); await openViewModal($(this).data('id')) }).off('click', '.btn-s2').on('click', '.btn-s2', function () { const $b = $(this); goStep2({ id: $b.data('id'), file: $b.data('file'), file_url: $b.data('url'), scan_date: $b.data('date') }) }).off('click', '.btn-resubmit').on('click', '.btn-resubmit', async function () { openResubmitModal($(this).data('id')) }).off('click', '.btn-fs').on('click', '.btn-fs', async function () { if (!confirm('Mark as final submitted?')) return; await $.ajax({ url: R.finalSubmit($(this).data('id')), method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }).off('click', '.btn-del').on('click', '.btn-del', async function () { if (!confirm('Delete this scan?')) return; await $.ajax({ url: R.destroy($(this).data('id')), method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false) }) }
             $('#btnExportToggle').on('click', function (e) { e.stopPropagation(); $('#exportMenu').toggleClass('open') });
             $(document).on('click', function (e) { if (!$(e.target).closest('#exportMenu').length) $('#exportMenu').removeClass('open') });
             $('#exportExcel,#exportPdf').on('click', function () { $('#exportMenu').removeClass('open') });
@@ -1457,10 +1487,12 @@
             function renderSupport(files) { const $badge = $('#supportCountBadge'); if (files.length) { $badge.text(files.length).removeClass('hidden') } else { $badge.addClass('hidden') } if (!files.length) { $('#supportList').html(`<div class="flex flex-col items-center justify-center py-10 gap-2 text-stone-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8 a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><p class="text-xs">No supporting files yet</p></div>`); return } $('#supportList').html(files.map((f, i) => `<div class="sf-row" id="sf-${f.Support_Id}"><div class="flex items-center gap-2.5 min-w-0"><span class="text-[10px] text-stone-400 w-4 text-right shrink-0 font-medium">${i + 1}</span><div class="w-8 h-8 flex items-center justify-center bg-stone-100 rounded-lg text-stone-500 text-[9px] font-bold uppercase shrink-0 border border-stone-200">${esc(f.File_Ext || '?')}</div><div class="min-w-0"><p class="text-xs font-medium text-stone-700 truncate leading-tight">${esc(f.File)}</p>${f.doc_type_name ? `<p class="text-[10px] text-stone-400 leading-tight mt-0.5">${esc(f.doc_type_name)}</p>` : `<p class="text-[10px] text-stone-300 leading-tight mt-0.5 italic">No type</p>`}</div></div><div class="flex items-center gap-1.5 shrink-0"><a href="${esc(f.File_Location)}" target="_blank" class="w-6 h-6 flex items-center justify-center rounded text-blue-400 hover:bg-blue-50 transition-colors" title="View file"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4 M14 4h6m0 0v6m0-6L10 14"/></svg></a><button class="w-6 h-6 flex items-center justify-center rounded text-red-400 hover:bg-red-50 transition-colors btn-del-sup" data-sid="${f.Support_Id}" title="Remove"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858 L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div>`).join('')) }
             $(document).on('click', '.btn-del-sup', async function () { if (!activeScan || !confirm('Remove this supporting file?')) return; const sid = $(this).data('sid'); await $.ajax({ url: R.supportDel(activeScan.id, sid), method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } }); $(`#sf-${sid}`).slideUp(150, function () { $(this).remove(); const n = $('#supportList .sf-row').length; const $badge = $('#supportCountBadge'); if (n) { $badge.text(n) } else { $badge.addClass('hidden'); $('#supportList').html(`<div class="flex flex-col items-center justify-center py-10 gap-2 text-stone-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8 a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><p class="text-xs">No supporting files yet</p></div>`) } }) });
             $('#btnFinalSubmit').on('click', async function () { if (!activeScan || !confirm('Mark this scan as final submitted?')) return; await $.ajax({ url: R.finalSubmit(activeScan.id), method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } }); dt.ajax.reload(null, false); $('#btnBackToStep1').click() });
-            async function openViewModal(scanId) { try { const [supportRes] = await Promise.all([$.getJSON(R.supportList(scanId))]); const scanData = dt.rows().data().toArray().find(r => r.Scan_Id == scanId); if (!scanData) { alert('Scan not found'); return } $('#modalScanTitle').text(`Scan #${scanId}`); $('#modalScanMeta').text(scanData.Temp_Scan_Date || '—'); const mainUrl = scanData.File_Location; $('#modalMainFile').html(`<div class="modal-file-item" data-url="${esc(mainUrl)}" data-name="${esc(scanData.File)}"><div class="modal-file-icon">${esc(scanData.File.split('.').pop().toUpperCase())}</div><div class="modal-file-name">${esc(scanData.File)}</div></div>`); if (supportRes.data.length) { $('#modalSupportingGroup').show(); $('#modalSupportingFiles').empty(); supportRes.data.forEach(f => { $('#modalSupportingFiles').append(`<div class="modal-file-item" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><div class="modal-file-icon">${esc(f.File_Ext || '?')}</div><div class="modal-file-name">${esc(f.File)}${f.doc_type_name ? ` <span class="text-[10px] text-stone-400">• ${esc(f.doc_type_name)}</span>` : ''}</div></div>`) }) } else { $('#modalSupportingGroup').hide() } $('#viewScanModal,#viewScanModalBackdrop').addClass('open'); loadModalViewer(mainUrl, scanData.File) } catch (e) { console.error(e); alert('Failed to load scan details') } }
-            function loadModalViewer(url, name) { const $body = $('#modalViewerBody'); $body.find('iframe,img').remove(); $('#modalViewingFileName').text(name); const isPdf = url.toLowerCase().includes('.pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url); if (isPdf) { $body.append(`<iframe src="${esc(url)}"></iframe>`) } else if (isImg) { $body.append(`<img src="${esc(url)}" alt="${esc(name)}">`) } else { $body.append(`<iframe src="${esc(url)}"></iframe>`) } $('.modal-file-item').removeClass('active'); $(`.modal-file-item[data-url="${url}"]`).addClass('active') }
-            $(document).on('click', '.modal-file-item', function () { loadModalViewer($(this).data('url'), $(this).data('name')) });
-            $('#btnCloseModal,#viewScanModalBackdrop').on('click', function () { $('#viewScanModal,#viewScanModalBackdrop').removeClass('open'); $('#modalMainFile,#modalSupportingFiles').empty(); $('#modalSupportingGroup').hide() });
+            async function openViewModal(scanId) { try { const [supportRes] = await Promise.all([$.getJSON(R.supportList(scanId))]); const scanData = dt.rows().data().toArray().find(r => r.Scan_Id == scanId); if (!scanData) { alert('Scan not found'); return } $('#modalScanTitle').text(`Scan #${scanId}`); $('#modalScanMeta').text(scanData.Temp_Scan_Date || '—'); const mainUrl = scanData.File_Location; const mainName = scanData.File; window.__modalMainUrl = mainUrl; window.__modalMainName = mainName; let tabsHtml = `<button class="modal-tab active" data-tab="main" data-url="${esc(mainUrl)}" data-name="${esc(mainName)}">Main Scan</button>`; if (supportRes.data.length) { const grouped = {}; supportRes.data.forEach(f => { const g = f.doc_type_name || 'Other'; if (!grouped[g]) grouped[g] = []; grouped[g].push(f) }); Object.keys(grouped).forEach(gn => { tabsHtml += `<button class="modal-tab" data-tab="group" data-group="${esc(gn)}">${esc(gn)} (${grouped[gn].length})</button>` }); window.__modalGroups = grouped } else { window.__modalGroups = {} } $('#modalTabsBar').html(tabsHtml + '<div class="modal-tab-files" id="tabFilesPanel"></div>'); $('#viewScanModal,#viewScanModalBackdrop').addClass('open'); loadModalViewer(mainUrl, mainName) } catch (e) { console.error(e); alert('Failed to load scan details') } }
+            $(document).on('click', '.modal-tab[data-tab="main"]', function () { $('.modal-tab').removeClass('active'); $(this).addClass('active'); $('#tabFilesPanel').removeClass('open').empty(); loadModalViewer($(this).data('url'), $(this).data('name')) });
+            $(document).on('click', '.modal-tab[data-tab="group"]', function () { const gn = $(this).data('group'); const files = window.__modalGroups[gn] || []; $('.modal-tab').removeClass('active'); $(this).addClass('active'); let html = ''; files.forEach(f => { html += `<div class="file-link" data-url="${esc(f.File_Location)}" data-name="${esc(f.File)}"><span class="file-ext">${esc(f.File_Ext || '?')}</span><span>${esc(f.File)}</span></div>` }); $('#tabFilesPanel').html(html).addClass('open') });
+            $(document).on('click', '#tabFilesPanel .file-link', function () { const url = $(this).data('url'); const name = $(this).data('name'); $('#tabFilesPanel .file-link').removeClass('active'); $(this).addClass('active'); loadModalViewer(url, name) });
+            function loadModalViewer(url, name) { const $body = $('#modalViewerBody'); $body.find('iframe,img').remove(); $('#modalViewingFileName').text(name); const isPdf = url.toLowerCase().includes('.pdf'); const isImg = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url); if (isPdf) { $body.append(`<iframe src="${esc(url)}"></iframe>`) } else if (isImg) { $body.append(`<img src="${esc(url)}" alt="${esc(name)}">`) } else { $body.append(`<iframe src="${esc(url)}"></iframe>`) } }
+            $('#btnCloseModal,#viewScanModalBackdrop').on('click', function () { $('#viewScanModal,#viewScanModalBackdrop').removeClass('open'); $('#modalTabsBar').empty(); window.__modalMainUrl = null; window.__modalMainName = null; window.__modalGroups = {} });
             let resubmitScanId = null;
             function openResubmitModal(scanId) { resubmitScanId = scanId; const scanData = dt.rows().data().toArray().find(r => r.Scan_Id == scanId); if (!scanData) { alert('Scan not found'); return } const $sel = $('#resubmitApprover'); if ($sel.data('select2')) $sel.select2('destroy'); $sel.empty(); if (scanData.Bill_Approver && scanData.approver_name) { $sel.append(new Option(scanData.approver_name, scanData.Bill_Approver, true, true)) } else { $sel.append('<option value="">Select approver</option>') } $sel.select2({ placeholder: 'Search approver…', allowClear: true, dropdownParent: $('#resubmitModal'), ajax: { url: R.approvers, dataType: 'json', delay: 250, data: (p) => ({ q: p.term || '', page: p.page || 1, location_id: scanData.Location || '' }), processResults: (d) => ({ results: d.results, pagination: d.pagination }) } }); $('#resubmitModal,#resubmitModalBackdrop').addClass('open') }
             $('#btnCloseResubmitModal,#btnCancelResubmit,#resubmitModalBackdrop').on('click', function () { $('#resubmitModal,#resubmitModalBackdrop').removeClass('open'); resubmitScanId = null });
