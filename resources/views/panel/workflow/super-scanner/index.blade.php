@@ -229,7 +229,6 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Company</th>
                             <th>Location</th>
                             <th>File</th>
                             <th>Scan Date</th>
@@ -405,19 +404,18 @@ function openDetailModal(companyId, companyName, metric) {
         },
         pageLength: 10,
         dom: 'rtp',
-        order: [[4, 'desc']],
+        order: [[3, 'desc']],
         columns: [
             { data: 'DT_RowIndex',    orderable: false, searchable: false, width: '36px', className:'text-center' },
-            { data: 'company_name',   defaultContent:'—' },
             { data: 'location_name',  defaultContent:'—' },
             { data: 'file_preview',   orderable: false, searchable: false,
           render: (d,t,r) => t==='display' ? `<a href="javascript:void(0)" class="text-blue-600 hover:underline text-xs btn-view-scan" data-id="${r.Scan_Id}" data-file="${esc(r.File)}" data-url="${esc(r.File_Location)}">${esc(r.File)}</a>` : r.File },
             { data: 'Scan_Date',      defaultContent:'—' },
             { data: 'Temp_Scan_Date', defaultContent:'—' },
             { data: 'status_badge',   orderable: false, searchable: false, className:'text-center' },
-            { data: 'scanned_by',     defaultContent:'—' },
-            { data: 'approver_name',  defaultContent:'—' },
-            { data: 'Bill_Approver_Remark', defaultContent:'—',
+            { data: 'scanned_by',     defaultContent:'—', searchable: false },
+            { data: 'approver_name',  defaultContent:'—', searchable: false },
+            { data: 'Bill_Approver_Remark', defaultContent:'—', searchable: false,
               render: d => d ? `<span title="${esc(d)}" class="block truncate max-w-[120px]">${esc(d)}</span>` : '—' },
         ],
         language: { emptyTable:'No records', processing:'<span style="font-size:.72rem;color:#7f1d1d">Loading…</span>' },

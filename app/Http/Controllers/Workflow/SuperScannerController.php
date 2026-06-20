@@ -540,7 +540,6 @@ class SuperScannerController extends Controller
             ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
             ->leftJoin('users as u',   'u.id',  '=', 's.Temp_Scan_By')
             ->leftJoin('users as apv', 'apv.id', '=', 's.Bill_Approver')
-            ->leftJoin('companies as c', 'c.id', '=', 's.Group_Id')
             ->where('s.Temp_Scan', 'Y')
             ->where('s.Is_Deleted', 'N')
             ->when($fyId,     fn($q) => $q->where('s.year_id', $fyId))
@@ -572,7 +571,7 @@ class SuperScannerController extends Controller
         }
 
         $query->select([
-            's.Scan_Id', 'c.name as company_name', 'l.location_name', 's.File', 's.File_Location', 's.File_Ext',
+            's.Scan_Id', 'l.location_name', 's.File', 's.File_Location', 's.File_Ext',
             's.Temp_Scan_Date', 's.Scan_Date', 's.Scan_Complete', 's.document_verified', 's.Final_Submit',
             's.Bill_Approved', 's.temp_scan_reject', 'u.name as scanned_by', 'apv.name as approver_name', 's.Bill_Approver_Remark',
         ]);
@@ -591,6 +590,15 @@ class SuperScannerController extends Controller
             ->addColumn('file_preview', fn($r) =>
                 '<a href="' . e($r->File_Location) . '" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">' . e($r->File) . '</a>'
             )
+            ->filterColumn('location_name', function ($query, $keyword) {
+                $query->where('l.location_name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('scanned_by', function ($query, $keyword) {
+                $query->where('u.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('approver_name', function ($query, $keyword) {
+                $query->where('apv.name', 'like', "%{$keyword}%");
+            })
             ->rawColumns(['status_badge', 'file_preview'])
             ->make(true);
     }
