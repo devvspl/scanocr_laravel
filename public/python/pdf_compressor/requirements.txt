@@ -1,0 +1,15 @@
+# PDF Compression Dependencies
+# Install with: pip install -r requirements.txt
+
+# Primary PDF manipulation libraries
+pikepdf>=8.0.0           # Modern PDF manipulation with QPDF backend
+PyMuPDF>=1.23.0          # Fast PDF processing and rendering
+PyPDF2>=3.0.0            # Legacy PDF reading (fallback for page counting)
+
+# Optional dependencies for enhanced functionality
+Pillow>=10.0.0           # Image processing support
+qpdf>=11.0.0             # Backend for pikepdf (may need system install)
+
+# Development and testing (optional)
+# pytest>=7.0.0          # For running tests
+# black>=23.0.0          # Code formatting

@@ -170,6 +170,9 @@ class PermissionSeeder extends Seeder
                 'temp-scanning.view',                   // index — view/upload temp scans
                 'temp-scanning.create',                 // store main file + supporting files
                 'temp-scanning.delete',                 // destroy scan / support file
+                'temp-scanning.final-submit',           // POST .../final-submit
+                'temp-scanning.resubmit',               // POST .../resubmit
+                'temp-scanning.export',                 // export excel / pdf
             ],
 
             // ── Super Scanner (Workflow) ──────────────────────────────────
@@ -177,6 +180,7 @@ class PermissionSeeder extends Seeder
             // by 'Super Scanner' role at menu level.
             'Super Scanner' => [
                 'super-scanner.view',                   // index — company-wise summary
+                'super-scanner.scan',                   // company scan / verify / supporting / final-submit / destroy
                 'super-scanner.export',                 // export excel / pdf
             ],
 
@@ -191,6 +195,15 @@ class PermissionSeeder extends Seeder
                 'direct-scanning.delete',               // destroy scan / support file
                 'direct-scanning.final-submit',         // final submit action
                 'direct-scanning.resubmit',             // resubmit after rejection
+                'direct-scanning.export',               // export excel / pdf
+            ],
+
+            // ── PDF Compressor (Tools) ────────────────────────────────────
+            'PDF Compressor' => [
+                'pdf-compressor.view',                  // playground page + history list
+                'pdf-compressor.compress',              // upload + compress AJAX action
+                'pdf-compressor.download',              // download compressed file
+                'pdf-compressor.delete',                // delete job record + temp files
             ],
 
         ];

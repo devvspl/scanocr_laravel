@@ -22,6 +22,7 @@ use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
+use App\Http\Controllers\Panel\PdfCompressorController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
@@ -132,6 +133,14 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
         Route::post('dept-rules', [DocumentAiController::class, 'storeDeptRule'])->name('dept-rules.store');
         Route::post('dept-rules/{id}', [DocumentAiController::class, 'updateDeptRule'])->name('dept-rules.update');
         Route::delete('dept-rules/{id}', [DocumentAiController::class, 'deleteDeptRule'])->name('dept-rules.delete');
+    });
+
+    // ── Tools ─────────────────────────────────────────────────────────────────
+    Route::prefix('tools')->name('tools.')->group(function () {
+        Route::get('pdf-compressor', [PdfCompressorController::class, 'index'])->name('pdf-compressor.index');
+        Route::post('pdf-compressor/compress', [PdfCompressorController::class, 'compress'])->name('pdf-compressor.compress');
+        Route::get('pdf-compressor/{id}/download', [PdfCompressorController::class, 'download'])->name('pdf-compressor.download');
+        Route::delete('pdf-compressor/{id}', [PdfCompressorController::class, 'destroy'])->name('pdf-compressor.destroy');
     });
 
     // ── Profile ───────────────────────────────────────────────────────────────
@@ -326,6 +335,19 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::post('/{scan}/replace',           [\App\Http\Controllers\Workflow\DirectScannerController::class, 'replaceFile'])       ->name('replace');
             Route::delete('/{scan}',                 [\App\Http\Controllers\Workflow\DirectScannerController::class, 'destroy'])           ->name('destroy');
             Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\DirectScannerController::class, 'destroySupport'])->name('support.destroy');
+        });
+
+    });
+
+    // ── Tools ─────────────────────────────────────────────────────────────────
+    Route::prefix('tools')->name('tools.')->group(function () {
+
+        // PDF Compressor Playground
+        Route::prefix('pdf-compressor')->name('pdf-compressor.')->group(function () {
+            Route::get('/',           [\App\Http\Controllers\Panel\PdfCompressorController::class, 'index'])    ->name('index');
+            Route::post('/compress',  [\App\Http\Controllers\Panel\PdfCompressorController::class, 'compress']) ->name('compress');
+            Route::get('/{id}/download', [\App\Http\Controllers\Panel\PdfCompressorController::class, 'download']) ->name('download');
+            Route::delete('/{id}',    [\App\Http\Controllers\Panel\PdfCompressorController::class, 'destroy'])  ->name('destroy');
         });
 
     });

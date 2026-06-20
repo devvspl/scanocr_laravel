@@ -127,6 +127,16 @@ class CheckPermission
         'settings.core-api-sync.drop',
     ];
 
+    // Explicit route → permission map (checked before derive()).
+    // Add entries here for routes whose names don't follow the auto-derive pattern.
+    private const ROUTE_OVERRIDES = [
+        // ── PDF Compressor ────────────────────────────────────────────────
+        'tools.pdf-compressor.index'    => 'pdf-compressor.view',
+        'tools.pdf-compressor.compress' => 'pdf-compressor.compress',
+        'tools.pdf-compressor.download' => 'pdf-compressor.download',
+        'tools.pdf-compressor.destroy'  => 'pdf-compressor.delete',
+    ];
+
     private const STRIP_PREFIXES = ['master.', 'settings.'];
 
     private const SUB_RESOURCES = [
@@ -164,7 +174,8 @@ class CheckPermission
         if (!$routeName || in_array($routeName, self::ALWAYS_ALLOW, true)) {
             return $next($request);
         }
-        $permission = $this->derive($routeName);
+        // Check explicit overrides first, then auto-derive from route name
+        $permission = self::ROUTE_OVERRIDES[$routeName] ?? $this->derive($routeName);
         if ($permission === null) {
             return $next($request);
         }

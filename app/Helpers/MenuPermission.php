@@ -48,7 +48,13 @@ class MenuPermission
         'password'     => 'password.change',
     ];
 
-    private const ROUTE_OVERRIDES = [];
+    private const ROUTE_OVERRIDES = [
+        // ── PDF Compressor ────────────────────────────────────────────────
+        'tools.pdf-compressor.index'    => 'pdf-compressor.view',
+        'tools.pdf-compressor.compress' => 'pdf-compressor.compress',
+        'tools.pdf-compressor.download' => 'pdf-compressor.download',
+        'tools.pdf-compressor.destroy'  => 'pdf-compressor.delete',
+    ];
 
     /**
      * Returns true if the current user can access the given route.
