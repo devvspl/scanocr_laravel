@@ -337,6 +337,26 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::delete('/{scan}/support/{supportId}', [\App\Http\Controllers\Workflow\DirectScannerController::class, 'destroySupport'])->name('support.destroy');
         });
 
+        // Bill Approval
+        Route::prefix('bill-approval')->name('bill-approval.')->group(function () {
+            Route::get('/',                    [\App\Http\Controllers\Workflow\BillApprovalController::class, 'index'])                ->name('index');
+            Route::get('/data',                [\App\Http\Controllers\Workflow\BillApprovalController::class, 'data'])                 ->name('data');
+            Route::get('/tab-counts',          [\App\Http\Controllers\Workflow\BillApprovalController::class, 'tabCounts'])            ->name('tab-counts');
+            Route::get('/locations',           [\App\Http\Controllers\Workflow\BillApprovalController::class, 'locationsSelect'])      ->name('locations');
+            Route::get('/users',               [\App\Http\Controllers\Workflow\BillApprovalController::class, 'usersSelect'])          ->name('users');
+            Route::get('/companies',           [\App\Http\Controllers\Workflow\BillApprovalController::class, 'companiesSelect'])      ->name('companies');
+            Route::get('/financial-years',     [\App\Http\Controllers\Workflow\BillApprovalController::class, 'financialYearsSelect']) ->name('financial-years');
+            Route::get('/{scan}/detail',       [\App\Http\Controllers\Workflow\BillApprovalController::class, 'scanDetail'])           ->name('detail');
+            Route::post('/{scan}/approve',     [\App\Http\Controllers\Workflow\BillApprovalController::class, 'approve'])              ->name('approve');
+            Route::post('/{scan}/reject',      [\App\Http\Controllers\Workflow\BillApprovalController::class, 'reject'])               ->name('reject');
+            Route::get('/{scan}/support-list', [\App\Http\Controllers\Workflow\BillApprovalController::class, 'supportList'])          ->name('support-list');
+            Route::get('/rejection-reasons',   [\App\Http\Controllers\Workflow\BillApprovalController::class, 'rejectionReasons'])     ->name('rejection-reasons');
+            Route::post('/rejection-reasons',  [\App\Http\Controllers\Workflow\BillApprovalController::class, 'storeRejectionReason']) ->name('rejection-reasons.store');
+            Route::get('/export/logs',         [\App\Http\Controllers\Workflow\BillApprovalController::class, 'exportLogs'])           ->name('export.logs');
+            Route::get('/export/excel',        [\App\Http\Controllers\Workflow\BillApprovalController::class, 'exportExcel'])          ->name('export.excel');
+            Route::get('/export/pdf',          [\App\Http\Controllers\Workflow\BillApprovalController::class, 'exportPdf'])            ->name('export.pdf');
+        });
+
     });
 
     // ── Tools ─────────────────────────────────────────────────────────────────

@@ -125,6 +125,23 @@ class CheckPermission
         'settings.core-api-sync.modal-data',
         'settings.core-api-sync.empty',
         'settings.core-api-sync.drop',
+        // Workflow — Bill Approval (gated by role, not granular permissions)
+        'workflow.bill-approval.index',
+        'workflow.bill-approval.data',
+        'workflow.bill-approval.tab-counts',
+        'workflow.bill-approval.locations',
+        'workflow.bill-approval.users',
+        'workflow.bill-approval.companies',
+        'workflow.bill-approval.financial-years',
+        'workflow.bill-approval.detail',
+        'workflow.bill-approval.approve',
+        'workflow.bill-approval.reject',
+        'workflow.bill-approval.support-list',
+        'workflow.bill-approval.rejection-reasons',
+        'workflow.bill-approval.rejection-reasons.store',
+        'workflow.bill-approval.export.logs',
+        'workflow.bill-approval.export.excel',
+        'workflow.bill-approval.export.pdf',
     ];
 
     // Explicit route → permission map (checked before derive()).

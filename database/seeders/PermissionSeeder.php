@@ -206,6 +206,16 @@ class PermissionSeeder extends Seeder
                 'pdf-compressor.delete',                // delete job record + temp files
             ],
 
+            // ── Bill Approval (Workflow) ──────────────────────────────────
+            // All workflow.bill-approval.* routes are in ALWAYS_ALLOW — gated
+            // by 'Bill Approval' role at menu level.
+            'Bill Approval' => [
+                'bill-approval.view',                   // index — view pending/approved/rejected bills
+                'bill-approval.approve',                // approve a bill
+                'bill-approval.reject',                 // reject a bill with reason
+                'bill-approval.manage-reasons',         // create new rejection reasons
+            ],
+
         ];
 
         // ── 3. Create groups & permissions ────────────────────────────────

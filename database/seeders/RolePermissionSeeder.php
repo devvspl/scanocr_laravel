@@ -43,6 +43,8 @@ class RolePermissionSeeder extends Seeder
             'profile.view', 'profile.update', 'profile.password.change',
             'temp-scanning.view',
             'direct-scanning.view',
+            'bill-approval.view', 'bill-approval.approve', 'bill-approval.reject',
+            'bill-approval.manage-reasons',
         ],
 
         'Classification' => [
