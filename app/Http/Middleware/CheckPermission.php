@@ -68,6 +68,8 @@ class CheckPermission
         'workflow.super-scanner.company.tab-counts',
         'workflow.super-scanner.company.scan',
         'workflow.super-scanner.company.verify-document',
+        'workflow.super-scanner.company.name-scan',
+        'workflow.super-scanner.company.reject-naming',
         'workflow.super-scanner.company.support-list',
         'workflow.super-scanner.company.supporting.store',
         'workflow.super-scanner.company.final-submit',
@@ -142,6 +144,19 @@ class CheckPermission
         'workflow.bill-approval.export.logs',
         'workflow.bill-approval.export.excel',
         'workflow.bill-approval.export.pdf',
+        // Workflow — Classification (gated by role, not granular permissions)
+        'workflow.classification.index',
+        'workflow.classification.data',
+        'workflow.classification.tab-counts',
+        'workflow.classification.classify',
+        'workflow.classification.detail',
+        'workflow.classification.support-list',
+        'workflow.classification.doc-types',
+        'workflow.classification.companies',
+        'workflow.classification.financial-years',
+        'workflow.classification.locations',
+        'workflow.classification.users',
+        'workflow.classification.approvers',
     ];
 
     // Explicit route → permission map (checked before derive()).

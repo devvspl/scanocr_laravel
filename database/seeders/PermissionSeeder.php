@@ -216,6 +216,14 @@ class PermissionSeeder extends Seeder
                 'bill-approval.manage-reasons',         // create new rejection reasons
             ],
 
+            // ── Classification (Workflow) ─────────────────────────────────
+            // All workflow.classification.* routes are in ALWAYS_ALLOW — gated
+            // by 'Classification' role at menu level.
+            'Classification' => [
+                'classification.view',                  // index — view pending/auto/completed
+                'classification.classify',              // classify a document (add to queue)
+            ],
+
         ];
 
         // ── 3. Create groups & permissions ────────────────────────────────

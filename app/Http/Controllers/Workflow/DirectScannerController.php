@@ -333,6 +333,7 @@ class DirectScannerController extends Controller
             'Bill_Approver'      => $request->input('bill_approver'),
             'Scan_By'            => $user->id,
             'bill_voucher_date'  => $request->input('bill_date'),
+            'bill_date'  => $request->input('bill_date'),
             'firm_id'            => $request->input('vendor_id'),
             'bill_no_voucher_no' => $request->input('bill_no'),
             'Document_name'      => $request->input('document_name'),

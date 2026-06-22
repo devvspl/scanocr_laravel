@@ -311,6 +311,7 @@ class TempScannerController extends Controller
             'Location'          => $request->input('location'),
             'Bill_Approver'     => $request->input('bill_approver'),
             'bill_voucher_date' => $request->input('bill_date'),
+            'bill_date' => $request->input('bill_date'),
             'Temp_Scan_By'      => $user->id,
             'Temp_Scan'         => 'Y',
             'Scan_Complete'     => 'N',

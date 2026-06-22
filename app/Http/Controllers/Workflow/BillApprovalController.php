@@ -289,7 +289,6 @@ class BillApprovalController extends Controller
             'Bill_Approved'        => 'Y',
             'Bill_Approver_Date'   => now()->toDateString(),
             'Bill_Approver_Remark' => $request->input('remark', null),
-            'temp_scan_reject'     => 'N',
         ]);
 
         return response()->json(['success' => true, 'message' => 'Bill approved successfully.']);
@@ -308,10 +307,6 @@ class BillApprovalController extends Controller
             'Bill_Approved'           => 'R',
             'Bill_Approver_Date'      => now()->toDateString(),
             'Bill_Approver_Remark'    => $request->input('reason'),
-            'temp_scan_reject'        => 'Y',
-            'temp_scan_reject_date'   => now()->toDateString(),
-            'temp_scan_reject_by'     => Auth::id(),
-            'temp_scan_reject_remark' => $request->input('reason'),
         ]);
 
         return response()->json(['success' => true, 'message' => 'Bill rejected.']);

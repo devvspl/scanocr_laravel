@@ -370,6 +370,7 @@ class AuthController extends Controller
             'Direct Scanning' => route('workflow.direct-scan.index'),
             'Super Scanner'   => route('workflow.super-scanner.index'),
             'Bill Approval'   => route('workflow.bill-approval.index'),
+            'Classification'  => route('workflow.classification.index'),
         ];
 
         // Collect which workflow roles this user actually has

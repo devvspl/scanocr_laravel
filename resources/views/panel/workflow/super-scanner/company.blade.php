@@ -594,6 +594,12 @@
             color: #dc2626
         }
 
+        /* Info rows for modals */
+        .info-row{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid #f5f5f4}
+        .info-row:last-child{border-bottom:none}
+        .info-label{font-size:.6rem;font-weight:700;color:#78716c;text-transform:uppercase;letter-spacing:.03em;width:80px;flex-shrink:0}
+        .info-value{font-size:.72rem;color:#292524;word-break:break-word;flex:1}
+
         /* ── File Viewer Modal ─────────────────────────────── */
         .vm-tabs-bar{display:flex;align-items:center;gap:0;padding:0 1rem;background:#fafaf9;border-bottom:1px solid #e7e5e4;flex-shrink:0;flex-wrap:wrap;position:relative}
         .vm-tab{padding:.55rem .85rem;font-size:.68rem;font-weight:600;color:#78716c;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -1095,33 +1101,69 @@
         </div>
     </div>
 
-    {{-- Verify Document Modal --}}
+    {{-- Verify Document Modal (2-column with file viewer) --}}
     <div class="modal-backdrop" id="verifyModalBackdrop"></div>
     <div class="modal-container" id="verifyModal">
-        <div class="bg-white rounded-xl p-5 max-w-md">
-            <h3 class="text-sm font-semibold text-stone-800 mb-3">Verify Document</h3>
-            <div id="verifyAlert" class="hidden px-3 py-2 rounded-lg border text-xs font-medium mb-3"></div>
-            <form id="verifyForm">
-                <input type="hidden" id="verify-scan-id">
-                <div class="mb-4">
-                    <label class="block text-xs font-medium text-stone-600 mb-1">Document Received Date <span
-                            class="text-red-500">*</span></label>
-                    <input type="date" id="document-received-date"
-                        class="h-9 px-3 text-xs border border-stone-300 rounded-lg bg-white focus:border-stone-800 outline-none transition-colors w-full"
-                        required>
+        <div style="background:#fff;border-radius:1rem;box-shadow:0 20px 50px rgba(0,0,0,.25);width:100%;max-width:1150px;height:85vh;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid #e7e5e4;flex-shrink:0">
+                <div><h3 class="text-xs font-semibold text-stone-800" id="verifyTitle">—</h3><p class="text-[10px] text-stone-400" id="verifySub">—</p></div>
+                <button id="btnCancelVerify" class="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:bg-stone-100"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <div style="flex:1;overflow:hidden;display:grid;grid-template-columns:1.5fr 1fr">
+                <div style="display:flex;flex-direction:column;border-right:1px solid #e7e5e4;overflow:hidden">
+                    <div class="vm-tabs-bar" id="verifyTabsBar"></div>
+                    <div class="vm-viewer"><div class="vm-viewer-bar"><span id="verifyFileName" class="text-[9px] font-semibold text-stone-300">—</span></div><div class="vm-viewer-body" id="verifyViewerBody"></div></div>
                 </div>
-                <div class="flex items-center gap-2 justify-end">
-                    <button type="button" id="btnCancelVerify"
-                        class="h-9 px-4 border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-medium rounded-lg transition-colors">Cancel</button>
-                    <button type="submit"
-                        class="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">Verify</button>
+                <div style="display:flex;flex-direction:column;overflow-y:auto;padding:.75rem 1rem">
+                    <div id="verifyInfo"></div>
+                    <div class="border-t border-stone-100 pt-3 mt-3">
+                        <div id="verifyAlert" class="hidden px-3 py-2 rounded-lg border text-xs font-medium mb-3"></div>
+                        <form id="verifyForm">
+                            <input type="hidden" id="verify-scan-id">
+                            <div class="mb-3"><label class="text-[10px] font-medium text-stone-600 mb-1 block">Document Received Date <span class="text-red-500">*</span></label><input type="date" id="document-received-date" required onfocus="this.showPicker()" class="w-full h-8 px-2 text-xs border border-stone-200 rounded-md bg-white outline-none focus:border-stone-400"></div>
+                            <button type="submit" class="w-full h-9 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Verify Document</button>
+                        </form>
+                    </div>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     {{-- File Viewer Modal --}}
     <div class="modal-backdrop" id="viewScanModalBackdrop"></div>
+
+    {{-- Naming Modal --}}
+    <div class="modal-backdrop" id="namingBackdrop"></div>
+    <div class="modal-container" id="namingModal">
+        <div style="background:#fff;border-radius:1rem;box-shadow:0 20px 50px rgba(0,0,0,.25);width:100%;max-width:1150px;height:85vh;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid #e7e5e4;flex-shrink:0">
+                <div><h3 class="text-xs font-semibold text-stone-800" id="namingTitle">—</h3><p class="text-[10px] text-stone-400" id="namingSub">—</p></div>
+                <button id="btnCloseNaming" class="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:bg-stone-100"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <div class="detail-grid" style="flex:1;overflow:hidden;display:grid;grid-template-columns:1.5fr 1fr">
+                <div style="display:flex;flex-direction:column;border-right:1px solid #e7e5e4;overflow:hidden">
+                    <div class="vm-tabs-bar" id="namingTabsBar"></div>
+                    <div class="vm-viewer"><div class="vm-viewer-bar"><span id="namingFileName" class="text-[9px] font-semibold text-stone-300">—</span></div><div class="vm-viewer-body" id="namingViewerBody"></div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;overflow-y:auto;padding:.75rem 1rem">
+                    <div id="namingAlert" class="hidden px-3 py-2 rounded-lg border text-xs font-medium mb-3"></div>
+                    <form id="namingForm" class="flex flex-col gap-3">
+                        <input type="hidden" id="namingScanId">
+                        <div><label class="text-[10px] font-medium text-stone-600 mb-1 block">Bill Date <span class="text-red-500">*</span></label><input type="date" id="namingBillDate" required onfocus="this.showPicker()" class="w-full h-8 px-2 text-xs border border-stone-200 rounded-md bg-white outline-none focus:border-stone-400"></div>
+                        <div><label class="text-[10px] font-medium text-stone-600 mb-1 block">Bill No <span class="text-red-500">*</span></label><input type="text" id="namingBillNo" required placeholder="Enter bill number" class="w-full h-8 px-2 text-xs border border-stone-200 rounded-md bg-white outline-none focus:border-stone-400"></div>
+                        <div><label class="text-[10px] font-medium text-stone-600 mb-1 block">Vendor Name <span class="text-red-500">*</span></label><select id="namingVendor" style="width:100%" required></select></div>
+                        <div><label class="text-[10px] font-medium text-stone-600 mb-1 block">Document Name <span class="text-red-500">*</span></label><input type="text" id="namingDocName" required placeholder="Auto-generated" class="w-full h-8 px-2 text-xs border border-stone-200 rounded-md bg-white outline-none focus:border-stone-400"></div>
+                        <button type="submit" class="w-full h-9 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Save & Approve</button>
+                    </form>
+                    <div class="border-t border-stone-100 pt-3 mt-3">
+                        <label class="text-[10px] font-medium text-stone-500 mb-1 block">Rejection Reason <span class="text-red-500">*</span></label>
+                        <select id="namingRejectReason" style="width:100%" class="mb-2"></select>
+                        <button style="margin-top: 8px;" id="btnNamingReject" class="w-full h-8 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Reject</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal-container" id="viewScanModal">
         <div style="background:#fff;border-radius:1rem;box-shadow:0 20px 50px rgba(0,0,0,.25);width:100%;max-width:1100px;max-height:90vh;display:flex;flex-direction:column">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e7e5e4;flex-shrink:0">
@@ -1411,11 +1453,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                               </svg></button>`;
-                        h += `<button class="dt-btn blue btn-add-support" title="Add Supporting Files"
-                                data-id="${r.Scan_Id}" data-file="${r.File || ''}" data-url="${r.File_Location || ''}">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                              </svg></button>`;
                         return h + '</div>';
                     }},
                 ],
@@ -1423,6 +1460,7 @@
                     $('#pendingNamingTable_wrapper .dataTables_paginate').appendTo('#dtPaginatePN');
                     $('#pendingNamingTable_wrapper .dataTables_info').appendTo('#dtInfoPN');
                 },
+                createdRow: function(row, data) { $(row).attr('data-scan-id', data.Scan_Id).css('cursor','pointer'); },
             });
 
             $('#dtLengthPN').on('change', function () { pendingNamingTable.page.len(+$(this).val()).draw(); });
@@ -1438,6 +1476,14 @@
                 $('#filterPNFromDate, #filterPNToDate').val('');
                 pnFilters = { from_date: '', to_date: '' };
                 pendingNamingTable.ajax.reload();
+            });
+
+            // Row click on Pending Naming → open naming modal
+            $('#pendingNamingTable tbody').on('click', 'tr', function(e) {
+                if ($(e.target).closest('.dt-btn').length) return; // ignore button clicks
+                const scanId = $(this).data('scan-id');
+                if (!scanId) return;
+                openNamingModal(scanId, $(this).data());
             });
 
             // ── Pending Verification DataTable ────────────────────────────────────────
@@ -1466,10 +1512,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                               </svg></button>`;
-                        h += `<button class="dt-btn green btn-verify-doc" title="Verify Document" data-id="${r.Scan_Id}">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg></button>`;
                         return h + '</div>';
                     }},
                 ],
@@ -1477,6 +1519,7 @@
                     $('#pendingVerifyTable_wrapper .dataTables_paginate').appendTo('#dtPaginatePV');
                     $('#pendingVerifyTable_wrapper .dataTables_info').appendTo('#dtInfoPV');
                 },
+                createdRow: function(row, data) { $(row).attr('data-scan-id', data.Scan_Id).css('cursor','pointer'); },
             });
 
             $('#dtLengthPV').on('change', function () { pendingVerifyTable.page.len(+$(this).val()).draw(); });
@@ -1492,6 +1535,14 @@
                 $('#filterPVFromDate, #filterPVToDate').val('');
                 pvFilters = { from_date: '', to_date: '' };
                 pendingVerifyTable.ajax.reload();
+            });
+
+            // Row click on Pending Verification → open verify modal
+            $('#pendingVerifyTable tbody').on('click', 'tr', function(e) {
+                if ($(e.target).closest('.dt-btn').length) return;
+                const scanId = $(this).data('scan-id');
+                if (!scanId) return;
+                openVerifyModal(scanId);
             });
 
             function getUserFriendlyErrorMessage(errorMsg) {
@@ -1875,15 +1926,55 @@
             $('#dtSearchRecent').on('input', function () { clearTimeout(stRecent); const v = $(this).val(); stRecent = setTimeout(() => recentScansTable.search(v).draw(), 350); });
 
             // ── Verify Document Modal ─────────────────────────────────────────────────
-            window.openVerifyModal = function (scanId) {
+            window.openVerifyModal = async function (scanId) {
+                const rowData = pendingVerifyTable.rows().data().toArray().find(r => r.Scan_Id == scanId);
+                if (!rowData) return;
+
                 $('#verify-scan-id').val(scanId);
                 $('#document-received-date').val('');
+                $('#verifyAlert').addClass('hidden');
+                $('#verifyTitle').text(`Verify Scan #${scanId}`);
+                $('#verifySub').text(rowData.Document_name || rowData.File || '—');
+
+                // Info panel
+                const fmt = v => v ? new Date(v).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                let info = '';
+                info += `<div class="info-row"><span class="info-label">Location</span><span class="info-value">${rowData.location_name || '—'}</span></div>`;
+                info += `<div class="info-row"><span class="info-label">File</span><span class="info-value">${rowData.File || '—'}</span></div>`;
+                info += `<div class="info-row"><span class="info-label">Doc Name</span><span class="info-value">${rowData.Document_name || '—'}</span></div>`;
+                info += `<div class="info-row"><span class="info-label">Scan Date</span><span class="info-value">${fmt(rowData.Temp_Scan_Date)}</span></div>`;
+                info += `<div class="info-row"><span class="info-label">Scanned By</span><span class="info-value">${rowData.scanned_by || '—'}</span></div>`;
+                $('#verifyInfo').html(info);
+
+                // File viewer tabs
+                const url = rowData.File_Location || '';
+                const file = rowData.File || '';
+                let tabs = `<button class="vm-tab active" data-tab="main" data-url="${url}" data-name="${file}">Main Scan</button>`;
+                window.__vGroups = {};
+                try {
+                    const res = await $.getJSON(`/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}/support-list`);
+                    if (res.data && res.data.length) {
+                        const g = {}; res.data.forEach(f => { const k = f.doc_type_name || 'Other'; if (!g[k]) g[k] = []; g[k].push(f) });
+                        Object.keys(g).forEach(k => { tabs += `<button class="vm-tab" data-tab="group" data-group="${k}">${k} (${g[k].length})</button>` });
+                        window.__vGroups = g;
+                    }
+                } catch(e) {}
+                $('#verifyTabsBar').html(tabs + '<div class="vm-tab-files" id="vFP"></div>');
+                vLoad(url, file);
+
                 $('#verifyModalBackdrop, #verifyModal').addClass('open');
             };
 
             $('#btnCancelVerify, #verifyModalBackdrop').on('click', function () {
                 $('#verifyModalBackdrop, #verifyModal').removeClass('open');
+                $('#verifyTabsBar').empty(); $('#verifyViewerBody').find('iframe,img').remove();
             });
+
+            // Verify file viewer tabs
+            $(document).on('click', '#verifyTabsBar .vm-tab[data-tab="main"]', function() { $('#verifyTabsBar .vm-tab').removeClass('active'); $(this).addClass('active'); $('#vFP').removeClass('open').empty(); vLoad($(this).data('url'), $(this).data('name')) });
+            $(document).on('click', '#verifyTabsBar .vm-tab[data-tab="group"]', function() { const g = $(this).data('group'); const f = window.__vGroups[g] || []; $('#verifyTabsBar .vm-tab').removeClass('active'); $(this).addClass('active'); let h = ''; f.forEach(x => { h += `<div class="file-link" data-url="${x.File_Location}" data-name="${x.File}"><span class="file-ext">${x.File_Ext || '?'}</span><span>${x.File}</span></div>` }); $('#vFP').html(h).addClass('open') });
+            $(document).on('click', '#vFP .file-link', function() { $('#vFP .file-link').removeClass('active'); $(this).addClass('active'); vLoad($(this).data('url'), $(this).data('name')) });
+            function vLoad(url, name) { const $b = $('#verifyViewerBody'); $b.find('iframe,img').remove(); $('#verifyFileName').text(name || ''); if (!url) return; url.toLowerCase().includes('.pdf') ? $b.append(`<iframe src="${url}"></iframe>`) : $b.append(`<img src="${url}" alt="${name}">`) }
 
             $('#verifyForm').on('submit', function (e) {
                 e.preventDefault();
@@ -2078,6 +2169,104 @@
                 setTimeout(() => $t.css('opacity', 1), 10);
                 setTimeout(() => { $t.css('opacity', 0); setTimeout(() => $t.remove(), 250); }, 3500);
             }
+
+            // ── Naming Modal ──────────────────────────────────────────────────────────
+            function openNamingModal(scanId) {
+                const rowData = pendingNamingTable.rows().data().toArray().find(r => r.Scan_Id == scanId);
+                if (!rowData) return;
+
+                $('#namingScanId').val(scanId);
+                $('#namingTitle').text(`Name Scan #${scanId}`);
+                $('#namingSub').text(rowData.location_name || '—');
+                $('#namingBillDate,#namingBillNo,#namingDocName').val('');
+                $('#namingAlert').addClass('hidden');
+
+                // Load file viewer
+                const url = rowData.File_Location || '';
+                const file = rowData.File || '';
+                let tabs = `<button class="vm-tab active" data-tab="main" data-url="${url}" data-name="${file}">Main Scan</button>`;
+                window.__nGroups = {};
+                $.getJSON(`/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}/support-list`).done(res => {
+                    if (res.data && res.data.length) {
+                        const g = {}; res.data.forEach(f => { const k = f.doc_type_name || 'Other'; if (!g[k]) g[k] = []; g[k].push(f) });
+                        Object.keys(g).forEach(k => { tabs += `<button class="vm-tab" data-tab="group" data-group="${k}">${k} (${g[k].length})</button>` });
+                        window.__nGroups = g;
+                    }
+                    $('#namingTabsBar').html(tabs + '<div class="vm-tab-files" id="nFP"></div>');
+                    nLoad(url, file);
+                });
+
+                // Init vendor select2
+                const $v = $('#namingVendor');
+                if ($v.data('select2')) $v.select2('destroy');
+                $v.empty().append('<option value="">Select vendor…</option>');
+                $v.select2({ placeholder: 'Search vendor…', allowClear: true, ajax: { url: R.vendors, dataType: 'json', delay: 250, data: p => ({ q: p.term || '', page: p.page || 1 }), processResults: d => ({ results: d.results, pagination: d.pagination }) }, dropdownParent: $('#namingModal') });
+
+                // Init rejection reason
+                const $r = $('#namingRejectReason');
+                if ($r.data('select2')) $r.select2('destroy');
+                $r.empty().append('<option value="">Select reason…</option>');
+                $r.select2({ placeholder: 'Search or type…', allowClear: true, tags: true, createTag: p => { const t = $.trim(p.term); return t ? { id: t, text: t, newTag: true } : null }, ajax: { url: '{{ route("workflow.bill-approval.rejection-reasons") }}', dataType: 'json', delay: 200, data: p => ({ q: p.term || '', page: p.page || 1 }), processResults: d => ({ results: d.results, pagination: d.pagination }) }, dropdownParent: $('#namingModal') });
+
+                // Auto-generate doc name
+                $('#namingBillDate,#namingBillNo').off('input.naming').on('input.naming', genNamingDocName);
+                $v.off('change.naming').on('change.naming', genNamingDocName);
+
+                $('#namingModal,#namingBackdrop').addClass('open');
+            }
+
+            function genNamingDocName() {
+                const dt = $('#namingBillDate').val();
+                const vd = $('#namingVendor').select2('data')[0];
+                const bn = $('#namingBillNo').val().trim();
+                const dateStr = dt ? dt.replace(/-/g, '').substring(2) : '';
+                const vendorClean = vd && vd.firm_name_clean ? vd.firm_name_clean.substring(0, 30) : (vd && vd.text ? vd.text.replace(/\s*\(.*?\)\s*/g, '').replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().substring(0, 30).trim() : '');
+                const billClean = bn ? bn.replace(/[^A-Za-z0-9]/g, '') : '';
+                const parts = [dateStr, vendorClean, billClean].filter(p => p);
+                $('#namingDocName').val(parts.join('_'));
+            }
+
+            // Close naming modal
+            $('#btnCloseNaming,#namingBackdrop').on('click', function () { $('#namingModal,#namingBackdrop').removeClass('open'); $('#namingTabsBar').empty(); $('#namingViewerBody').find('iframe,img').remove() });
+
+            // Save & Approve
+            $('#namingForm').on('submit', async function (e) {
+                e.preventDefault();
+                const data = { _token: CSRF, scan_id: $('#namingScanId').val(), bill_date: $('#namingBillDate').val(), bill_no: $('#namingBillNo').val(), vendor_id: $('#namingVendor').val(), document_name: $('#namingDocName').val() };
+                try {
+                    await $.ajax({ url: `/workflow/super-scanner/company/${COMPANY_ID}/name-scan`, method: 'POST', data, headers: { 'X-CSRF-TOKEN': CSRF } });
+                    $('#namingModal,#namingBackdrop').removeClass('open');
+                    pendingNamingTable.ajax.reload(null, false);
+                    scansTable.ajax.reload(null, false);
+                    loadTabCounts();
+                    showToast('Document named successfully', 'success');
+                } catch (err) {
+                    const msg = err.responseJSON?.message || Object.values(err.responseJSON?.errors || {}).flat()[0] || 'Failed';
+                    $('#namingAlert').removeClass('hidden border-green-200 bg-green-50 text-green-700').addClass('border-red-200 bg-red-50 text-red-700').text(msg);
+                }
+            });
+
+            // Reject naming
+            $('#btnNamingReject').on('click', async function () {
+                const sel = $('#namingRejectReason').select2('data')[0];
+                if (!sel || !sel.id) { alert('Please select a rejection reason'); return }
+                const reason = sel.text;
+                if (sel.newTag) { try { await $.ajax({ url: '{{ route("workflow.bill-approval.rejection-reasons.store") }}', method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF }, data: { reason } }) } catch (e) { if (e.status !== 422) { alert('Failed'); return } } }
+                try {
+                    await $.ajax({ url: `/workflow/super-scanner/company/${COMPANY_ID}/reject-naming`, method: 'POST', data: { _token: CSRF, scan_id: $('#namingScanId').val(), reason }, headers: { 'X-CSRF-TOKEN': CSRF } });
+                    $('#namingModal,#namingBackdrop').removeClass('open');
+                    pendingNamingTable.ajax.reload(null, false);
+                    loadTabCounts();
+                    showToast('Scan rejected', 'success');
+                } catch (err) { alert(err.responseJSON?.message || 'Failed') }
+            });
+
+            // Naming modal file viewer tabs
+            $(document).on('click', '#namingTabsBar .vm-tab[data-tab="main"]', function () { $('#namingTabsBar .vm-tab').removeClass('active'); $(this).addClass('active'); $('#nFP').removeClass('open').empty(); nLoad($(this).data('url'), $(this).data('name')) });
+            $(document).on('click', '#namingTabsBar .vm-tab[data-tab="group"]', function () { const g = $(this).data('group'); const f = window.__nGroups[g] || []; $('#namingTabsBar .vm-tab').removeClass('active'); $(this).addClass('active'); let h = ''; f.forEach(x => { h += `<div class="file-link" data-url="${x.File_Location}" data-name="${x.File}"><span class="file-ext">${x.File_Ext || '?'}</span><span>${x.File}</span></div>` }); $('#nFP').html(h).addClass('open') });
+            $(document).on('click', '#nFP .file-link', function () { $('#nFP .file-link').removeClass('active'); $(this).addClass('active'); nLoad($(this).data('url'), $(this).data('name')) });
+            function nLoad(url, name) { const $b = $('#namingViewerBody'); $b.find('iframe,img').remove(); $('#namingFileName').text(name || ''); if (!url) return; url.toLowerCase().includes('.pdf') ? $b.append(`<iframe src="${url}"></iframe>`) : $b.append(`<img src="${url}" alt="${name}">`) }
+
         });
     </script>
 @endpush

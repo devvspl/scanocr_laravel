@@ -296,6 +296,7 @@ class SuperScannerController extends Controller
             'Temp_Scan_By'        => Auth::id(),
             'Temp_Scan'           => 'Y',
             'bill_voucher_date'   => $request->input('bill_date'),
+            'bill_date'   => $request->input('bill_date'),
             'firm_id'             => $request->input('vendor_id'),
             'bill_no_voucher_no'  => $request->input('bill_no'),
             'Document_name'       => $request->input('document_name'),
@@ -360,6 +361,74 @@ class SuperScannerController extends Controller
             ]);
 
         return response()->json(['success' => true, 'message' => 'Document verified successfully.']);
+    }
+
+    /**
+     * POST /workflow/super-scanner/company/{company}/name-scan  (AJAX JSON)
+     * Save naming details and mark Scan_Complete = Y.
+     */
+    public function nameScan(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $request->validate([
+            'scan_id'       => 'required|integer|exists:scan_file,Scan_Id',
+            'bill_date'     => 'required|date',
+            'bill_no'       => 'required|string|max:100',
+            'vendor_id'     => 'required|integer|exists:master_firm,firm_id',
+            'document_name' => 'required|string|max:255',
+        ]);
+
+        $scan = DB::table('scan_file')
+            ->where('Scan_Id', $request->input('scan_id'))
+            ->where('Group_Id', $company->id)
+            ->first();
+
+        if (!$scan) abort(403);
+
+        DB::table('scan_file')
+            ->where('Scan_Id', $request->input('scan_id'))
+            ->update([
+                'bill_voucher_date'  => $request->input('bill_date'),
+                'bill_no_voucher_no' => $request->input('bill_no'),
+                'firm_id'            => $request->input('vendor_id'),
+                'Document_name'      => $request->input('document_name'),
+                'Scan_Complete'      => 'Y',
+            ]);
+
+        return response()->json(['success' => true, 'message' => 'Document named and approved successfully.']);
+    }
+
+    /**
+     * POST /workflow/super-scanner/company/{company}/reject-naming  (AJAX JSON)
+     * Reject a scan from the pending naming queue.
+     */
+    public function rejectNaming(Request $request, Company $company)
+    {
+        $this->authorizeCompany($company);
+
+        $request->validate([
+            'scan_id' => 'required|integer|exists:scan_file,Scan_Id',
+            'reason'  => 'required|string|max:500',
+        ]);
+
+        $scan = DB::table('scan_file')
+            ->where('Scan_Id', $request->input('scan_id'))
+            ->where('Group_Id', $company->id)
+            ->first();
+
+        if (!$scan) abort(403);
+
+        DB::table('scan_file')
+            ->where('Scan_Id', $request->input('scan_id'))
+            ->update([
+                'temp_scan_reject'        => 'Y',
+                'temp_scan_reject_remark' => $request->input('reason'),
+                'temp_scan_reject_by'     => Auth::id(),
+                'temp_scan_reject_date'   => now()->toDateString(),
+            ]);
+
+        return response()->json(['success' => true, 'message' => 'Scan rejected.']);
     }
 
     // ── Select2 endpoints ─────────────────────────────────────────────────────
