@@ -27,6 +27,7 @@ class DashboardController extends Controller
             'Super Scanner'   => 'workflow.super-scanner.index',
             'Bill Approval'   => 'workflow.bill-approval.index',
             'Classification'  => 'workflow.classification.index',
+            'Data Punching'   => 'workflow.punching.index',
         ];
 
         if (!$isSuperAdmin && $user->roles->count() === 1) {

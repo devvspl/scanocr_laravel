@@ -224,6 +224,14 @@ class PermissionSeeder extends Seeder
                 'classification.classify',              // classify a document (add to queue)
             ],
 
+            // ── Punching (Workflow) ───────────────────────────────────────
+            // All workflow.punching.* routes are in ALWAYS_ALLOW — gated
+            // by 'Data Punching' role at menu level.
+            'Punching' => [
+                'punching.view',                        // index — view pending/my/rejected
+                'punching.punch',                       // mark as punched
+            ],
+
         ];
 
         // ── 3. Create groups & permissions ────────────────────────────────

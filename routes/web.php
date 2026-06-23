@@ -1,8 +1,9 @@
 ﻿<?php
 
+use App\Http\Controllers\PublicController;
+use App\Http\Controllers\DocumentAiController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TokenLoginController;
-use App\Http\Controllers\DocumentAiController;
 use App\Http\Controllers\Panel\CompanyController;
 use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\DocumentTypeController;
@@ -24,10 +25,10 @@ use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
 use App\Http\Controllers\Panel\PdfCompressorController;
 use App\Http\Controllers\Panel\UserController;
-use App\Http\Controllers\PublicController;
 use App\Http\Controllers\Workflow\BillApprovalController;
 use App\Http\Controllers\Workflow\ClassificationController;
 use App\Http\Controllers\Workflow\DirectScannerController;
+use App\Http\Controllers\Workflow\PunchingController;
 use App\Http\Controllers\Workflow\SuperScannerController;
 use App\Http\Controllers\Workflow\TempScannerController;
 use Illuminate\Support\Facades\Route;
@@ -376,6 +377,35 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/locations',            [ClassificationController::class, 'locationsSelect'])    ->name('locations');
             Route::get('/users',                [ClassificationController::class, 'usersSelect'])        ->name('users');
             Route::get('/approvers',            [ClassificationController::class, 'approversSelect'])    ->name('approvers');
+        });
+
+        // Punching
+        Route::prefix('punching')->name('punching.')->group(function () {
+            Route::get('/',                    [PunchingController::class, 'index'])       ->name('index');
+            Route::get('/data',                [PunchingController::class, 'data'])        ->name('data');
+            Route::get('/tab-counts',          [PunchingController::class, 'tabCounts'])   ->name('tab-counts');
+            Route::get('/{scan}/detail',       [PunchingController::class, 'scanDetail'])  ->name('detail');
+            Route::get('/{scan}/support-list', [PunchingController::class, 'supportList'])->name('support-list');
+            Route::post('/{scan}/mark-punched',[PunchingController::class, 'markPunched'])->name('mark-punched');
+            Route::get('/scanners',            [PunchingController::class, 'scannersSelect']) ->name('scanners');
+            Route::get('/approvers',           [PunchingController::class, 'approversSelect'])->name('approvers');
+            Route::get('/doc-types',           [PunchingController::class, 'docTypesSelect']) ->name('doc-types');
+            Route::get('/locations',           [PunchingController::class, 'locationsSelect'])->name('locations');
+
+            // Punching Entry (full-page form) — select endpoints MUST come before {scan} routes
+            Route::get('/entry/select/items',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'itemsSelect'])      ->name('entry.select.items');
+            Route::post('/entry/select/items/create',[\App\Http\Controllers\Workflow\PunchingEntryController::class, 'createItem'])       ->name('entry.select.items.create');
+            Route::get('/entry/select/units',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'unitsSelect'])      ->name('entry.select.units');
+            Route::get('/entry/select/buyers',       [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'buyersSelect'])     ->name('entry.select.buyers');
+            Route::get('/entry/select/vendors',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'vendorsSelect'])    ->name('entry.select.vendors');
+            Route::get('/entry/select/departments',  [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'departmentsSelect'])->name('entry.select.departments');
+            Route::get('/entry/select/categories',   [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'categoriesSelect'])->name('entry.select.categories');
+            Route::get('/entry/select/ledgers',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'ledgersSelect'])    ->name('entry.select.ledgers');
+            Route::get('/entry/select/files',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'filesSelect'])      ->name('entry.select.files');
+            Route::get('/entry/select/locations',    [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'locationsSelect'])  ->name('entry.select.locations');
+            Route::get('/entry/{scan}',              [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'show'])             ->name('entry');
+            Route::get('/entry/{scan}/items',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'getItems'])         ->name('entry.items');
+            Route::post('/entry/{scan}/save',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'save'])             ->name('entry.save');
         });
 
     });

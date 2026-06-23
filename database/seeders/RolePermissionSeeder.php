@@ -59,6 +59,7 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'profile.view', 'profile.update', 'profile.password.change',
             'temp-scanning.view', 'direct-scanning.view',
+            'punching.view', 'punching.punch',
         ],
 
         'Punch Approval' => [
