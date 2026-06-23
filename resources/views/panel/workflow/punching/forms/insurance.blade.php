@@ -13,7 +13,7 @@
     </div>
     <div class="f-group">
         <label>Policy Number</label>
-        <input type="text" name="Policy_Number" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <input type="text" name="Policy_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
     </div>
     <div class="f-group">
         <label>Policy Date</label>
@@ -42,7 +42,7 @@
 </div>
 
 {{-- Row 3: Premium Amount --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Premium Amount</label>
         <input type="text" name="Premium_Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
@@ -50,7 +50,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

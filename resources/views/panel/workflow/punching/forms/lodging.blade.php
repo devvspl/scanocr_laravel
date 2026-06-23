@@ -64,11 +64,11 @@
     </div>
     <div class="f-group">
         <label>Check In Date/Time</label>
-        <input type="text" name="Arrival_Date" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}">
+        <input type="text" name="Check_In" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}">
     </div>
     <div class="f-group">
         <label>Check Out Date/Time</label>
-        <input type="text" name="Departure_Date" class="f-input" value="{{ $punchDetail->ToDateTime ?? '' }}">
+        <input type="text" name="Check_Out" class="f-input" value="{{ $punchDetail->ToDateTime ?? '' }}">
     </div>
 </div>
 
@@ -123,7 +123,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

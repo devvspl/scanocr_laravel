@@ -6,14 +6,14 @@
     <div class="f-group">
         <label>Vendor Name <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->vendor_name ?? false))<span class="hint">{{ $tempData->vendor_name }}</span>@endif
-        <select name="Vendor_Name" id="selVendor" style="width:100%">
+        <select name="From" id="selVendor" style="width:100%">
             <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
         </select>
     </div>
     <div class="f-group">
         <label>Billing To <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->billing_to ?? false))<span class="hint">{{ $tempData->billing_to }}</span>@endif
-        <select name="Billing_To" id="selBuyer" style="width:100%">
+        <select name="To" id="selBuyer" style="width:100%">
             <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
         </select>
     </div>
@@ -27,7 +27,7 @@
     </div>
     <div class="f-group">
         <label>Invoice No</label>
-        <input type="text" name="InvoiceNo" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
+        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Invoice Date</label>
@@ -44,18 +44,18 @@
     <div class="f-group">
         <label>Location</label>
         @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
-        <select name="Work_Location" id="selLocation" style="width:100%">
+        <select name="Location" id="selLocation" style="width:100%">
             <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
         </select>
     </div>
     <div class="f-group">
         <label>Vehicle No</label>
-        <input type="text" name="VehicleNo" class="f-input" value="{{ $punchDetail->VehicleRegNo ?? '' }}" required>
+        <input type="text" name="Vehicle_No" class="f-input" value="{{ $punchDetail->VehicleRegNo ?? '' }}" required>
     </div>
 </div>
 
 {{-- Row 4: Description --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Description</label>
         <input type="text" name="Description" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
@@ -66,7 +66,7 @@
 <div class="f-row cols-3">
     <div class="f-group">
         <label>Liter</label>
-        <input type="text" name="Liter" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->MeterNumber ?? '' }}" required>
+        <input type="text" name="Liters" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->MeterNumber ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Per Liter Rate</label>
@@ -91,7 +91,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

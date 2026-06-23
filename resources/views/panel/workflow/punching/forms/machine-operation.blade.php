@@ -55,15 +55,15 @@
     </div>
     <div class="f-group">
         <label>Invoice Date</label>
-        <input type="date" name="Invoice_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
     </div>
 </div>
 
 {{-- Row 4: Particular --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Particular</label>
-        <input type="text" name="Particular" class="f-input" value="{{ $punchDetail->Particular ?? '' }}">
+        <input type="text" name="Particular_Text" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
     </div>
 </div>
 
@@ -83,12 +83,14 @@
     </div>
     <div class="f-group">
         <label>Total Amount</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Grand_Total ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

@@ -6,7 +6,7 @@
     <div class="f-group">
         <label>Agency Name <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->agency_name ?? false))<span class="hint">{{ $tempData->agency_name }}</span>@endif
-        <select name="Agency_Name" id="selVendor" style="width:100%">
+        <select name="From" id="selVendor" style="width:100%">
             <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
         </select>
     </div>
@@ -21,7 +21,7 @@
     <div class="f-group">
         <label>Billing Name <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->billing_name ?? false))<span class="hint">{{ $tempData->billing_name }}</span>@endif
-        <select name="Billing_Name" id="selBuyer" style="width:100%">
+        <select name="To" id="selBuyer" style="width:100%">
             <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
         </select>
     </div>
@@ -59,15 +59,15 @@
     </div>
     <div class="f-group">
         <label>Invoice No <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Invoice_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
+        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Invoice Date <span style="color:#dc2626">*</span></label>
-        <input type="date" name="Invoice_Date" class="f-input" value="{{ $punchDetail->File_Date ?? '' }}" required>
+        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->File_Date ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Per KM Rate <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Per_KM_Rate" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
+        <input type="text" name="Rate_Per_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
     </div>
 </div>
 
@@ -83,11 +83,11 @@
     </div>
     <div class="f-group">
         <label>Start Reading <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Opening_Reading" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->OpeningKm ?? '' }}" required>
+        <input type="text" name="Opening_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->OpeningKM ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Closing Reading <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Closing_Reading" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->ClosingKm ?? '' }}" required>
+        <input type="text" name="Closing_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->ClosingKM ?? '' }}" required>
     </div>
 </div>
 
@@ -103,12 +103,14 @@
     </div>
     <div class="f-group">
         <label>Total Amount</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Grand_Total ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

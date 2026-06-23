@@ -24,7 +24,7 @@
     </div>
     <div class="f-group">
         <label>BP No</label>
-        <input type="text" name="BP_No" class="f-input" value="{{ $punchDetail->ReferenceNo ?? '' }}">
+        <input type="text" name="Consumer_No" class="f-input" value="{{ $punchDetail->ReferenceNo ?? '' }}">
     </div>
     <div class="f-group">
         <label>Bill Period</label>
@@ -78,11 +78,11 @@
     </div>
     <div class="f-group">
         <label>Bill Amount</label>
-        <input type="text" name="Bill_Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
 </div>
 
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Payment Amount</label>
         <input type="text" name="Payment_Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Payment_Amount ?? '' }}">
@@ -90,7 +90,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

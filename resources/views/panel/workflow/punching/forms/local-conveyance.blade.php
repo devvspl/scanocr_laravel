@@ -58,7 +58,7 @@
     </div>
     <div class="f-group">
         <label>Per KM Rate <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Per_KM_Rate" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
+        <input type="text" name="Rate_Per_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
     </div>
 </div>
 
@@ -99,12 +99,14 @@
     </div>
     <div class="f-group">
         <label>Total Amount</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Grand_Total ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

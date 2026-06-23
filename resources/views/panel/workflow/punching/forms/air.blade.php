@@ -45,7 +45,7 @@
     </div>
     <div class="f-group">
         <label>Journey To</label>
-        <input type="text" name="Journey_To" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}">
+        <input type="text" name="Journey_Upto" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}">
     </div>
     <div class="f-group">
         <label>Travel Class</label>
@@ -67,9 +67,11 @@
 </div>
 
 {{-- Row 4: Passenger Details --}}
-<div class="f-group">
-    <label>Passenger Details</label>
-    <textarea name="Passenger_Details" class="f-input" rows="2">{{ $punchDetail->PassengerDetail ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group">
+        <label>Passenger Details</label>
+        <textarea name="Passenger" class="f-input" rows="2">{{ $punchDetail->PassengerDetail ?? '' }}</textarea>
+    </div>
 </div>
 
 {{-- Row 5: Base Fare, GST, Surcharge, CUTE Charge, Extra Luggage, Other --}}
@@ -103,15 +105,17 @@
 </div>
 
 {{-- Total Fare --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Total Fare</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

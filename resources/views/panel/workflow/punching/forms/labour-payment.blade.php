@@ -5,11 +5,11 @@
 <div class="f-row">
     <div class="f-group">
         <label>Voucher No</label>
-        <input type="text" name="Voucher_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
     </div>
     <div class="f-group">
         <label>Payment Date</label>
-        <input type="date" name="Payment_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
     </div>
     <div class="f-group">
         <label>Payee</label>
@@ -25,11 +25,11 @@
 <div class="f-row">
     <div class="f-group">
         <label>Particular</label>
-        <input type="text" name="Particular" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
+        <input type="text" name="Particular_Text" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
     </div>
     <div class="f-group">
         <label>Total Amount</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
     <div class="f-group">
         <label>From Date</label>
@@ -65,7 +65,7 @@
 </div>
 
 {{-- Sub Total --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Sub Total</label>
         <input type="text" name="Sub_Total" id="subTotal" class="f-input" readonly value="{{ $punchDetail->SubTotal ?? '' }}">
@@ -73,7 +73,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

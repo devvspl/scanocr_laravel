@@ -109,8 +109,11 @@
 </style>
 <style>
 .form-panel{display:flex;flex-direction:column;overflow-y:auto;padding:.75rem 1rem;background:#fff}
-.f-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.5rem}
+.f-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:.6rem}
+.f-row.cols-1{grid-template-columns:1fr}
 .f-row.cols-2{grid-template-columns:repeat(2,1fr)}
+.f-row.cols-3{grid-template-columns:repeat(3,1fr)}
+.f-group{min-width:0}
 .f-group label{font-size:.6rem;font-weight:600;color:#78716c;text-transform:uppercase;display:block;margin-bottom:2px}
 .f-group .hint{font-size:.55rem;color:#dc2626;display:block;margin-bottom:1px}
 .f-input{height:28px;width:100%;padding:0 .5rem;font-size:.72rem;border:1px solid #d6d3d1;border-radius:.375rem;background:#fff;outline:none;color:#292524}

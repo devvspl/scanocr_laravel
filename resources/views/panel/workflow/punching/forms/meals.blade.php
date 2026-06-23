@@ -5,20 +5,20 @@
 <div class="f-row cols-3">
     <div class="f-group">
         <label>Hotel Name</label>
-        <input type="text" name="Hotel" class="f-input" value="{{ $punchDetail->Hotel_Name ?? '' }}">
+        <input type="text" name="Hotel_Name" class="f-input" value="{{ $punchDetail->Hotel_Name ?? '' }}">
     </div>
     <div class="f-group">
         <label>Bill No</label>
-        <input type="text" name="InvoiceNo" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
     </div>
     <div class="f-group">
         <label>Bill Date</label>
-        <input type="date" name="Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
     </div>
 </div>
 
 {{-- Row 2: Hotel Address --}}
-<div class="f-row">
+<div class="f-row cols-1">
     <div class="f-group">
         <label>Hotel Address</label>
         <input type="text" name="Hotel_Address" class="f-input" value="{{ $punchDetail->Hotel_Address ?? '' }}">
@@ -40,7 +40,7 @@
     </div>
     <div class="f-group">
         <label>Amount</label>
-        <input type="text" name="Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <input type="text" name="Grand_Total" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
 </div>
 
@@ -60,7 +60,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>

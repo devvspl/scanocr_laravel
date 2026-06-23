@@ -39,7 +39,7 @@
                 <td>1</td>
                 <td><select name="Employee[]" class="particular-sel" style="width:100%"><option value="">Select</option></select></td>
                 <td><input type="text" name="PNR[]"></td>
-                <td><input type="text" name="Amount[]" class="calc-trigger" inputmode="decimal"></td>
+                <td><input type="text" name="Ticket_Amount[]" class="calc-trigger" inputmode="decimal"></td>
                 <td><button type="button" class="btn-add-row">+</button></td>
             </tr>
         </tbody>
@@ -49,16 +49,16 @@
 {{-- Totals --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Sub Total</label>
-        <input type="text" name="SubTotal" id="subTotal" class="f-input" readonly value="{{ $punchDetail->SubTotal ?? '' }}">
-    </div>
-    <div class="f-group">
         <label>Cancellation Charge</label>
-        <input type="text" name="Total_Discount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Discount ?? '' }}">
+        <input type="text" name="Cancellation_Charge" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->SubTotal ?? '' }}">
     </div>
     <div class="f-group">
         <label>Other Charges</label>
         <input type="text" name="OthCharge_Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->OthCharge_Amount ?? '' }}">
+    </div>
+    <div class="f-group">
+        <label>Refund Amount</label>
+        <input type="text" name="Refund_Amount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Discount ?? '' }}">
     </div>
     <div class="f-group">
         <label>Grand Total</label>
@@ -67,7 +67,9 @@
 </div>
 
 {{-- Remark --}}
-<div class="f-group" style="margin-bottom:.5rem">
-    <label>Remark</label>
-    <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+<div class="f-row cols-1">
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark</label>
+        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    </div>
 </div>
