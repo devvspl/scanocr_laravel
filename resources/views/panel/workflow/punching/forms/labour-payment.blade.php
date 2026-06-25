@@ -4,20 +4,22 @@
 {{-- Row 1: Voucher No, Payment Date, Payee, Location --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Voucher No</label>
-        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <label>Voucher No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Voucher_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Payment Date</label>
-        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <label>Payment Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Payment_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Payee</label>
-        <input type="text" name="Payee" class="f-input" value="{{ $punchDetail->Related_Person ?? '' }}">
+        <label>Payee <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Payee" class="f-input" value="{{ $punchDetail->Related_Person ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Location</label>
-        <input type="text" name="Location" class="f-input" value="{{ $punchDetail->Loc_Name ?? '' }}">
+        <label>Location <span style="color:#dc2626">*</span></label>
+        <select name="Location" id="selLocation" style="width:100%">
+            <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
+        </select>
     </div>
 </div>
 
@@ -28,16 +30,16 @@
         <input type="text" name="Particular_Text" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Total Amount</label>
-        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <label>Total Amount <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Total_Amount" class="f-input" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>From Date</label>
-        <input type="date" name="From_Date" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}">
+        <input type="date" name="From_Date" class="f-input" value="{{ $punchDetail->FromDateTime ? \Carbon\Carbon::parse($punchDetail->FromDateTime)->format('Y-m-d') : '' }}">
     </div>
     <div class="f-group">
         <label>To Date</label>
-        <input type="date" name="To_Date" class="f-input" value="{{ $punchDetail->ToDateTime ?? '' }}">
+        <input type="date" name="To_Date" class="f-input" value="{{ $punchDetail->ToDateTime ? \Carbon\Carbon::parse($punchDetail->ToDateTime)->format('Y-m-d') : '' }}">
     </div>
 </div>
 
@@ -48,18 +50,32 @@
         <thead>
             <tr>
                 <th style="width:25px">#</th>
-                <th style="width:200px">Head</th>
+                <th style="min-width:200px">Head</th>
                 <th style="width:120px">Amount</th>
                 <th style="width:25px"></th>
             </tr>
         </thead>
-        <tbody id="itemsBody">
+        <tbody id="labourHeadsBody">
+            @php
+                $labourDetails = \DB::table('labour_payment_detail')->where('Scan_Id', $scanData->Scan_Id)->get();
+            @endphp
+            @if($labourDetails->count() > 0)
+                @foreach($labourDetails as $idx => $item)
+                <tr>
+                    <td>{{ $idx + 1 }}</td>
+                    <td><select name="Head[]" class="labour-head-sel" style="width:100%"><option value="{{ $item->Head ?? '' }}" selected>{{ $item->Head ?? '' }}</option></select></td>
+                    <td><input type="text" name="Amount[]" class="f-input labour-amt" inputmode="decimal" value="{{ $item->Amount ?? '' }}"></td>
+                    <td>@if($idx === 0)<button type="button" class="btn-add-labour">+</button>@else<button type="button" class="btn-del-labour">−</button>@endif</td>
+                </tr>
+                @endforeach
+            @else
             <tr>
                 <td>1</td>
-                <td><select name="Head[]" class="particular-sel" style="width:100%"><option value="">Select</option></select></td>
-                <td><input type="text" name="Amount[]" class="calc-trigger" inputmode="decimal"></td>
-                <td><button type="button" class="btn-add-row">+</button></td>
+                <td><select name="Head[]" class="labour-head-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="Amount[]" class="f-input labour-amt" inputmode="decimal"></td>
+                <td><button type="button" class="btn-add-labour">+</button></td>
             </tr>
+            @endif
         </tbody>
     </table>
 </div>
@@ -68,14 +84,14 @@
 <div class="f-row cols-1">
     <div class="f-group">
         <label>Sub Total</label>
-        <input type="text" name="Sub_Total" id="subTotal" class="f-input" readonly value="{{ $punchDetail->SubTotal ?? '' }}">
+        <input type="text" name="Sub_Total" id="labourSubTotal" class="f-input" readonly value="{{ $punchDetail->SubTotal ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>

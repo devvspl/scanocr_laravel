@@ -29,6 +29,7 @@ use App\Http\Controllers\Workflow\BillApprovalController;
 use App\Http\Controllers\Workflow\ClassificationController;
 use App\Http\Controllers\Workflow\DirectScannerController;
 use App\Http\Controllers\Workflow\PunchingController;
+use App\Http\Controllers\Workflow\PunchingEntryController;
 use App\Http\Controllers\Workflow\SuperScannerController;
 use App\Http\Controllers\Workflow\TempScannerController;
 use Illuminate\Support\Facades\Route;
@@ -393,23 +394,23 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/locations',           [PunchingController::class, 'locationsSelect'])->name('locations');
 
             // Punching Entry (full-page form) — select endpoints MUST come before {scan} routes
-            Route::get('/entry/select/items',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'itemsSelect'])      ->name('entry.select.items');
-            Route::post('/entry/select/items/create',[\App\Http\Controllers\Workflow\PunchingEntryController::class, 'createItem'])       ->name('entry.select.items.create');
-            Route::get('/entry/select/units',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'unitsSelect'])      ->name('entry.select.units');
-            Route::get('/entry/select/buyers',       [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'buyersSelect'])     ->name('entry.select.buyers');
-            Route::get('/entry/select/vendors',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'vendorsSelect'])    ->name('entry.select.vendors');
-            Route::get('/entry/select/departments',  [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'departmentsSelect'])->name('entry.select.departments');
-            Route::get('/entry/select/categories',   [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'categoriesSelect'])->name('entry.select.categories');
-            Route::get('/entry/select/ledgers',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'ledgersSelect'])    ->name('entry.select.ledgers');
-            Route::get('/entry/select/files',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'filesSelect'])      ->name('entry.select.files');
-            Route::get('/entry/select/locations',    [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'locationsSelect'])  ->name('entry.select.locations');
-            Route::get('/entry/select/employees',   [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'employeesSelect']) ->name('entry.select.employees');
-            Route::get('/entry/select/last-reading', [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'lastReading'])     ->name('entry.select.lastReading');
-            Route::get('/entry/select/hotels',       [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'hotelsSelect'])    ->name('entry.select.hotels');
-            Route::get('/entry/{scan}',              [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'show'])             ->name('entry');
-            Route::get('/entry/{scan}/items',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'getItems'])         ->name('entry.items');
-            Route::get('/entry/{scan}/history',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'history'])          ->name('entry.history');
-            Route::post('/entry/{scan}/save',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'save'])             ->name('entry.save');
+            Route::get('/entry/select/items',        [PunchingEntryController::class, 'itemsSelect'])      ->name('entry.select.items');
+            Route::post('/entry/select/items/create',[PunchingEntryController::class, 'createItem'])       ->name('entry.select.items.create');
+            Route::get('/entry/select/units',        [PunchingEntryController::class, 'unitsSelect'])      ->name('entry.select.units');
+            Route::get('/entry/select/buyers',       [PunchingEntryController::class, 'buyersSelect'])     ->name('entry.select.buyers');
+            Route::get('/entry/select/vendors',      [PunchingEntryController::class, 'vendorsSelect'])    ->name('entry.select.vendors');
+            Route::get('/entry/select/departments',  [PunchingEntryController::class, 'departmentsSelect'])->name('entry.select.departments');
+            Route::get('/entry/select/categories',   [PunchingEntryController::class, 'categoriesSelect'])->name('entry.select.categories');
+            Route::get('/entry/select/ledgers',      [PunchingEntryController::class, 'ledgersSelect'])    ->name('entry.select.ledgers');
+            Route::get('/entry/select/files',        [PunchingEntryController::class, 'filesSelect'])      ->name('entry.select.files');
+            Route::get('/entry/select/locations',    [PunchingEntryController::class, 'locationsSelect'])  ->name('entry.select.locations');
+            Route::get('/entry/select/employees',   [PunchingEntryController::class, 'employeesSelect']) ->name('entry.select.employees');
+            Route::get('/entry/select/last-reading', [PunchingEntryController::class, 'lastReading'])     ->name('entry.select.lastReading');
+            Route::get('/entry/select/hotels',       [PunchingEntryController::class, 'hotelsSelect'])    ->name('entry.select.hotels');
+            Route::get('/entry/{scan}',              [PunchingEntryController::class, 'show'])             ->name('entry');
+            Route::get('/entry/{scan}/items',        [PunchingEntryController::class, 'getItems'])         ->name('entry.items');
+            Route::get('/entry/{scan}/history',      [PunchingEntryController::class, 'history'])          ->name('entry.history');
+            Route::post('/entry/{scan}/save',        [PunchingEntryController::class, 'save'])             ->name('entry.save');
         });
 
     });

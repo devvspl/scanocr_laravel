@@ -16,20 +16,20 @@
         <input type="text" name="Agent_Name" class="f-input" value="{{ $punchDetail->AgentName ?? '' }}">
     </div>
     <div class="f-group">
-        <label>PNR Number</label>
-        <input type="text" name="PNR_Number" class="f-input" value="{{ $punchDetail->ServiceNo ?? '' }}">
+        <label>PNR Number <span style="color:#dc2626">*</span></label>
+        <input type="text" name="PNR_Number" class="f-input" value="{{ $punchDetail->ServiceNo ?? '' }}" required>
     </div>
 </div>
 
 {{-- Row 2: Booking Date, Journey Date, Booking ID, Transaction ID --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Date of Booking</label>
-        <input type="date" name="Booking_Date" class="f-input" value="{{ $punchDetail->BookingDate ?? '' }}">
+        <label>Date of Booking <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Booking_Date" class="f-input" value="{{ $punchDetail->BookingDate ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Journey Date</label>
-        <input type="date" name="Journey_Date" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}">
+        <label>Journey Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Journey_Date" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Booking ID</label>
@@ -49,7 +49,7 @@
     </div>
     <div class="f-group">
         <label>Journey To</label>
-        <input type="text" name="Journey_Upto" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}">
+        <input type="text" name="Journey_To" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}">
     </div>
     <div class="f-group">
         <label>Travel Class</label>
@@ -78,7 +78,7 @@
     <div class="f-group">
         <label>Location</label>
         @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
-        <select name="Location" id="selLocation" style="width:100%">
+        <select name="location_id" id="selLocation" style="width:100%">
             <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
         </select>
     </div>
@@ -88,14 +88,54 @@
 <div class="f-row cols-1">
     <div class="f-group">
         <label>Passenger Details</label>
-        <textarea name="Passenger" class="f-input" rows="2">{{ $punchDetail->PassengerDetail ?? '' }}</textarea>
+        <textarea name="Passenger_Details" class="f-input" rows="2">{{ $punchDetail->PassengerDetail ?? '' }}</textarea>
     </div>
 </div>
+
+
+{{-- Row 4b: Employee Selection --}}
+<div style="margin:.6rem 0 .5rem"><span style="font-size:.65rem;font-weight:700;color:#7f1d1d;text-transform:uppercase;letter-spacing:.03em">Employees <span style="color:#dc2626">*</span></span></div>
+<div style="overflow-x:auto;max-height:200px;overflow-y:auto;border:2px solid #e7e5e4;border-radius:.5rem;margin-bottom:.6rem">
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:25px">#</th>
+                <th style="min-width:200px">Employee</th>
+                <th style="width:100px">Emp Code</th>
+                <th style="width:25px"></th>
+            </tr>
+        </thead>
+        <tbody id="railEmpBody">
+            @php
+                $railEmps = \DB::table('lodging_employee')->where('scan_id', $scanData->Scan_Id)->get();
+            @endphp
+            @if($railEmps->count() > 0)
+                @foreach($railEmps as $idx => $emp)
+                <tr>
+                    <td>{{ $idx + 1 }}</td>
+                    <td><select name="Employee[]" class="rail-emp-sel" style="width:100%" required><option value="{{ $emp->emp_id }}" selected>{{ $emp->emp_name ?? '' }}</option></select></td>
+                    <td><input type="text" name="EmpCode[]" value="{{ $emp->emp_code ?? '' }}" readonly></td>
+                    <td>@if($idx === 0)<button type="button" class="btn-add-emp">+</button>@else<button type="button" class="btn-del-emp">−</button>@endif</td>
+                </tr>
+                @endforeach
+            @else
+            <tr>
+                <td>1</td>
+                <td><select name="Employee[]" class="rail-emp-sel" style="width:100%" required><option value="">Select</option></select></td>
+                <td><input type="text" name="EmpCode[]" readonly></td>
+                <td><button type="button" class="btn-add-emp">+</button></td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+</div>
+
+
 
 {{-- Row 5: Base Fare, GST, Surcharge, Other --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Base Fare <span style="color:#dc2626">*</span></label>
+        <label>Base Fare</label>
         <input type="text" name="Base_Fare" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Base_Fare ?? '' }}">
     </div>
     <div class="f-group">
@@ -115,15 +155,15 @@
 {{-- Total Fare --}}
 <div class="f-row cols-1">
     <div class="f-group">
-        <label>Total Fare</label>
-        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" value="{{ $punchDetail->Grand_Total ?? '' }}">
+        <label>Total Fare <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" value="{{ $punchDetail->Total_Amount ?? $punchDetail->Grand_Total ?? '' }}" required>
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>

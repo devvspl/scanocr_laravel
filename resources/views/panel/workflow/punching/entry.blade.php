@@ -132,6 +132,8 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 .btn-del-emp{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .btn-add-meals-emp{background:#7f1d1d;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .btn-del-meals-emp{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-add-labour{background:#7f1d1d;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-del-labour{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .form-footer{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-top:1px solid #e7e5e4;background:#fafaf9;flex-shrink:0}
 .form-footer .btn-cancel{margin-right:auto}
 .btn-draft{height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
@@ -1000,6 +1002,64 @@ $(function(){
     }
 
     // ========== Electricity Bill: Period date range (continued) ==========
+
+    // ========== Machine Operation — Trips × Rate = Total Amount ==========
+    if ($('input[name="Trip"].mo-calc').length) {
+        function calcMachineTotal(){
+            var trips = parseFloat($('input[name="Trip"]').val()) || 0;
+            var rate = parseFloat($('input[name="Rate"]').val()) || 0;
+            $('#grandTotal').val(trips > 0 && rate > 0 ? (trips * rate).toFixed(2) : '0.00');
+        }
+        $(document).on('input', '.mo-calc', calcMachineTotal);
+    }
+
+    // ========== Labour Payment — Add/Remove Heads & SubTotal ==========
+    if ($('#labourHeadsBody').length) {
+        function initLabourHeadSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Head',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selLedgers,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                }
+            });
+        }
+        initLabourHeadSel('.labour-head-sel');
+
+        function calcLabourSubTotal(){
+            var total = 0;
+            $('#labourHeadsBody tr').each(function(){
+                total += parseFloat($(this).find('input[name="Amount[]"]').val()) || 0;
+            });
+            $('#labourSubTotal').val(total > 0 ? total.toFixed(2) : '0.00');
+        }
+        $(document).on('input', '.labour-amt', calcLabourSubTotal);
+
+        $(document).on('click', '.btn-add-labour', function(){
+            var count = $('#labourHeadsBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Head[]" class="labour-head-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="Amount[]" class="f-input labour-amt" inputmode="decimal"></td>
+                <td><button type="button" class="btn-del-labour">−</button></td>
+            </tr>`;
+            $('#labourHeadsBody').append(tr);
+            initLabourHeadSel('#labourHeadsBody tr:last .labour-head-sel');
+        });
+        $(document).on('click', '.btn-del-labour', function(){
+            if ($('#labourHeadsBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#labourHeadsBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+            calcLabourSubTotal();
+        });
+    }
+
+    // ========== Electricity Bill: Period date range (original) ==========
     if ($('input[name="Period_From"]').length && $('input[name="Period_To"]').length) {
         $('input[name="Period_From"], input[name="Period_To"]').on('change', function(){
             var from = $('input[name="Period_From"]').val();
@@ -1038,7 +1098,7 @@ $(function(){
     }
 
     // ========== Load Existing Items via AJAX (only for invoice-type forms) ==========
-    var kmForms = ['two-four-wheeler','hired-vehicle','local-conveyance','lodging','meals','miscellaneous'];
+    var kmForms = ['two-four-wheeler','hired-vehicle','local-conveyance','lodging','meals','miscellaneous','labour-payment','cash-receipt','machine-operation'];
     if (kmForms.indexOf('{{ $formPartial }}') === -1) {
     $.ajax({
         url: R.items,
@@ -1202,9 +1262,14 @@ $(function(){
                 break;
 
             case 'cash-receipt':
-                if(!chk($('#selVendor').val())) missing.push('Received From');
-                if(!chk($('#selBuyer').val())) missing.push('Receiver');
-                if(!chk($('input[name="Grand_Total"]').val())) missing.push('Amount');
+                if(!chk($('input[name="Receipt_No"]').val())) missing.push('Receipt No');
+                if(!chk($('input[name="Receipt_Date"]').val())) missing.push('Receipt Date');
+                if(!chk($('#selBuyer').val())) missing.push('Company');
+                if(!chk($('input[name="ReceivedFrom"]').val())) missing.push('Received From');
+                if(!chk($('input[name="Receiver"]').val())) missing.push('Receiver');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'cash-deposits':
@@ -1233,6 +1298,13 @@ $(function(){
             case 'machine-operation':
                 if(!chk($('#selBuyer').val())) missing.push('Company');
                 if(!chk($('#selVendor').val())) missing.push('Vendor');
+                if(!chk($('input[name="VehicleRegNo"]').val())) missing.push('Vehicle No');
+                if(!chk($('select[name="Vehicle_Type"]').val())) missing.push('Vehicle Type');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Invoice_Date"]').val())) missing.push('Invoice Date');
+                if(!chk($('input[name="Trip"]').val()) || parseFloat($('input[name="Trip"]').val()) <= 0) missing.push('Trips (must be greater than 0)');
+                if(!chk($('input[name="Rate"]').val()) || parseFloat($('input[name="Rate"]').val()) <= 0) missing.push('Rate per Trip (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'local-conveyance':
@@ -1371,8 +1443,33 @@ $(function(){
                 break;
 
             case 'labour-payment':
-                // No explicit required markers — basic validation
-                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Payment Date');
+                if(!chk($('input[name="Voucher_No"]').val())) missing.push('Voucher No');
+                if(!chk($('input[name="Payment_Date"]').val())) missing.push('Payment Date');
+                if(!chk($('input[name="Payee"]').val())) missing.push('Payee');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Total_Amount"]').val()) || parseFloat($('input[name="Total_Amount"]').val()) <= 0) missing.push('Total Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // At least one head row required, and if head filled then amount required & vice versa
+                var hasHead = false;
+                var hasIncompleteHead = false;
+                $('#labourHeadsBody tr').each(function(){
+                    var $tr = $(this);
+                    var head = ($tr.find('select[name="Head[]"]').val() || '').trim();
+                    var amt = $tr.find('input[name="Amount[]"]').val().trim();
+                    if(head && amt) hasHead = true;
+                    if(head && !amt){
+                        hasIncompleteHead = true;
+                        $tr.find('input[name="Amount[]"]').css('border-color','#dc2626');
+                    } else if(!head && amt){
+                        hasIncompleteHead = true;
+                        $tr.find('select[name="Head[]"]').next('.select2-container').find('.select2-selection').css('border-color','#dc2626');
+                    } else {
+                        $tr.find('input[name="Amount[]"]').css('border-color','');
+                        $tr.find('select[name="Head[]"]').next('.select2-container').find('.select2-selection').css('border-color','');
+                    }
+                });
+                if(!hasHead) missing.push('At least one Payment Head with Amount');
+                if(hasIncompleteHead) missing.push('Fill both Head & Amount in each row');
                 break;
 
             case 'ticket-cancellation':

@@ -736,44 +736,56 @@ class PunchingEntryController extends Controller
     private function saveVehicleMaintenance(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Bill_No' => 'nullable|string|max:150',
+            'InvoiceNo' => 'nullable|string|max:150',
             'Bill_Date' => 'nullable|date',
-            'From' => 'nullable|integer',
-            'To' => 'nullable|integer',
+            'Vendor_Name' => 'nullable|integer',
+            'Billing_To' => 'nullable|integer',
             'VehicleRegNo' => 'nullable|string|max:50',
-            'Location' => 'nullable|string|max:255',
+            'Work_Location' => 'nullable|string|max:255',
             'Grand_Total' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
         ];
         if ($isFinal) {
-            $rules['Bill_No'] = 'required|string|max:150';
+            $rules['InvoiceNo'] = 'required|string|max:150';
             $rules['Bill_Date'] = 'required|date';
-            $rules['From'] = 'required|integer|min:1';
-            $rules['To'] = 'required|integer|min:1';
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['Vendor_Name'] = 'required|integer|min:1';
+            $rules['Billing_To'] = 'required|integer|min:1';
+            $rules['Grand_Total'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'InvoiceNo.required' => 'Invoice No is required.',
+            'Bill_Date.required' => 'Invoice Date is required.',
+            'Vendor_Name.required' => 'Vendor Name is required.',
+            'Billing_To.required' => 'Billing To is required.',
+            'Grand_Total.required' => 'Grand Total is required.',
+            'Grand_Total.gt' => 'Grand Total must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
-            $fromName = $request->filled('From') ? DB::table('master_firm')->where('firm_id', $request->input('From'))->value('firm_name') : '';
-            $toName = $request->filled('To') ? DB::table('master_firm')->where('firm_id', $request->input('To'))->value('firm_name') : '';
+            $vendorId = (int) $request->input('Vendor_Name', 0);
+            $vendorName = $vendorId ? DB::table('master_firm')->where('firm_id', $vendorId)->value('firm_name') : '';
+            $billingId = (int) $request->input('Billing_To', 0);
+            $billingName = $billingId ? DB::table('master_firm')->where('firm_id', $billingId)->value('firm_name') : '';
+            $grandTotal = (float) $request->input('Grand_Total', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
                 'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'From_ID' => (int) $request->input('From', 0), 'FromName' => $fromName,
-                'To_ID' => (int) $request->input('To', 0), 'ToName' => $toName,
-                'Company' => $toName, 'CompanyID' => (int) $request->input('To', 0),
-                'File_No' => $request->input('Bill_No', ''),
+                'From_ID' => $vendorId, 'FromName' => $vendorName,
+                'To_ID' => $billingId, 'ToName' => $billingName,
+                'Company' => $billingName, 'CompanyID' => $billingId,
+                'File_No' => $request->input('InvoiceNo', ''),
                 'BillDate' => $request->input('Bill_Date'),
-                'Loc_Name' => $request->input('Location', ''),
+                'Loc_Name' => $request->input('Work_Location', ''),
                 'VehicleRegNo' => $request->input('VehicleRegNo', ''),
-                'SubTotal' => (float) $request->input('Sub_Total', 0),
-                'Total_Amount' => (float) $request->input('Total', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
-                'Total_Discount' => (float) $request->input('Total_Discount', 0),
+                'SubTotal' => $request->input('Sub_Total', '') !== '' ? (float) $request->input('Sub_Total') : 0,
+                'Total_Amount' => $request->input('Total', '') !== '' ? (float) $request->input('Total') : 0,
+                'Grand_Total' => $grandTotal,
+                'Total_Discount' => $request->input('Total_Discount', '') !== '' ? (float) $request->input('Total_Discount') : 0,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -781,37 +793,53 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                $fileID = $existing->FileID;
-                DB::table('sub_punchfile')->where('FileID', $fileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $grandTotal, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $grandTotal, 'Comment' => $data['Remark']]);
             }
 
+            // Line items
             DB::table('invoice_detail')->where('Scan_Id', $scanId)->delete();
             $particulars = $request->input('Particular', []);
-            if (is_array($particulars)) {
+            $hsns = $request->input('HSN', []);
+            $qtys = $request->input('Qty', []);
+            $units = $request->input('Unit', []);
+            $mrps = $request->input('MRP', []);
+            $discounts = $request->input('Discount', []);
+            $prices = $request->input('Price', []);
+            $amounts = $request->input('Amount', []);
+            $gsts = $request->input('GST', []);
+            $sgsts = $request->input('SGST', []);
+            $igsts = $request->input('IGST', []);
+            $tamounts = $request->input('TAmount', []);
+
+            if (is_array($particulars) && !empty($particulars)) {
                 $items = [];
                 foreach ($particulars as $i => $particular) {
                     if (empty(trim((string) ($particular ?? '')))) continue;
                     $items[] = [
-                        'Scan_Id' => $scanId, 'Particular' => (string) $particular,
-                        'HSN' => (string) ($request->input('HSN')[$i] ?? ''),
-                        'Qty' => (float) ($request->input('Qty')[$i] ?? 0),
-                        'Unit' => (string) ($request->input('Unit')[$i] ?? ''),
-                        'MRP' => (float) ($request->input('MRP')[$i] ?? 0),
-                        'Discount' => (float) ($request->input('Discount')[$i] ?? 0),
-                        'Price' => (float) ($request->input('Price')[$i] ?? 0),
-                        'Amount' => (float) ($request->input('Amount')[$i] ?? 0),
-                        'GST' => (float) ($request->input('GST')[$i] ?? 0),
-                        'SGST' => (float) ($request->input('SGST')[$i] ?? 0),
-                        'IGST' => (float) ($request->input('IGST')[$i] ?? 0),
-                        'Cess' => (float) ($request->input('Cess')[$i] ?? 0),
-                        'Total_Amount' => (float) ($request->input('TAmount')[$i] ?? 0),
+                        'Scan_Id' => $scanId,
+                        'Particular' => (string) $particular,
+                        'HSN' => (string) ($hsns[$i] ?? ''),
+                        'Qty' => (string) (($qtys[$i] ?? '') !== '' ? $qtys[$i] : '0'),
+                        'Unit' => (string) ($units[$i] ?? ''),
+                        'MRP' => (string) (($mrps[$i] ?? '') !== '' ? $mrps[$i] : '0'),
+                        'Discount' => (string) (($discounts[$i] ?? '') !== '' ? $discounts[$i] : '0'),
+                        'Price' => (string) (($prices[$i] ?? '') !== '' ? $prices[$i] : '0'),
+                        'Amount' => (string) (($amounts[$i] ?? '') !== '' ? $amounts[$i] : '0'),
+                        'GST' => (string) (($gsts[$i] ?? '') !== '' ? $gsts[$i] : '0'),
+                        'SGST' => (string) (($sgsts[$i] ?? '') !== '' ? $sgsts[$i] : '0'),
+                        'IGST' => (string) (($igsts[$i] ?? '') !== '' ? $igsts[$i] : '0'),
+                        'Cess' => '0',
+                        'Total_Amount' => (string) (($tamounts[$i] ?? '') !== '' ? $tamounts[$i] : '0'),
                     ];
                 }
-                foreach (array_chunk($items, 100) as $chunk) {
-                    DB::table('invoice_detail')->insert($chunk);
+                if (!empty($items)) {
+                    foreach (array_chunk($items, 100) as $chunk) {
+                        DB::table('invoice_detail')->insert($chunk);
+                    }
                 }
             }
 
@@ -1003,40 +1031,58 @@ class PunchingEntryController extends Controller
     private function saveCashReceipt(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Bill_No' => 'nullable|string|max:150',
-            'Bill_Date' => 'nullable|date',
-            'Payment_Mode' => 'nullable|string|max:100',
-            'Grand_Total' => 'nullable|numeric',
+            'Receipt_No' => 'nullable|string|max:150',
+            'Receipt_Date' => 'nullable|date',
+            'CompanyID' => 'nullable|integer',
+            'Receiver' => 'nullable|string|max:255',
+            'ReceivedFrom' => 'nullable|string|max:255',
+            'Particular' => 'nullable|string|max:500',
+            'Location' => 'nullable|string|max:255',
+            'Amount' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
         ];
         if ($isFinal) {
-            $rules['Bill_No'] = 'required|string|max:150';
-            $rules['Bill_Date'] = 'required|date';
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['Receipt_No'] = 'required|string|max:150';
+            $rules['Receipt_Date'] = 'required|date';
+            $rules['CompanyID'] = 'required|integer|min:1';
+            $rules['Receiver'] = 'required|string|max:255';
+            $rules['ReceivedFrom'] = 'required|string|max:255';
+            $rules['Amount'] = 'required|numeric|gt:0';
+            $rules['Location'] = 'required|string|max:255';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'Receipt_No.required' => 'Receipt No is required.',
+            'Receipt_Date.required' => 'Receipt Date is required.',
+            'CompanyID.required' => 'Company is required.',
+            'Receiver.required' => 'Receiver is required.',
+            'ReceivedFrom.required' => 'Received From is required.',
+            'Amount.required' => 'Amount is required.',
+            'Amount.gt' => 'Amount must be greater than 0.',
+            'Location.required' => 'Location is required.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
-            $fromName = $request->filled('From') ? DB::table('master_firm')->where('firm_id', $request->input('From'))->value('firm_name') : '';
-            $toName = $request->filled('To') ? DB::table('master_firm')->where('firm_id', $request->input('To'))->value('firm_name') : '';
-            $deptName = $request->filled('Department') ? DB::table('departments')->where('id', $request->input('Department'))->value('department_name') : '';
+            $companyId = (int) $request->input('CompanyID', 0);
+            $companyName = $companyId ? DB::table('master_firm')->where('firm_id', $companyId)->value('firm_name') : '';
+            $amount = (float) $request->input('Amount', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
                 'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'BillDate' => $request->input('Bill_Date'),
-                'File_No' => $request->input('Bill_No', ''),
-                'NatureOfPayment' => $request->input('Payment_Mode', ''),
-                'From_ID' => (int) $request->input('From', 0), 'FromName' => $fromName,
-                'To_ID' => (int) $request->input('To', 0), 'ToName' => $toName,
-                'Department' => $deptName, 'DepartmentID' => (int) $request->input('Department', 0),
-                'Category' => $request->input('Category', ''),
-                'Ledger' => $request->input('Ledger', ''),
+                'File_No' => $request->input('Receipt_No', ''),
+                'BillDate' => $request->input('Receipt_Date'),
+                'CompanyID' => $companyId,
+                'Company' => $companyName,
+                'Related_Person' => $request->input('Receiver', ''),
+                'FromName' => $request->input('ReceivedFrom', ''),
+                'FileName' => $request->input('Particular', ''),
                 'Loc_Name' => $request->input('Location', ''),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
-                'Total_Amount' => (float) $request->input('Grand_Total', 0),
+                'Total_Amount' => $amount,
+                'Grand_Total' => $amount,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -1044,10 +1090,11 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $amount, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $amount, 'Comment' => $data['Remark']]);
             }
 
             if ($isFinal) {
@@ -1198,9 +1245,20 @@ class PunchingEntryController extends Controller
         if ($isFinal) {
             $rules['Invoice_No'] = 'required|string|max:150';
             $rules['Bill_Date'] = 'required|date';
-            $rules['Amount_Outstanding'] = 'required|numeric|min:0';
+            $rules['Biller_Name'] = 'required|string|max:255';
+            $rules['Phone_No'] = 'required|string|max:50';
+            $rules['Amount_Outstanding'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'Invoice_No.required' => 'Invoice No is required.',
+            'Bill_Date.required' => 'Bill Date is required.',
+            'Biller_Name.required' => 'Biller Name is required.',
+            'Phone_No.required' => 'Phone No is required.',
+            'Amount_Outstanding.required' => 'Total Amount Outstanding is required.',
+            'Amount_Outstanding.gt' => 'Total Amount Outstanding must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
@@ -1214,12 +1272,12 @@ class PunchingEntryController extends Controller
                 'File_No' => $request->input('Invoice_No', ''),
                 'Period' => $request->input('Period', ''),
                 'MobileNo' => $request->input('Phone_No', ''),
-                'SubTotal' => (float) $request->input('Taxable_Value', 0),
-                'CGST_Amount' => (float) $request->input('CGST', 0),
-                'SGST_Amount' => (float) $request->input('SGST', 0),
-                'GST_IGST_Amount' => (float) $request->input('IGST', 0),
-                'Total_Amount' => (float) $request->input('Amount_Due', 0),
-                'Grand_Total' => (float) $request->input('Amount_Outstanding', 0),
+                'SubTotal' => $request->input('Taxable_Value', '') !== '' ? (float) $request->input('Taxable_Value') : 0,
+                'CGST_Amount' => $request->input('CGST', '') !== '' ? (float) $request->input('CGST') : 0,
+                'SGST_Amount' => $request->input('SGST', '') !== '' ? (float) $request->input('SGST') : 0,
+                'GST_IGST_Amount' => $request->input('IGST', '') !== '' ? (float) $request->input('IGST') : 0,
+                'Total_Amount' => $request->input('Amount_Due', '') !== '' ? (float) $request->input('Amount_Due') : 0,
+                'Grand_Total' => $request->input('Amount_Outstanding', '') !== '' ? (float) $request->input('Amount_Outstanding') : 0,
                 'DueDate' => $request->input('Last_Payment_Date'),
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
@@ -1229,6 +1287,7 @@ class PunchingEntryController extends Controller
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
                 DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
                 DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
@@ -1271,13 +1330,24 @@ class PunchingEntryController extends Controller
         ];
         if ($isFinal) {
             $rules['CPIN'] = 'required|string|max:100';
-            $rules['Total_Amount'] = 'required|numeric|min:0';
+            $rules['Deposit_Date'] = 'required|date';
+            $rules['GSTIN'] = 'required|string|max:50';
+            $rules['Total_Amount'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'CPIN.required' => 'CPIN is required.',
+            'Deposit_Date.required' => 'Deposit Date is required.',
+            'GSTIN.required' => 'GSTIN is required.',
+            'Total_Amount.required' => 'Total Challan Amount is required.',
+            'Total_Amount.gt' => 'Total Challan Amount must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
+            $amount = (float) $request->input('Total_Amount', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
@@ -1287,13 +1357,13 @@ class PunchingEntryController extends Controller
                 'CIN' => $request->input('CIN', ''),
                 'BankName' => $request->input('Bank_Name', ''),
                 'BankBSRCode' => $request->input('BRN', ''),
-                'GSTIN' => $request->input('GSTIN', ''),
-                'Email' => $request->input('Email', ''),
-                'MobileNo' => $request->input('Mobile', ''),
-                'Company' => $request->input('Company', ''),
-                'Related_Address' => $request->input('Address', ''),
-                'Total_Amount' => (float) $request->input('Total_Amount', 0),
-                'Grand_Total' => (float) $request->input('Total_Amount', 0),
+                'GSTIN' => $request->input('GSTIN', '') ?? '',
+                'Email' => $request->input('Email', '') ?? '',
+                'MobileNo' => $request->input('Mobile', '') ?? '',
+                'Company' => $request->input('Company', '') ?? '',
+                'Related_Address' => $request->input('Address', '') ?? '',
+                'Total_Amount' => $amount,
+                'Grand_Total' => $amount,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -1301,31 +1371,41 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $amount, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $amount, 'Comment' => $data['Remark']]);
             }
 
             // GST Challan detail items
-            DB::table('gst_challan_detail')->where('scan_id', $scanId)->delete();
+            DB::table('gst_challan_detail')->where('Scan_Id', $scanId)->delete();
             $particulars = $request->input('Particular', []);
+            $taxes = $request->input('Tax', []);
+            $interests = $request->input('Interest', []);
+            $penalties = $request->input('Penalty', []);
+            $fees = $request->input('Fees', []);
+            $others = $request->input('Other', []);
+            $totals = $request->input('Total', []);
+
             if (is_array($particulars) && !empty($particulars)) {
                 $details = [];
                 foreach ($particulars as $i => $particular) {
                     $details[] = [
-                        'scan_id' => $scanId,
+                        'Scan_Id' => $scanId,
                         'Particular' => (string) ($particular ?? ''),
-                        'Tax' => (float) ($request->input('Tax')[$i] ?? 0),
-                        'Interest' => (float) ($request->input('Interest')[$i] ?? 0),
-                        'Penalty' => (float) ($request->input('Penalty')[$i] ?? 0),
-                        'Fees' => (float) ($request->input('Fees')[$i] ?? 0),
-                        'Other' => (float) ($request->input('Other')[$i] ?? 0),
-                        'Total' => (float) ($request->input('Total')[$i] ?? 0),
+                        'Tax' => ($taxes[$i] ?? '') !== '' ? (float) $taxes[$i] : 0,
+                        'Interest' => ($interests[$i] ?? '') !== '' ? (float) $interests[$i] : 0,
+                        'Penalty' => ($penalties[$i] ?? '') !== '' ? (float) $penalties[$i] : 0,
+                        'Fees' => ($fees[$i] ?? '') !== '' ? (float) $fees[$i] : 0,
+                        'Other' => ($others[$i] ?? '') !== '' ? (float) $others[$i] : 0,
+                        'Total' => ($totals[$i] ?? '') !== '' ? (float) $totals[$i] : 0,
                     ];
                 }
-                foreach (array_chunk($details, 100) as $chunk) {
-                    DB::table('gst_challan_detail')->insert($chunk);
+                if (!empty($details)) {
+                    foreach (array_chunk($details, 100) as $chunk) {
+                        DB::table('gst_challan_detail')->insert($chunk);
+                    }
                 }
             }
 
@@ -1735,53 +1815,74 @@ class PunchingEntryController extends Controller
     private function saveVehicleFuel(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
+            'From' => 'nullable|integer',
+            'To' => 'nullable|integer',
             'Bill_No' => 'nullable|string|max:150',
             'Bill_Date' => 'nullable|date',
             'Due_Date' => 'nullable|date',
             'Vehicle_No' => 'nullable|string|max:50',
-            'Fuel_Type' => 'nullable|string|max:50',
-            'Liters' => 'nullable|numeric',
-            'Rate' => 'nullable|numeric',
-            'Odometer' => 'nullable|numeric',
             'Dealer_Code' => 'nullable|string|max:100',
             'Description' => 'nullable|string|max:500',
-            'Grand_Total' => 'nullable|numeric',
+            'Liters' => 'nullable|numeric',
+            'Rate' => 'nullable|numeric',
             'Total_Discount' => 'nullable|numeric',
+            'Grand_Total' => 'nullable|numeric',
+            'Location' => 'nullable|string|max:255',
             'Remark' => 'nullable|string|max:5000',
         ];
         if ($isFinal) {
+            $rules['From'] = 'required|integer|min:1';
+            $rules['To'] = 'required|integer|min:1';
             $rules['Bill_No'] = 'required|string|max:150';
             $rules['Bill_Date'] = 'required|date';
-            $rules['Location'] = 'required|string|max:255';
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['Vehicle_No'] = 'required|string|max:50';
+            $rules['Liters'] = 'required|numeric|gt:0';
+            $rules['Grand_Total'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'From.required' => 'Vendor Name is required.',
+            'To.required' => 'Billing To is required.',
+            'Bill_No.required' => 'Invoice No is required.',
+            'Bill_Date.required' => 'Invoice Date is required.',
+            'Vehicle_No.required' => 'Vehicle No is required.',
+            'Liters.required' => 'Liter is required.',
+            'Liters.gt' => 'Liter must be greater than 0.',
+            'Grand_Total.required' => 'Grand Total is required.',
+            'Grand_Total.gt' => 'Grand Total must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
-            $fromName = $request->filled('From') ? DB::table('master_firm')->where('firm_id', $request->input('From'))->value('firm_name') : '';
-            $toName = $request->filled('To') ? DB::table('master_firm')->where('firm_id', $request->input('To'))->value('firm_name') : '';
+            $vendorId = (int) $request->input('From', 0);
+            $vendorName = $vendorId ? DB::table('master_firm')->where('firm_id', $vendorId)->value('firm_name') : '';
+            $billingId = (int) $request->input('To', 0);
+            $billingName = $billingId ? DB::table('master_firm')->where('firm_id', $billingId)->value('firm_name') : '';
+            $grandTotal = (float) $request->input('Grand_Total', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
                 'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'BillDate' => $request->input('Bill_Date'),
-                'File_No' => $request->input('Bill_No', ''),
                 'FileName' => $request->input('Description', ''),
-                'From_ID' => (int) $request->input('From', 0), 'FromName' => $fromName,
-                'To_ID' => (int) $request->input('To', 0), 'ToName' => $toName,
-                'CompanyID' => (int) $request->input('To', 0),
-                'Company' => $toName,
+                'From_ID' => $vendorId,
+                'FromName' => $vendorName,
+                'To_ID' => $billingId,
+                'ToName' => $billingName,
+                'CompanyID' => $billingId,
+                'Company' => $billingName,
                 'BSRCode' => $request->input('Dealer_Code', ''),
+                'File_No' => $request->input('Bill_No', ''),
+                'BillDate' => $request->input('Bill_Date'),
                 'DueDate' => $request->input('Due_Date'),
                 'Loc_Name' => $request->input('Location', ''),
                 'VehicleRegNo' => $request->input('Vehicle_No', ''),
                 'MeterNumber' => $request->input('Liters', ''),
                 'TariffPlan' => $request->input('Rate', ''),
-                'Total_Amount' => (float) $request->input('Amount', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
-                'Total_Discount' => (float) $request->input('Total_Discount', 0),
+                'Total_Amount' => $request->input('Amount', '') !== '' ? (float) $request->input('Amount') : 0,
+                'Grand_Total' => $grandTotal,
+                'Total_Discount' => $request->input('Total_Discount', '') !== '' ? (float) $request->input('Total_Discount') : 0,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -1789,38 +1890,11 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $grandTotal, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
-            }
-
-            // Line items (fuel entries)
-            DB::table('invoice_detail')->where('Scan_Id', $scanId)->delete();
-            $particulars = $request->input('Particular', []);
-            if (is_array($particulars)) {
-                $items = [];
-                foreach ($particulars as $i => $particular) {
-                    if (empty(trim((string) ($particular ?? '')))) continue;
-                    $items[] = [
-                        'Scan_Id' => $scanId, 'Particular' => (string) $particular,
-                        'HSN' => (string) ($request->input('HSN')[$i] ?? ''),
-                        'Qty' => (float) ($request->input('Qty')[$i] ?? 0),
-                        'Unit' => (string) ($request->input('Unit')[$i] ?? ''),
-                        'MRP' => (float) ($request->input('MRP')[$i] ?? 0),
-                        'Discount' => (float) ($request->input('Discount')[$i] ?? 0),
-                        'Price' => (float) ($request->input('Price')[$i] ?? 0),
-                        'Amount' => (float) ($request->input('Amount')[$i] ?? 0),
-                        'GST' => (float) ($request->input('GST')[$i] ?? 0),
-                        'SGST' => (float) ($request->input('SGST')[$i] ?? 0),
-                        'IGST' => (float) ($request->input('IGST')[$i] ?? 0),
-                        'Cess' => (float) ($request->input('Cess')[$i] ?? 0),
-                        'Total_Amount' => (float) ($request->input('TAmount')[$i] ?? 0),
-                    ];
-                }
-                foreach (array_chunk($items, 100) as $chunk) {
-                    DB::table('invoice_detail')->insert($chunk);
-                }
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $grandTotal, 'Comment' => $data['Remark']]);
             }
 
             if ($isFinal) {
@@ -1845,41 +1919,76 @@ class PunchingEntryController extends Controller
     private function saveLabourPayment(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Bill_No' => 'nullable|string|max:150',
-            'Bill_Date' => 'nullable|date',
+            'Voucher_No' => 'nullable|string|max:150',
+            'Payment_Date' => 'nullable|date',
             'Payee' => 'nullable|string|max:255',
-            'Particular' => 'nullable|string|max:500',
+            'Location' => 'nullable|string|max:255',
+            'Particular_Text' => 'nullable|string|max:500',
+            'Total_Amount' => 'nullable|numeric',
             'From_Date' => 'nullable|date',
             'To_Date' => 'nullable|date',
-            'Sub_Total' => 'nullable|numeric',
-            'Grand_Total' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
         ];
         if ($isFinal) {
-            $rules['Bill_No'] = 'required|string|max:150';
-            $rules['Bill_Date'] = 'required|date';
+            $rules['Voucher_No'] = 'required|string|max:150';
+            $rules['Payment_Date'] = 'required|date';
+            $rules['Payee'] = 'required|string|max:255';
             $rules['Location'] = 'required|string|max:255';
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['Total_Amount'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
+            $rules['Head'] = 'required|array|min:1';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'Voucher_No.required' => 'Voucher No is required.',
+            'Payment_Date.required' => 'Payment Date is required.',
+            'Payee.required' => 'Payee is required.',
+            'Location.required' => 'Location is required.',
+            'Total_Amount.required' => 'Total Amount is required.',
+            'Total_Amount.gt' => 'Total Amount must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+            'Head.required' => 'At least one Payment Head is required.',
+            'Head.min' => 'At least one Payment Head is required.',
+        ]);
+
+        // Custom validation: if head filled, amount required and vice versa
+        if ($isFinal) {
+            $heads = $request->input('Head', []);
+            $amounts = $request->input('Amount', []);
+            $hasValidRow = false;
+            foreach ($heads as $i => $head) {
+                $h = trim($head ?? '');
+                $a = trim($amounts[$i] ?? '');
+                if ($h && $a) $hasValidRow = true;
+                if ($h && !$a) {
+                    return response()->json(['success' => false, 'message' => 'Amount is required for Head: ' . $h], 422);
+                }
+                if (!$h && $a) {
+                    return response()->json(['success' => false, 'message' => 'Head is required when Amount is filled (row ' . ($i + 1) . ')'], 422);
+                }
+            }
+            if (!$hasValidRow) {
+                return response()->json(['success' => false, 'message' => 'At least one Payment Head with Amount is required.'], 422);
+            }
+        }
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
+            $totalAmount = (float) $request->input('Total_Amount', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
                 'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'BillDate' => $request->input('Bill_Date'),
-                'File_No' => $request->input('Bill_No', ''),
+                'File_No' => $request->input('Voucher_No', ''),
+                'BillDate' => $request->input('Payment_Date'),
                 'Related_Person' => $request->input('Payee', ''),
-                'FileName' => $request->input('Particular_Text', ''),
-                'FromDateTime' => $request->input('From_Date'),
-                'ToDateTime' => $request->input('To_Date'),
-                'SubTotal' => (float) $request->input('Sub_Total', 0),
                 'Loc_Name' => $request->input('Location', ''),
-                'Total_Amount' => (float) $request->input('Grand_Total', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
+                'FileName' => $request->input('Particular_Text', ''),
+                'Total_Amount' => $totalAmount,
+                'Grand_Total' => $totalAmount,
+                'FromDateTime' => $request->input('From_Date') ? $request->input('From_Date') . ' 00:00:00' : null,
+                'ToDateTime' => $request->input('To_Date') ? $request->input('To_Date') . ' 00:00:00' : null,
+                'SubTotal' => $request->input('Sub_Total', '') !== '' ? (float) $request->input('Sub_Total') : 0,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -1887,27 +1996,31 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $totalAmount, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $totalAmount, 'Comment' => $data['Remark']]);
             }
 
             // Line items (labour payment details)
-            DB::table('labour_payment_detail')->where('scan_id', $scanId)->delete();
+            DB::table('labour_payment_detail')->where('Scan_Id', $scanId)->delete();
             $heads = $request->input('Head', []);
+            $amounts = $request->input('Amount', []);
             if (is_array($heads) && !empty($heads)) {
                 $details = [];
                 foreach ($heads as $i => $head) {
                     if (empty(trim((string) ($head ?? '')))) continue;
                     $details[] = [
-                        'scan_id' => $scanId,
+                        'Scan_Id' => $scanId,
                         'Head' => (string) $head,
-                        'Amount' => (float) ($request->input('Amount')[$i] ?? 0),
+                        'Amount' => ($amounts[$i] ?? '') !== '' ? (float) $amounts[$i] : 0,
                     ];
                 }
-                foreach (array_chunk($details, 100) as $chunk) {
-                    DB::table('labour_payment_detail')->insert($chunk);
+                if (!empty($details)) {
+                    foreach (array_chunk($details, 100) as $chunk) {
+                        DB::table('labour_payment_detail')->insert($chunk);
+                    }
                 }
             }
 
@@ -1933,41 +2046,72 @@ class PunchingEntryController extends Controller
     private function saveMachineOperation(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Bill_No' => 'nullable|string|max:150',
-            'Bill_Date' => 'nullable|date',
-            'Payee' => 'nullable|string|max:255',
+            'CompanyID' => 'nullable|integer',
+            'To_ID' => 'nullable|integer',
+            'VehicleRegNo' => 'nullable|string|max:50',
+            'Vehicle_Type' => 'nullable|string|max:50',
+            'location_id' => 'nullable|string|max:255',
+            'Invoice_Date' => 'nullable|date',
             'Particular' => 'nullable|string|max:500',
-            'From_Date' => 'nullable|date',
-            'To_Date' => 'nullable|date',
-            'Sub_Total' => 'nullable|numeric',
-            'Grand_Total' => 'nullable|numeric',
+            'Hour' => 'nullable|string|max:50',
+            'Trip' => 'nullable|numeric',
+            'Rate' => 'nullable|numeric',
+            'Total_Amount' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
         ];
         if ($isFinal) {
-            $rules['Bill_No'] = 'required|string|max:150';
-            $rules['Bill_Date'] = 'required|date';
-            $rules['Location'] = 'required|string|max:255';
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['CompanyID'] = 'required|integer|min:1';
+            $rules['To_ID'] = 'required|integer|min:1';
+            $rules['VehicleRegNo'] = 'required|string|max:50';
+            $rules['Vehicle_Type'] = 'required|string|max:50';
+            $rules['location_id'] = 'required|string|max:255';
+            $rules['Invoice_Date'] = 'required|date';
+            $rules['Trip'] = 'required|numeric|gt:0';
+            $rules['Rate'] = 'required|numeric|gt:0';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'CompanyID.required' => 'Company is required.',
+            'To_ID.required' => 'Vendor is required.',
+            'VehicleRegNo.required' => 'Vehicle No is required.',
+            'Vehicle_Type.required' => 'Vehicle Type is required.',
+            'location_id.required' => 'Location is required.',
+            'Invoice_Date.required' => 'Invoice Date is required.',
+            'Trip.required' => 'Trips is required.',
+            'Trip.gt' => 'Trips must be greater than 0.',
+            'Rate.required' => 'Rate per Trip is required.',
+            'Rate.gt' => 'Rate must be greater than 0.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
+            $companyId = (int) $request->input('CompanyID', 0);
+            $companyName = $companyId ? DB::table('master_firm')->where('firm_id', $companyId)->value('firm_name') : '';
+            $vendorId = (int) $request->input('To_ID', 0);
+            $vendorName = $vendorId ? DB::table('master_firm')->where('firm_id', $vendorId)->value('firm_name') : '';
+            $totalAmount = (float) $request->input('Total_Amount', 0);
 
             $data = [
                 'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
                 'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'BillDate' => $request->input('Bill_Date'),
-                'File_No' => $request->input('Bill_No', ''),
-                'Related_Person' => $request->input('Payee', ''),
-                'FileName' => $request->input('Particular_Text', ''),
-                'FromDateTime' => $request->input('From_Date'),
-                'ToDateTime' => $request->input('To_Date'),
-                'SubTotal' => (float) $request->input('Sub_Total', 0),
-                'Loc_Name' => $request->input('Location', ''),
-                'Total_Amount' => (float) $request->input('Grand_Total', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
+                'Company' => $companyName,
+                'CompanyID' => $companyId,
+                'Related_Address' => $request->input('Related_Address', '') ?? '',
+                'To_ID' => $vendorId,
+                'ToName' => $vendorName,
+                'AgencyAddress' => $request->input('AgencyAddress', '') ?? '',
+                'VehicleRegNo' => $request->input('VehicleRegNo', ''),
+                'Vehicle_Type' => $request->input('Vehicle_Type', ''),
+                'Loc_Name' => $request->input('location_id', ''),
+                'BillDate' => $request->input('Invoice_Date'),
+                'Particular' => $request->input('Particular', ''),
+                'Period' => $request->input('Hour', ''),
+                'TotalRunKM' => $request->input('Trip', ''),
+                'RateOfInterest' => $request->input('Rate', ''),
+                'Total_Amount' => $totalAmount,
+                'Grand_Total' => $totalAmount,
                 'Remark' => $request->input('Remark', ''),
                 'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
             ];
@@ -1975,28 +2119,11 @@ class PunchingEntryController extends Controller
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $totalAmount, 'Comment' => $data['Remark']]);
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update(['Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N']);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
-            }
-
-            // Line items (labour/machine payment details)
-            DB::table('labour_payment_detail')->where('scan_id', $scanId)->delete();
-            $heads = $request->input('Head', []);
-            if (is_array($heads) && !empty($heads)) {
-                $details = [];
-                foreach ($heads as $i => $head) {
-                    if (empty(trim((string) ($head ?? '')))) continue;
-                    $details[] = [
-                        'scan_id' => $scanId,
-                        'Head' => (string) $head,
-                        'Amount' => (float) ($request->input('Amount')[$i] ?? 0),
-                    ];
-                }
-                foreach (array_chunk($details, 100) as $chunk) {
-                    DB::table('labour_payment_detail')->insert($chunk);
-                }
+                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $totalAmount, 'Comment' => $data['Remark']]);
             }
 
             if ($isFinal) {
@@ -2466,95 +2593,141 @@ class PunchingEntryController extends Controller
     private function saveAir(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Travel_Mode' => 'nullable|string|max:50',
-            'TrainBusName' => 'nullable|string|max:255',
-            'Quota' => 'nullable|string|max:50',
-            'Class' => 'nullable|string|max:50',
+            'Agent_Name' => 'nullable|string|max:255',
+            'PNR_Number' => 'nullable|string|max:150',
             'Booking_Date' => 'nullable|date',
             'Journey_Date' => 'nullable|date',
+            'Airline' => 'nullable|string|max:255',
+            'Ticket_Number' => 'nullable|string|max:150',
             'Journey_From' => 'nullable|string|max:150',
-            'Journey_Upto' => 'nullable|string|max:150',
-            'Passenger' => 'nullable|string|max:500',
-            'Booking_Status' => 'nullable|string|max:50',
-            'Travel_Insurance' => 'nullable|string|max:50',
-            'Grand_Total' => 'nullable|numeric',
+            'Journey_To' => 'nullable|string|max:150',
+            'Travel_Class' => 'nullable|string|max:50',
+            'Passenger_Details' => 'nullable|string|max:1000',
+            'Base_Fare' => 'nullable|numeric',
+            'GST' => 'nullable|numeric',
+            'Surcharge' => 'nullable|numeric',
+            'Cute_Charge' => 'nullable|numeric',
+            'Extra_Luggage' => 'nullable|numeric',
+            'Other' => 'nullable|numeric',
+            'Total_Amount' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
+            'location_id' => 'nullable|string|max:255',
         ];
         if ($isFinal) {
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['PNR_Number'] = 'required|string|max:150';
+            $rules['Booking_Date'] = 'required|date';
+            $rules['Journey_Date'] = 'required|date';
+            $rules['Total_Amount'] = 'required|numeric|min:0';
+            $rules['Employee'] = 'required|array|min:1';
+            $rules['Employee.*'] = 'required|integer|min:1';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'PNR_Number.required' => 'PNR Number is required.',
+            'Booking_Date.required' => 'Booking Date is required.',
+            'Journey_Date.required' => 'Journey Date is required.',
+            'Total_Amount.required' => 'Total Amount is required.',
+            'Employee.required' => 'At least one Employee is required.',
+            'Employee.min' => 'At least one Employee is required.',
+            'Employee.*.required' => 'Employee is required.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
 
             $data = [
-                'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
-                'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'TravelMode' => $request->input('Travel_Mode', ''),
-                'FileName' => $request->input('TrainBusName', ''),
-                'TravelQuota' => $request->input('Quota', ''),
-                'TravelClass' => $request->input('Class', ''),
+                'Scan_Id' => $scanId,
+                'Group_Id' => $scanRecord->Group_Id,
+                'DocType' => $docType ?? '',
+                'DocTypeId' => $scanRecord->DocType_Id,
+                'TravelMode' => 'Air',
+                'AgentName' => $request->input('Agent_Name', ''),
+                'ServiceNo' => $request->input('PNR_Number', ''),
                 'BookingDate' => $request->input('Booking_Date'),
                 'FromDateTime' => $request->input('Journey_Date'),
-                'FromName' => $request->input('Journey_From', ''),
-                'ToName' => $request->input('Journey_Upto', ''),
-                'PassengerDetail' => $request->input('Passenger', ''),
-                'BookingStatus' => $request->input('Booking_Status', ''),
-                'TravelInsurance' => $request->input('Travel_Insurance', ''),
-                'Total_Amount' => (float) $request->input('Grand_Total', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
+                'Airline' => $request->input('Airline', ''),
+                'File_No' => $request->input('Ticket_Number', ''),
+                'TripStarted' => $request->input('Journey_From', ''),
+                'TripEnded' => $request->input('Journey_To', ''),
+                'TravelClass' => $request->input('Travel_Class', ''),
+                'PassengerDetail' => $request->input('Passenger_Details', ''),
+                'Base_Fare' => (float) $request->input('Base_Fare', 0),
+                'GSTIN' => (float) $request->input('GST', 0),
+                'Surcharge' => (float) $request->input('Surcharge', 0),
+                'Cute_Charge' => (float) $request->input('Cute_Charge', 0),
+                'Extra_Luggage' => (float) $request->input('Extra_Luggage', 0),
+                'OthCharge_Amount' => (float) $request->input('Other', 0),
+                'Total_Amount' => (float) $request->input('Total_Amount', 0),
+                'Grand_Total' => (float) $request->input('Total_Amount', 0),
                 'Remark' => $request->input('Remark', ''),
-                'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
+                'Loc_Name' => $request->input('location_id', ''),
+                'Created_By' => Auth::id(),
+                'Created_Date' => now()->toDateTimeString(),
             ];
 
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                $fileID = $existing->FileID;
+                DB::table('sub_punchfile')->where('FileID', $fileID)->update([
+                    'Amount' => '-' . $data['Total_Amount'],
+                    'Comment' => $data['Remark']
+                ]);
+                // Clear existing employees
+                DB::table('lodging_employee')->where('scan_id', $scanId)->delete();
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update([
+                    'Is_Rejected' => 'N',
+                    'Reject_Date' => null,
+                    'Edit_Permission' => 'N'
+                ]);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert([
+                    'FileID' => $fileID,
+                    'Amount' => '-' . $data['Total_Amount'],
+                    'Comment' => $data['Remark']
+                ]);
             }
 
-            // Line items (passengers/segments)
-            DB::table('invoice_detail')->where('Scan_Id', $scanId)->delete();
-            $particulars = $request->input('Particular', []);
-            if (is_array($particulars)) {
-                $items = [];
-                foreach ($particulars as $i => $particular) {
-                    if (empty(trim((string) ($particular ?? '')))) continue;
-                    $items[] = [
-                        'Scan_Id' => $scanId, 'Particular' => (string) $particular,
-                        'HSN' => (string) ($request->input('HSN')[$i] ?? ''),
-                        'Qty' => (float) ($request->input('Qty')[$i] ?? 0),
-                        'Unit' => (string) ($request->input('Unit')[$i] ?? ''),
-                        'MRP' => (float) ($request->input('MRP')[$i] ?? 0),
-                        'Discount' => (float) ($request->input('Discount')[$i] ?? 0),
-                        'Price' => (float) ($request->input('Price')[$i] ?? 0),
-                        'Amount' => (float) ($request->input('Amount')[$i] ?? 0),
-                        'GST' => (float) ($request->input('GST')[$i] ?? 0),
-                        'SGST' => (float) ($request->input('SGST')[$i] ?? 0),
-                        'IGST' => (float) ($request->input('IGST')[$i] ?? 0),
-                        'Cess' => (float) ($request->input('Cess')[$i] ?? 0),
-                        'Total_Amount' => (float) ($request->input('TAmount')[$i] ?? 0),
+            // Save employee associations
+            $employees = $request->input('Employee', []);
+            $empCodes = $request->input('EmpCode', []);
+            if (is_array($employees) && !empty($employees)) {
+                $empData = [];
+                foreach ($employees as $i => $empId) {
+                    if (empty($empId)) continue;
+                    $empName = DB::table('master_employee')->where('employee_id', $empId)->value('employee_name') ?? '';
+                    $empData[] = [
+                        'scan_id' => $scanId,
+                        'emp_id' => $empId,
+                        'emp_code' => $empCodes[$i] ?? '',
+                        'emp_name' => $empName,
                     ];
                 }
-                foreach (array_chunk($items, 100) as $chunk) {
-                    DB::table('invoice_detail')->insert($chunk);
+                if (!empty($empData)) {
+                    DB::table('lodging_employee')->insert($empData);
                 }
             }
 
             if ($isFinal) {
                 DB::table('scan_file')->where('Scan_Id', $scanId)->update([
-                    'File_Punched' => 'Y', 'Punch_By' => Auth::id(), 'Punch_Date' => now(),
-                    'Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N',
+                    'File_Punched' => 'Y',
+                    'Punch_By' => Auth::id(),
+                    'Punch_Date' => now(),
+                    'Is_Rejected' => 'N',
+                    'Reject_Date' => null,
+                    'Edit_Permission' => 'N',
                 ]);
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => $isFinal ? 'Submitted successfully.' : 'Draft saved.', 'redirect' => $isFinal ? route('workflow.punching.index') : null]);
+            return response()->json([
+                'success' => true,
+                'message' => $isFinal ? 'Air Fare submitted successfully.' : 'Draft saved.',
+                'redirect' => $isFinal ? route('workflow.punching.index') : null
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Save failed: ' . $e->getMessage()], 500);
@@ -2568,67 +2741,141 @@ class PunchingEntryController extends Controller
     private function saveRail(Request $request, int $scanId, $scanRecord, bool $isFinal)
     {
         $rules = [
-            'Travel_Mode' => 'nullable|string|max:50',
-            'TrainBusName' => 'nullable|string|max:255',
-            'Quota' => 'nullable|string|max:50',
-            'Class' => 'nullable|string|max:50',
+            'Train_Number' => 'nullable|string|max:150',
+            'Agent_Name' => 'nullable|string|max:255',
+            'PNR_Number' => 'nullable|string|max:150',
             'Booking_Date' => 'nullable|date',
             'Journey_Date' => 'nullable|date',
+            'Booking_Id' => 'nullable|string|max:150',
+            'Transaction_Id' => 'nullable|string|max:150',
             'Journey_From' => 'nullable|string|max:150',
-            'Journey_Upto' => 'nullable|string|max:150',
-            'Passenger' => 'nullable|string|max:500',
-            'Booking_Status' => 'nullable|string|max:50',
-            'Travel_Insurance' => 'nullable|string|max:50',
-            'Grand_Total' => 'nullable|numeric',
+            'Journey_To' => 'nullable|string|max:150',
+            'Travel_Class' => 'nullable|string|max:50',
+            'Travel_Quota' => 'nullable|string|max:50',
+            'Passenger_Details' => 'nullable|string|max:1000',
+            'Base_Fare' => 'nullable|numeric',
+            'GST' => 'nullable|numeric',
+            'Surcharge' => 'nullable|numeric',
+            'Other' => 'nullable|numeric',
+            'Total_Amount' => 'nullable|numeric',
             'Remark' => 'nullable|string|max:5000',
+            'location_id' => 'nullable|string|max:255',
         ];
         if ($isFinal) {
-            $rules['Grand_Total'] = 'required|numeric|min:0';
+            $rules['PNR_Number'] = 'required|string|max:150';
+            $rules['Booking_Date'] = 'required|date';
+            $rules['Journey_Date'] = 'required|date';
+            $rules['Total_Amount'] = 'required|numeric|min:0';
+            $rules['Employee'] = 'required|array|min:1';
+            $rules['Employee.*'] = 'required|integer|min:1';
+            $rules['Remark'] = 'required|string|min:1|max:5000';
         }
-        $request->validate($rules);
+        $request->validate($rules, [
+            'PNR_Number.required' => 'PNR Number is required.',
+            'Booking_Date.required' => 'Booking Date is required.',
+            'Journey_Date.required' => 'Journey Date is required.',
+            'Total_Amount.required' => 'Total Amount is required.',
+            'Employee.required' => 'At least one Employee is required.',
+            'Employee.min' => 'At least one Employee is required.',
+            'Employee.*.required' => 'Employee is required.',
+            'Remark.required' => 'Remark is required.',
+        ]);
 
         DB::beginTransaction();
         try {
             $docType = DB::table('document_types')->where('id', $scanRecord->DocType_Id)->value('key');
 
             $data = [
-                'Scan_Id' => $scanId, 'Group_Id' => $scanRecord->Group_Id,
-                'DocType' => $docType ?? '', 'DocTypeId' => $scanRecord->DocType_Id,
-                'TravelMode' => $request->input('Travel_Mode', ''),
-                'FileName' => $request->input('TrainBusName', ''),
-                'TravelQuota' => $request->input('Quota', ''),
-                'TravelClass' => $request->input('Class', ''),
+                'Scan_Id' => $scanId,
+                'Group_Id' => $scanRecord->Group_Id,
+                'DocType' => $docType ?? '',
+                'DocTypeId' => $scanRecord->DocType_Id,
+                'TravelMode' => 'Rail',
+                'File_No' => $request->input('Train_Number', ''),
+                'AgentName' => $request->input('Agent_Name', ''),
+                'ServiceNo' => $request->input('PNR_Number', ''),
                 'BookingDate' => $request->input('Booking_Date'),
                 'FromDateTime' => $request->input('Journey_Date'),
-                'FromName' => $request->input('Journey_From', ''),
-                'ToName' => $request->input('Journey_Upto', ''),
-                'PassengerDetail' => $request->input('Passenger', ''),
-                'BookingStatus' => $request->input('Booking_Status', ''),
-                'TravelInsurance' => $request->input('Travel_Insurance', ''),
-                'Total_Amount' => (float) $request->input('Grand_Total', 0),
-                'Grand_Total' => (float) $request->input('Grand_Total', 0),
+                'FDRNo' => $request->input('Booking_Id', ''),
+                'RegNo' => $request->input('Transaction_Id', ''),
+                'TripStarted' => $request->input('Journey_From', ''),
+                'TripEnded' => $request->input('Journey_To', ''),
+                'TravelClass' => $request->input('Travel_Class', ''),
+                'TravelQuota' => $request->input('Travel_Quota', ''),
+                'PassengerDetail' => $request->input('Passenger_Details', ''),
+                'Base_Fare' => (float) $request->input('Base_Fare', 0),
+                'GSTIN' => (float) $request->input('GST', 0),
+                'Surcharge' => (float) $request->input('Surcharge', 0),
+                'OthCharge_Amount' => (float) $request->input('Other', 0),
+                'Total_Amount' => (float) $request->input('Total_Amount', 0),
+                'Grand_Total' => (float) $request->input('Total_Amount', 0),
                 'Remark' => $request->input('Remark', ''),
-                'Created_By' => Auth::id(), 'Created_Date' => now()->toDateTimeString(),
+                'Loc_Name' => $request->input('location_id', ''),
+                'Created_By' => Auth::id(),
+                'Created_Date' => now()->toDateTimeString(),
             ];
 
             $existing = DB::table('punchfile')->where('Scan_Id', $scanId)->first();
             if ($existing) {
                 DB::table('punchfile')->where('Scan_Id', $scanId)->update($data);
-                DB::table('sub_punchfile')->where('FileID', $existing->FileID)->update(['Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                $fileID = $existing->FileID;
+                DB::table('sub_punchfile')->where('FileID', $fileID)->update([
+                    'Amount' => '-' . $data['Total_Amount'],
+                    'Comment' => $data['Remark']
+                ]);
+                // Clear existing employees
+                DB::table('lodging_employee')->where('scan_id', $scanId)->delete();
+                DB::table('scan_file')->where('Scan_Id', $scanId)->update([
+                    'Is_Rejected' => 'N',
+                    'Reject_Date' => null,
+                    'Edit_Permission' => 'N'
+                ]);
             } else {
                 $fileID = DB::table('punchfile')->insertGetId($data);
-                DB::table('sub_punchfile')->insert(['FileID' => $fileID, 'Amount' => '-' . $data['Grand_Total'], 'Comment' => $data['Remark']]);
+                DB::table('sub_punchfile')->insert([
+                    'FileID' => $fileID,
+                    'Amount' => '-' . $data['Total_Amount'],
+                    'Comment' => $data['Remark']
+                ]);
+            }
+
+            // Save employee associations
+            $employees = $request->input('Employee', []);
+            $empCodes = $request->input('EmpCode', []);
+            if (is_array($employees) && !empty($employees)) {
+                $empData = [];
+                foreach ($employees as $i => $empId) {
+                    if (empty($empId)) continue;
+                    $empName = DB::table('master_employee')->where('employee_id', $empId)->value('employee_name') ?? '';
+                    $empData[] = [
+                        'scan_id' => $scanId,
+                        'emp_id' => $empId,
+                        'emp_code' => $empCodes[$i] ?? '',
+                        'emp_name' => $empName,
+                    ];
+                }
+                if (!empty($empData)) {
+                    DB::table('lodging_employee')->insert($empData);
+                }
             }
 
             if ($isFinal) {
                 DB::table('scan_file')->where('Scan_Id', $scanId)->update([
-                    'File_Punched' => 'Y', 'Punch_By' => Auth::id(), 'Punch_Date' => now(),
-                    'Is_Rejected' => 'N', 'Reject_Date' => null, 'Edit_Permission' => 'N',
+                    'File_Punched' => 'Y',
+                    'Punch_By' => Auth::id(),
+                    'Punch_Date' => now(),
+                    'Is_Rejected' => 'N',
+                    'Reject_Date' => null,
+                    'Edit_Permission' => 'N',
                 ]);
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => $isFinal ? 'Submitted successfully.' : 'Draft saved.', 'redirect' => $isFinal ? route('workflow.punching.index') : null]);
+            return response()->json([
+                'success' => true,
+                'message' => $isFinal ? 'Rail Fare submitted successfully.' : 'Draft saved.',
+                'redirect' => $isFinal ? route('workflow.punching.index') : null
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Save failed: ' . $e->getMessage()], 500);
@@ -2968,7 +3215,7 @@ class PunchingEntryController extends Controller
 
         $total   = $query->count();
         $results = $query->offset(($page - 1) * $per)->limit($per)
-                         ->get(['id', 'emp_name as text', 'emp_code']);
+                         ->get(['employee_id as id', 'emp_name as text', 'emp_code']);
 
         return response()->json(['results' => $results, 'pagination' => ['more' => ($page * $per) < $total]]);
     }

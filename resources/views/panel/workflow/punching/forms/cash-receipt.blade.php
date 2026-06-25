@@ -4,12 +4,12 @@
 {{-- Row 1: Receipt No, Receipt Date, Payment Mode --}}
 <div class="f-row cols-3">
     <div class="f-group">
-        <label>Receipt No</label>
-        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <label>Receipt No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Receipt_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Receipt Date</label>
-        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <label>Receipt Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Receipt_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Payment Mode</label>
@@ -23,65 +23,49 @@
     </div>
 </div>
 
-{{-- Row 2: From (Received From), To (Receiver), Location --}}
+{{-- Row 2: Company, Received From, Receiver --}}
 <div class="f-row cols-3">
     <div class="f-group">
-        <label>Received From <span style="color:#dc2626">*</span></label>
-        @if($tempData && ($tempData->from_name ?? false))<span class="hint">{{ $tempData->from_name }}</span>@endif
-        <select name="From" id="selVendor" style="width:100%">
-            <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
+        <label>Company <span style="color:#dc2626">*</span></label>
+        <select name="CompanyID" id="selBuyer" style="width:100%">
+            @if($punchDetail && ($punchDetail->CompanyID ?? false))
+                <option value="{{ $punchDetail->CompanyID }}" selected>{{ $punchDetail->Company ?? '' }}</option>
+            @endif
         </select>
+    </div>
+    <div class="f-group">
+        <label>Received From <span style="color:#dc2626">*</span></label>
+        <input type="text" name="ReceivedFrom" class="f-input" value="{{ $punchDetail->FromName ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Receiver <span style="color:#dc2626">*</span></label>
-        @if($tempData && ($tempData->to_name ?? false))<span class="hint">{{ $tempData->to_name }}</span>@endif
-        <select name="To" id="selBuyer" style="width:100%">
-            <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
-        </select>
+        <input type="text" name="Receiver" class="f-input" value="{{ $punchDetail->Related_Person ?? '' }}" required>
+    </div>
+</div>
+
+{{-- Row 3: Particular, Location, Amount --}}
+<div class="f-row cols-3">
+    <div class="f-group">
+        <label>Particular</label>
+        <input type="text" name="Particular" class="f-input" value="{{ $punchDetail->FileName ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Location</label>
+        <label>Location <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
         <select name="Location" id="selLocation" style="width:100%">
             <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
         </select>
     </div>
-</div>
-
-{{-- Row 3: Department, Category, Ledger --}}
-<div class="f-row cols-3">
-    <div class="f-group">
-        <label>Department</label>
-        <select name="Department" id="selDept" style="width:100%">
-            <option value="{{ $punchDetail->DepartmentID ?? '' }}">{{ $punchDetail->Department ?? 'Select' }}</option>
-        </select>
-    </div>
-    <div class="f-group">
-        <label>Category</label>
-        <select name="Category" id="selCategory" style="width:100%">
-            <option value="{{ $punchDetail->Category ?? '' }}">{{ $punchDetail->Category ?? 'Select' }}</option>
-        </select>
-    </div>
-    <div class="f-group">
-        <label>Ledger</label>
-        <select name="Ledger" id="selLedger" style="width:100%">
-            <option value="{{ $punchDetail->Ledger ?? '' }}">{{ $punchDetail->Ledger ?? 'Select' }}</option>
-        </select>
-    </div>
-</div>
-
-{{-- Row 4: Grand Total --}}
-<div class="f-row cols-1">
     <div class="f-group">
         <label>Amount <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Grand_Total" id="grandTotal" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Grand_Total ?? '' }}">
+        <input type="text" name="Amount" class="f-input" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}" required>
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>
