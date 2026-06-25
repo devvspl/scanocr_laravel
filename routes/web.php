@@ -403,8 +403,12 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/entry/select/ledgers',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'ledgersSelect'])    ->name('entry.select.ledgers');
             Route::get('/entry/select/files',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'filesSelect'])      ->name('entry.select.files');
             Route::get('/entry/select/locations',    [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'locationsSelect'])  ->name('entry.select.locations');
+            Route::get('/entry/select/employees',   [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'employeesSelect']) ->name('entry.select.employees');
+            Route::get('/entry/select/last-reading', [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'lastReading'])     ->name('entry.select.lastReading');
+            Route::get('/entry/select/hotels',       [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'hotelsSelect'])    ->name('entry.select.hotels');
             Route::get('/entry/{scan}',              [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'show'])             ->name('entry');
             Route::get('/entry/{scan}/items',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'getItems'])         ->name('entry.items');
+            Route::get('/entry/{scan}/history',      [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'history'])          ->name('entry.history');
             Route::post('/entry/{scan}/save',        [\App\Http\Controllers\Workflow\PunchingEntryController::class, 'save'])             ->name('entry.save');
         });
 

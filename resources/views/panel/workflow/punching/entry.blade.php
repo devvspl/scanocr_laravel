@@ -127,7 +127,11 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 .items-table input:focus,.items-table select:focus{border-color:#7f1d1d;outline:none;box-shadow:0 0 0 2px rgba(127,29,29,.08)}
 .items-table input[readonly]{background:#f5f5f4;color:#57534e}
 .btn-add-row{background:#7f1d1d;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.btn-del-row{background:#dc2626;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-del-row{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-add-emp{background:#7f1d1d;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-del-emp{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-add-meals-emp{background:#7f1d1d;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-del-meals-emp{background:#292524;color:#fff;border:none;border-radius:.25rem;width:20px;height:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .form-footer{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-top:1px solid #e7e5e4;background:#fafaf9;flex-shrink:0}
 .form-footer .btn-cancel{margin-right:auto}
 .btn-draft{height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
@@ -138,6 +142,9 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 #alertBox{display:none;padding:.5rem .75rem;border-radius:.5rem;font-size:.7rem;margin-bottom:.5rem}
 #alertBox.error{display:block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
 #alertBox.success{display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-draft:disabled,.btn-submit:disabled{cursor:not-allowed;pointer-events:none}
 </style>
 @endpush
 
@@ -168,9 +175,14 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
                     <h2 style="font-size:.85rem;font-weight:700;color:#292524">Invoice Entry — Scan #{{ $scanData->Scan_Id }}</h2>
                     <p style="font-size:.6rem;color:#78716c">{{ $scanData->company_name }} • {{ $scanData->doc_type_label }}</p>
                 </div>
-                <a href="{{ route('workflow.punching.index') }}" class="btn-back">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
-                </a>
+                <div style="display:flex;align-items:center;gap:.4rem">
+                    <button type="button" id="btnHistory" class="btn-back" style="background:#fafaf9">
+                        <svg style="width:12px;height:12px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>History
+                    </button>
+                    <a href="{{ route('workflow.punching.index') }}" class="btn-back">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
+                    </a>
+                </div>
             </div>
 
             <div id="alertBox"></div>
@@ -183,6 +195,7 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
                     'scanData' => $scanData,
                     'punchDetail' => $punchDetail,
                     'tempData' => $tempData,
+                    'kmRows' => $kmRows ?? collect(),
                 ])
             </form>
         </div>
@@ -193,6 +206,33 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
             <button type="button" id="btnDraft" class="btn-draft">Save Draft</button>
             <button type="button" id="btnSubmit" class="btn-submit">Final Submit</button>
         </div>
+    </div>
+</div>
+
+{{-- History Offcanvas --}}
+<div id="historyOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9998" onclick="closeHistory()"></div>
+
+{{-- Confirm Submit Modal --}}
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9998;display:none;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:.75rem;box-shadow:0 20px 60px rgba(0,0,0,.15);max-width:360px;width:90%;padding:1.5rem;text-align:center">
+        <div style="width:48px;height:48px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem">
+            <svg style="width:24px;height:24px;color:#dc2626" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.999L13.732 4.001c-.77-1.333-2.694-1.333-3.464 0L3.34 16.001C2.57 17.334 3.532 19 5.072 19z"/></svg>
+        </div>
+        <h3 style="font-size:.85rem;font-weight:700;color:#292524;margin:0 0 .4rem">Confirm Final Submit</h3>
+        <p style="font-size:.7rem;color:#78716c;margin:0 0 1.25rem;line-height:1.4">Are you sure you want to submit this entry? Once submitted, it cannot be edited without approval.</p>
+        <div style="display:flex;gap:.5rem;justify-content:center">
+            <button type="button" id="confirmCancel" style="padding:.4rem 1rem;font-size:.7rem;font-weight:600;border:1px solid #d6d3d1;border-radius:.5rem;background:#fff;color:#57534e;cursor:pointer">Cancel</button>
+            <button type="button" id="confirmSubmit" style="padding:.4rem 1rem;font-size:.7rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer">Yes, Submit</button>
+        </div>
+    </div>
+</div>
+<div id="historyPanel" style="position:fixed;top:0;right:-380px;width:380px;height:100%;background:#fff;z-index:9999;box-shadow:-4px 0 20px rgba(0,0,0,.1);transition:right .25s ease;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e7e5e4">
+        <h3 style="font-size:.8rem;font-weight:700;color:#292524;margin:0">Scan History — #{{ $scanData->Scan_Id }}</h3>
+        <button type="button" onclick="closeHistory()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#78716c">&times;</button>
+    </div>
+    <div id="historyContent" style="flex:1;overflow-y:auto;padding:1rem">
+        <div style="text-align:center;color:#a8a29e;font-size:.7rem;padding:2rem 0">Loading...</div>
     </div>
 </div>
 @endsection
@@ -214,7 +254,10 @@ $(function(){
         selCategories: '{{ route("workflow.punching.entry.select.categories") }}',
         selLedgers: '{{ route("workflow.punching.entry.select.ledgers") }}',
         selLocations: '{{ route("workflow.punching.entry.select.locations") }}',
-        selFiles: '{{ route("workflow.punching.entry.select.files") }}'
+        selFiles: '{{ route("workflow.punching.entry.select.files") }}',
+        selEmployees: '{{ route("workflow.punching.entry.select.employees") }}',
+        selLastReading: '{{ route("workflow.punching.entry.select.lastReading") }}',
+        selHotels: '{{ route("workflow.punching.entry.select.hotels") }}'
     };
 
     // ========== File Tabs ==========
@@ -254,12 +297,42 @@ $(function(){
     s2('#selLocation', R.selLocations, 'Select Location');
     s2('#selFile', R.selFiles, 'Select File');
 
+    // ========== Employee Select2 (from master_employee) ==========
+    if ($('#selEmployee').length || $('#selHiredEmployee').length || $('#selLocalEmployee').length || $('#selMealsEmployee').length) {
+        var empSel = $('#selEmployee').length ? '#selEmployee' : ($('#selHiredEmployee').length ? '#selHiredEmployee' : ($('#selLocalEmployee').length ? '#selLocalEmployee' : '#selMealsEmployee'));
+        $(empSel).select2({
+            placeholder: 'Search Employee / Payee',
+            allowClear: true,
+            minimumInputLength: 0,
+            ajax: {
+                url: R.selEmployees,
+                dataType: 'json',
+                delay: 200,
+                data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+            },
+            templateResult: function(item){
+                if(item.loading) return item.text;
+                return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+            }
+        });
+        // Auto-fill Emp Code on employee select
+        $(empSel).on('select2:select', function(e){
+            $('input[name="Emp_Code"]').val(e.params.data.emp_code || '');
+        });
+        $(empSel).on('select2:clear', function(){
+            $('input[name="Emp_Code"]').val('');
+        });
+    }
+
     // Address auto-fill on buyer/vendor select
     $('#selBuyer').on('select2:select', function(e){
         $('input[name="Buyer_Address"]').val(e.params.data.address || '');
+        $('input[name="Billing_Address"]').val(e.params.data.address || '');
     });
     $('#selVendor').on('select2:select', function(e){
         $('input[name="Vendor_Address"]').val(e.params.data.address || '');
+        $('input[name="Agency_Address"]').val(e.params.data.address || '');
     });
 
     // ========== Units as Select2 (server-side) ==========
@@ -418,18 +491,562 @@ $(function(){
         const tcs = parseFloat($('#tcsField').val()) || 0;
         const total = subTotal + (subTotal * tcs / 100);
         $('#totalField').val(total.toFixed(2));
-        $('#grandTotal').val(total.toFixed(2));
+
+        // Apply Round Off (for invoice form)
+        if ($('input[name="Round_Off_Type"]').length && !$('input[name="Dist_Opening[]"]').length) {
+            const roundType = $('input[name="Round_Off_Type"]:checked').val() || 'none';
+            let grandTotal = total;
+            let roundOff = 0;
+
+            if (roundType === 'upper' && total > 0) {
+                grandTotal = Math.ceil(total);
+                roundOff = grandTotal - total;
+            } else if (roundType === 'lower' && total > 0) {
+                grandTotal = Math.floor(total);
+                roundOff = total - grandTotal;
+            }
+
+            $('#roundOffField').val(roundOff !== 0 ? roundOff.toFixed(2) : '');
+            $('#grandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        } else if (!$('input[name="Dist_Opening[]"]').length) {
+            $('#grandTotal').val(total.toFixed(2));
+        }
     }
 
     $('#tcsField').on('input', calcTotals);
 
-    // ========== Load Existing Items via AJAX ==========
+    // Invoice Round Off type change
+    if ($('input[name="Round_Off_Type"]').length && !$('input[name="Dist_Opening[]"]').length) {
+        $('input[name="Round_Off_Type"]').on('change', function(){
+            // Update pill-style active state
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $(this).closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+            calcTotals();
+        });
+        // Set initial active state
+        (function(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $('input[name="Round_Off_Type"]:checked').closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+        })();
+    }
+
+    // ========== KM-Based Form (Two/Four Wheeler) — Add/Remove Rows & Calculation ==========
+    if ($('#itemsBody').closest('.items-table').find('input[name="Dist_Opening[]"]').length) {
+        // Override addRow for KM-based form
+        $(document).off('click', '.btn-add-row');
+        $(document).on('click', '.btn-add-row', function(){
+            addKmRow();
+        });
+
+        function addKmRow(){
+            const count = $('#itemsBody tr').length + 1;
+            const tr = `<tr>
+                <td>${count}</td>
+                <td><input type="text" name="Dist_Opening[]" class="calc-trigger" inputmode="decimal"></td>
+                <td><input type="text" name="Dist_Closing[]" class="calc-trigger" inputmode="decimal"></td>
+                <td><input type="text" name="Km[]" readonly></td>
+                <td><input type="text" name="Amount[]" readonly></td>
+                <td><button type="button" class="btn-del-row">−</button></td>
+            </tr>`;
+            $('#itemsBody').append(tr);
+        }
+
+        $(document).off('click', '.btn-del-row');
+        $(document).on('click', '.btn-del-row', function(){
+            if ($('#itemsBody tr').length <= 1) return; // keep at least 1 row
+            $(this).closest('tr').remove();
+            reindexKm();
+            calcKmTotals();
+        });
+
+        function reindexKm(){
+            $('#itemsBody tr').each(function(i){
+                $(this).find('td:first').text(i + 1);
+            });
+        }
+
+        // Override calc-trigger for KM form
+        $(document).off('input', '.calc-trigger');
+        $(document).on('input', '.calc-trigger', function(){
+            const $tr = $(this).closest('tr');
+            if ($tr.closest('#itemsBody').length) {
+                calcKmRow($tr);
+            }
+            calcKmTotals();
+        });
+
+        function calcKmRow($tr){
+            const opening = parseFloat($tr.find('input[name="Dist_Opening[]"]').val()) || 0;
+            const closing = parseFloat($tr.find('input[name="Dist_Closing[]"]').val()) || 0;
+            const km = closing - opening;
+            $tr.find('input[name="Km[]"]').val(km > 0 ? km.toFixed(2) : '');
+
+            const rate = parseFloat($('input[name="Rate_Per_KM"]').val()) || 0;
+            const amount = km > 0 ? km * rate : 0;
+            $tr.find('input[name="Amount[]"]').val(amount > 0 ? amount.toFixed(2) : '');
+        }
+
+        function calcKmTotals(){
+            let totalKm = 0;
+            let totalAmt = 0;
+            const rate = parseFloat($('input[name="Rate_Per_KM"]').val()) || 0;
+
+            $('#itemsBody tr').each(function(){
+                const opening = parseFloat($(this).find('input[name="Dist_Opening[]"]').val()) || 0;
+                const closing = parseFloat($(this).find('input[name="Dist_Closing[]"]').val()) || 0;
+                const km = closing - opening;
+                const rowKm = km > 0 ? km : 0;
+                const rowAmt = rowKm * rate;
+
+                $(this).find('input[name="Km[]"]').val(rowKm > 0 ? rowKm.toFixed(2) : '');
+                $(this).find('input[name="Amount[]"]').val(rowAmt > 0 ? rowAmt.toFixed(2) : '');
+
+                totalKm += rowKm;
+                totalAmt += rowAmt;
+            });
+
+            $('#totalField').val(totalKm > 0 ? totalKm.toFixed(2) : '');
+            $('#subTotal').val(totalAmt > 0 ? totalAmt.toFixed(2) : '');
+
+            // Round Off based on Upper / Lower / None selection
+            const roundType = $('input[name="Round_Off_Type"]:checked').val() || 'none';
+            let grandTotal = totalAmt;
+            let roundOff = 0;
+
+            if (roundType === 'upper' && totalAmt > 0) {
+                grandTotal = Math.ceil(totalAmt);
+                roundOff = grandTotal - totalAmt;
+            } else if (roundType === 'lower' && totalAmt > 0) {
+                grandTotal = Math.floor(totalAmt);
+                roundOff = totalAmt - grandTotal;
+            }
+
+            $('#roundOffField').val(roundOff !== 0 ? roundOff.toFixed(2) : '');
+            $('#grandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        }
+
+        // Recalc all rows when Rs/KM changes
+        $('input[name="Rate_Per_KM"]').on('input', function(){
+            calcKmTotals();
+        });
+
+        // Round Off grouped-input active state
+        function updateRoundOptStyle(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $('input[name="Round_Off_Type"]:checked').closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+        }
+        updateRoundOptStyle(); // set initial state
+
+        // Recalc on Round Off type change
+        $('input[name="Round_Off_Type"]').on('change', function(){
+            updateRoundOptStyle();
+            calcKmTotals();
+        });
+    }
+
+    // ========== Hired Vehicle Form — Calculation ==========
+    if ($('input[name="Opening_Reading"]').length && $('input[name="Closing_Reading"]').length && $('input[name="Per_KM_Rate"]').length) {
+        function calcHiredVehicle(){
+            const opening = parseFloat($('input[name="Opening_Reading"]').val()) || 0;
+            const closing = parseFloat($('input[name="Closing_Reading"]').val()) || 0;
+            const rate = parseFloat($('input[name="Per_KM_Rate"]').val()) || 0;
+            const otherCharge = parseFloat($('input[name="Other_Charge"]').val()) || 0;
+
+            const totalKm = closing > opening ? closing - opening : 0;
+            const totalAmount = (totalKm * rate) + otherCharge;
+
+            $('input[name="Total_KM"]').val(totalKm > 0 ? totalKm.toFixed(2) : '');
+            $('#grandTotal').val(totalAmount > 0 ? totalAmount.toFixed(2) : '0.00');
+        }
+
+        $(document).on('input', '.hv-calc', calcHiredVehicle);
+    }
+
+    // ========== Local Conveyance Form — Calculation ==========
+    if ($('input[name="Rate_Per_KM"].lc-calc').length) {
+        // Toggle between KM_Base and Fixed mode
+        function toggleCalMode(){
+            var mode = $('#calBySelect').val();
+            if (mode === 'Fixed') {
+                $('#lcTripSection').hide();
+                $('#rateLabel').text('Fixed Amount ');
+                $('#rateLabel').append('<span style="color:#dc2626">*</span>');
+                // In fixed mode: Grand Total = Fixed Amount directly
+                calcLcFixed();
+            } else {
+                $('#lcTripSection').show();
+                $('#rateLabel').text('Per KM Rate ');
+                $('#rateLabel').append('<span style="color:#dc2626">*</span>');
+                calcLcTotals();
+            }
+        }
+        $('#calBySelect').on('change', toggleCalMode);
+        toggleCalMode(); // init on page load
+
+        function calcLcFixed(){
+            var fixedAmt = parseFloat($('input[name="Rate_Per_KM"]').val()) || 0;
+            var discount = parseFloat($('#lcDiscount').val()) || 0;
+            var afterDiscount = fixedAmt - discount;
+            $('#lcTotalKm').val('');
+            $('#lcSubTotal').val(fixedAmt > 0 ? fixedAmt.toFixed(2) : '');
+
+            // Round Off
+            var roundType = $('input[name="Round_Off_Type"]:checked').val() || 'none';
+            var grandTotal = afterDiscount;
+            var roundOff = 0;
+            if (roundType === 'upper' && afterDiscount > 0) {
+                grandTotal = Math.ceil(afterDiscount);
+                roundOff = grandTotal - afterDiscount;
+            } else if (roundType === 'lower' && afterDiscount > 0) {
+                grandTotal = Math.floor(afterDiscount);
+                roundOff = afterDiscount - grandTotal;
+            }
+            $('#lcRoundOff').val(roundOff !== 0 ? roundOff.toFixed(2) : '');
+            $('#grandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        }
+
+        function calcLcRow($tr){
+            const opening = parseFloat($tr.find('input[name="Dist_Opening[]"]').val()) || 0;
+            const closing = parseFloat($tr.find('input[name="Dist_Closing[]"]').val()) || 0;
+            const km = closing > opening ? closing - opening : 0;
+            const rate = parseFloat($('input[name="Rate_Per_KM"]').val()) || 0;
+            const amount = km * rate;
+            $tr.find('input[name="Km[]"]').val(km > 0 ? km.toFixed(2) : '');
+            $tr.find('input[name="Amount[]"]').val(amount > 0 ? amount.toFixed(2) : '');
+        }
+
+        function calcLcTotals(){
+            let totalKm = 0;
+            let totalAmt = 0;
+            const rate = parseFloat($('input[name="Rate_Per_KM"]').val()) || 0;
+
+            $('#itemsBody tr').each(function(){
+                const opening = parseFloat($(this).find('input[name="Dist_Opening[]"]').val()) || 0;
+                const closing = parseFloat($(this).find('input[name="Dist_Closing[]"]').val()) || 0;
+                const km = closing > opening ? closing - opening : 0;
+                const rowAmt = km * rate;
+
+                $(this).find('input[name="Km[]"]').val(km > 0 ? km.toFixed(2) : '');
+                $(this).find('input[name="Amount[]"]').val(rowAmt > 0 ? rowAmt.toFixed(2) : '');
+
+                totalKm += km;
+                totalAmt += rowAmt;
+            });
+
+            $('#lcTotalKm').val(totalKm > 0 ? totalKm.toFixed(2) : '');
+            $('#lcSubTotal').val(totalAmt > 0 ? totalAmt.toFixed(2) : '');
+
+            // Discount
+            const discount = parseFloat($('#lcDiscount').val()) || 0;
+            const afterDiscount = totalAmt - discount;
+
+            // Round Off
+            const roundType = $('input[name="Round_Off_Type"]:checked').val() || 'none';
+            let grandTotal = afterDiscount;
+            let roundOff = 0;
+
+            if (roundType === 'upper' && afterDiscount > 0) {
+                grandTotal = Math.ceil(afterDiscount);
+                roundOff = grandTotal - afterDiscount;
+            } else if (roundType === 'lower' && afterDiscount > 0) {
+                grandTotal = Math.floor(afterDiscount);
+                roundOff = afterDiscount - grandTotal;
+            }
+
+            $('#lcRoundOff').val(roundOff !== 0 ? roundOff.toFixed(2) : '');
+            $('#grandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        }
+
+        $(document).on('input', '.lc-calc', function(){
+            var mode = $('#calBySelect').val();
+            if (mode === 'Fixed') {
+                calcLcFixed();
+            } else {
+                const $tr = $(this).closest('tr');
+                if ($tr.length) calcLcRow($tr);
+                calcLcTotals();
+            }
+        });
+
+        // Round Off type change
+        $('input[name="Round_Off_Type"]').on('change', function(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $(this).closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+            var mode = $('#calBySelect').val();
+            if (mode === 'Fixed') calcLcFixed(); else calcLcTotals();
+        });
+
+        // Init active state
+        (function(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $('input[name="Round_Off_Type"]:checked').closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+        })();
+
+        // Add row for local conveyance
+        $(document).off('click', '.btn-add-row');
+        $(document).on('click', '.btn-add-row', function(){
+            var count = $('#itemsBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><input type="date" name="Date[]"></td>
+                <td><input type="text" name="Dist_Opening[]" class="lc-calc" inputmode="decimal"></td>
+                <td><input type="text" name="Dist_Closing[]" class="lc-calc" inputmode="decimal"></td>
+                <td><input type="text" name="Km[]" readonly></td>
+                <td><input type="text" name="Amount[]" readonly></td>
+                <td><button type="button" class="btn-del-row">−</button></td>
+            </tr>`;
+            $('#itemsBody').append(tr);
+        });
+
+        $(document).off('click', '.btn-del-row');
+        $(document).on('click', '.btn-del-row', function(){
+            if ($('#itemsBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#itemsBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+            calcLcTotals();
+        });
+    }
+
+    // ========== Electricity Bill: Period date range ==========
+
+    // ========== Lodging Form — Calculation & Employee management ==========
+    if ($('input[name="Room_Rate"].lodging-calc').length) {
+        function calcLodging(){
+            const rooms = parseFloat($('input[name="No_Room"]').val()) || 1;
+            const rate = parseFloat($('input[name="Room_Rate"]').val()) || 0;
+            const otherCharge = parseFloat($('input[name="Other_Charge"]').val()) || 0;
+            const discount = parseFloat($('input[name="Discount"]').val()) || 0;
+            const gstPct = parseFloat($('input[name="Gst"]').val()) || 0;
+
+            // Duration calc
+            const arrival = $('input[name="Arrival_Date"]').val();
+            const departure = $('input[name="Departure_Date"]').val();
+            if (arrival && departure) {
+                const days = Math.ceil((new Date(departure) - new Date(arrival)) / (1000*60*60*24));
+                $('#lodgingDuration').val(days > 0 ? days + ' Night(s)' : '');
+            }
+
+            // Amount = Rooms * Rate * Duration(days)
+            const days = arrival && departure ? Math.ceil((new Date(departure) - new Date(arrival)) / (1000*60*60*24)) : 1;
+            const amount = rooms * rate * (days > 0 ? days : 1);
+            $('#lodgingAmount').val(amount > 0 ? amount.toFixed(2) : '');
+
+            // After discount
+            const afterDiscount = amount + otherCharge - discount;
+            // GST
+            const gstAmt = afterDiscount * gstPct / 100;
+            const total = afterDiscount + gstAmt;
+
+            // Round Off
+            const roundType = $('input[name="Round_Off_Type"]:checked').val() || 'none';
+            let grandTotal = total;
+            let roundOff = 0;
+            if (roundType === 'upper' && total > 0) { grandTotal = Math.ceil(total); roundOff = grandTotal - total; }
+            else if (roundType === 'lower' && total > 0) { grandTotal = Math.floor(total); roundOff = total - grandTotal; }
+
+            $('#lodgingRoundOff').val(roundOff !== 0 ? roundOff.toFixed(2) : '');
+            $('#grandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        }
+
+        $(document).on('input', '.lodging-calc', calcLodging);
+        $('input[name="Arrival_Date"], input[name="Departure_Date"], input[name="No_Room"]').on('change input', calcLodging);
+
+        $('input[name="Round_Off_Type"]').on('change', function(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $(this).closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+            calcLodging();
+        });
+        (function(){
+            $('.round-opt').css({background:'#fafaf9', color:'#57534e'});
+            $('input[name="Round_Off_Type"]:checked').closest('.round-opt').css({background:'#7f1d1d', color:'#fff'});
+        })();
+
+        // Hotel Select2 for lodging
+        if ($('#selHotel').length) {
+            $('#selHotel').select2({
+                placeholder: 'Search Hotel',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selHotels,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.city_name ? ' (' + item.city_name + ')' : ''));
+                }
+            });
+            $('#selHotel').on('select2:select', function(e){
+                $('input[name="Hotel_Address"]').val(e.params.data.address || '');
+            });
+            $('#selHotel').on('select2:clear', function(){
+                $('input[name="Hotel_Address"]').val('');
+            });
+        }
+
+        // Employee Select2 for lodging
+        function initLodgingEmpSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Employee',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selEmployees,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+                }
+            }).on('select2:select', function(e){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val(e.params.data.emp_code || '');
+            }).on('select2:clear', function(){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val('');
+            });
+        }
+        initLodgingEmpSel('.lodging-emp-sel');
+
+        // Add/remove employee rows
+        $(document).on('click', '.btn-add-emp', function(){
+            var count = $('#lodgingEmpBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Employee[]" class="lodging-emp-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="EmpCode[]" readonly></td>
+                <td><button type="button" class="btn-del-emp">−</button></td>
+            </tr>`;
+            $('#lodgingEmpBody').append(tr);
+            initLodgingEmpSel('#lodgingEmpBody tr:last .lodging-emp-sel');
+        });
+        $(document).on('click', '.btn-del-emp', function(){
+            if ($('#lodgingEmpBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#lodgingEmpBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+        });
+    }
+
+    // ========== Meals Form — Hotel & Employee Select2 ==========
+    if ($('#selMealsHotel').length) {
+        $('#selMealsHotel').select2({
+            placeholder: 'Search Hotel / Restaurant',
+            allowClear: true,
+            minimumInputLength: 0,
+            ajax: {
+                url: R.selHotels,
+                dataType: 'json',
+                delay: 200,
+                data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+            },
+            templateResult: function(item){
+                if(item.loading) return item.text;
+                return $('<span>').text(item.text + (item.city_name ? ' (' + item.city_name + ')' : ''));
+            }
+        });
+        $('#selMealsHotel').on('select2:select', function(e){
+            $('input[name="Hotel_Address"]').val(e.params.data.address || '');
+        });
+        $('#selMealsHotel').on('select2:clear', function(){
+            $('input[name="Hotel_Address"]').val('');
+        });
+
+        // Meals Employee Select2 & add/remove
+        function initMealsEmpSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Employee',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selEmployees,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+                }
+            }).on('select2:select', function(e){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val(e.params.data.emp_code || '');
+            }).on('select2:clear', function(){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val('');
+            });
+        }
+        initMealsEmpSel('.meals-emp-sel');
+
+        $(document).on('click', '.btn-add-meals-emp', function(){
+            var count = $('#mealsEmpBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Employee[]" class="meals-emp-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="EmpCode[]" readonly></td>
+                <td><button type="button" class="btn-del-meals-emp">−</button></td>
+            </tr>`;
+            $('#mealsEmpBody').append(tr);
+            initMealsEmpSel('#mealsEmpBody tr:last .meals-emp-sel');
+        });
+        $(document).on('click', '.btn-del-meals-emp', function(){
+            if ($('#mealsEmpBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#mealsEmpBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+        });
+    }
+
+    // ========== Electricity Bill: Period date range (continued) ==========
+    if ($('input[name="Period_From"]').length && $('input[name="Period_To"]').length) {
+        $('input[name="Period_From"], input[name="Period_To"]').on('change', function(){
+            var from = $('input[name="Period_From"]').val();
+            var to = $('input[name="Period_To"]').val();
+            $('input[name="Period"]').val(from && to ? from + ' to ' + to : (from || to || ''));
+        });
+    }
+
+    // ========== Electricity Bill: Auto-fill Previous Reading from BP No ==========
+    if ($('input[name="BP_No"]').length && $('input[name="Previous_Reading"]').length) {
+        function fetchLastReading(){
+            var bpNo = $('input[name="BP_No"]').val().trim();
+            if (!bpNo) { $('#prevReadingHint').hide(); return; }
+            $.ajax({
+                url: R.selLastReading,
+                method: 'GET',
+                data: { bp_no: bpNo },
+                dataType: 'json'
+            }).done(function(res){
+                if (res.reading) {
+                    $('#prevReadingHint').text('Last reading: ' + res.reading).show().css('cursor','pointer');
+                    if (!$('input[name="Previous_Reading"]').val().trim()) {
+                        $('input[name="Previous_Reading"]').val(res.reading);
+                    }
+                } else {
+                    $('#prevReadingHint').hide();
+                }
+            });
+        }
+        $('input[name="BP_No"]').on('blur change', fetchLastReading);
+        // Click hint to apply
+        $(document).on('click', '#prevReadingHint', function(){
+            var val = $(this).text().replace('Last reading: ', '');
+            $('input[name="Previous_Reading"]').val(val);
+        });
+    }
+
+    // ========== Load Existing Items via AJAX (only for invoice-type forms) ==========
+    var kmForms = ['two-four-wheeler','hired-vehicle','local-conveyance','lodging','meals','miscellaneous'];
+    if (kmForms.indexOf('{{ $formPartial }}') === -1) {
     $.ajax({
         url: R.items,
         method: 'GET',
         headers: {'X-CSRF-TOKEN': CSRF},
         dataType: 'json'
-    }).done(function(data){
+    }).done(function(resp){
+        var data = resp.data || resp;
         if(data && data.length > 0){
             $('#itemsBody').empty();
             rowCount = 0;
@@ -437,19 +1054,19 @@ $(function(){
                 rowCount++;
                 const tr = `<tr>
                     <td>${rowCount}</td>
-                    <td><select name="Particular[]" class="particular-sel" style="width:100%"><option value="${item.Item_ID || ''}" selected>${item.Item_Name || ''}</option></select></td>
-                    <td><input type="text" name="HSN[]" value="${item.HSN || ''}"></td>
-                    <td><input type="text" name="Qty[]" class="calc-trigger" value="${item.Qty || ''}"></td>
-                    <td><select name="Unit[]" class="unit-sel"></select></td>
-                    <td><input type="text" name="MRP[]" class="calc-trigger" value="${item.MRP || ''}"></td>
-                    <td><input type="text" name="Discount[]" class="calc-trigger" value="${item.Discount || ''}"></td>
-                    <td><input type="text" name="Price[]" readonly value="${item.Price || ''}"></td>
-                    <td><input type="text" name="Amount[]" class="amt-field" readonly value="${item.Amount || ''}"></td>
-                    <td><input type="text" name="GST[]" class="calc-trigger" value="${item.GST || ''}"></td>
-                    <td><input type="text" name="SGST[]" readonly value="${item.SGST || ''}"></td>
-                    <td><input type="text" name="IGST[]" class="calc-trigger" value="${item.IGST || ''}"></td>
-                    <td><input type="text" name="Cess[]" class="calc-trigger" value="${item.Cess || ''}"></td>
-                    <td><input type="text" name="TAmount[]" class="total-field" readonly value="${item.TAmount || ''}"></td>
+                    <td><select name="Particular[]" class="particular-sel" style="width:100%"><option value="${item.Particular || ''}" selected>${item.Particular || ''}</option></select></td>
+                    <td><input type="text" name="HSN[]" value="${item.HSN || ''}" style="min-width:60px"></td>
+                    <td><input type="text" name="Qty[]" class="calc-trigger" value="${item.Qty || ''}" style="min-width:50px"></td>
+                    <td><select name="Unit[]" class="unit-sel" style="min-width:70px"></select></td>
+                    <td><input type="text" name="MRP[]" class="calc-trigger" value="${item.MRP || ''}" style="min-width:65px"></td>
+                    <td><input type="text" name="Discount[]" class="calc-trigger" value="${item.Discount || ''}" style="min-width:55px"></td>
+                    <td><input type="text" name="Price[]" readonly value="${item.Price || ''}" style="min-width:65px"></td>
+                    <td><input type="text" name="Amount[]" class="amt-field" readonly value="${item.Amount || ''}" style="min-width:75px"></td>
+                    <td><input type="text" name="GST[]" class="calc-trigger" value="${item.GST || ''}" style="min-width:45px"></td>
+                    <td><input type="text" name="SGST[]" readonly value="${item.SGST || ''}" style="min-width:45px"></td>
+                    <td><input type="text" name="IGST[]" class="calc-trigger" value="${item.IGST || ''}" style="min-width:45px"></td>
+                    <td><input type="text" name="Cess[]" class="calc-trigger" value="${item.Cess || ''}" style="min-width:45px"></td>
+                    <td><input type="text" name="TAmount[]" class="total-field" readonly value="${item.Total_Amount || ''}" style="min-width:75px"></td>
                     <td><button type="button" class="btn-del-row">−</button></td>
                 </tr>`;
                 $('#itemsBody').append(tr);
@@ -462,6 +1079,318 @@ $(function(){
             $('#itemsBody tr:last .btn-del-row').removeClass('btn-del-row').addClass('btn-add-row').text('+');
         }
     });
+    } // end if not km-form
+
+    // ========== Form-Specific Validation Rules ==========
+    const FORM_KEY = '{{ $formPartial }}';
+
+    function validateForm(){
+        let missing = [];
+
+        // Helper to check a value is not empty
+        function chk(val){ return val && val.trim() !== ''; }
+
+        switch(FORM_KEY){
+            case 'two-four-wheeler':
+                if(!chk($('#selEmployee').val())) missing.push('Employee / Payee');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                if(!chk($('input[name="Vehicle_No"]').val())) missing.push('Vehicle No');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Rate_Per_KM"]').val()) || parseFloat($('input[name="Rate_Per_KM"]').val()) <= 0) missing.push('Rs/KM (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // Validate KM rows: at least one filled, and any added row must be complete
+                var hasKmRow = false;
+                var hasIncomplete = false;
+                $('#itemsBody tr').each(function(idx){
+                    var $tr = $(this);
+                    var op = $tr.find('input[name="Dist_Opening[]"]').val().trim();
+                    var cl = $tr.find('input[name="Dist_Closing[]"]').val().trim();
+                    var hasAny = (op !== '' || cl !== '');
+                    var hasBoth = (op !== '' && cl !== '');
+
+                    if(hasBoth) hasKmRow = true;
+
+                    // If row has partial data, mark incomplete
+                    if(hasAny && !hasBoth){
+                        hasIncomplete = true;
+                        $tr.find('input[name="Dist_Opening[]"], input[name="Dist_Closing[]"]').each(function(){
+                            if(!$(this).val().trim()) $(this).css('border-color','#dc2626');
+                        });
+                    } else {
+                        $tr.find('input[name="Dist_Opening[]"], input[name="Dist_Closing[]"]').css('border-color','');
+                    }
+                });
+                if(!hasKmRow) missing.push('At least one KM Detail row');
+                if(hasIncomplete) missing.push('Fill Opening & Closing KM in all rows or remove empty rows');
+                break;
+
+            case 'invoice':
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                if(!chk($('#selBuyer').val())) missing.push('Buyer');
+                if(!chk($('#selVendor').val())) missing.push('Vendor');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // Validate line items - at least 1 row with Particular + Qty + MRP
+                var hasItem = false;
+                var hasIncompleteItem = false;
+                $('#itemsBody tr').each(function(){
+                    var $tr = $(this);
+                    var p = ($tr.find('select[name="Particular[]"]').val() || $tr.find('input[name="Particular[]"]').val() || '').trim();
+                    var qty = $tr.find('input[name="Qty[]"]').val().trim();
+                    var mrp = $tr.find('input[name="MRP[]"]').val().trim();
+                    var hasAny = (p !== '' || qty !== '' || mrp !== '');
+                    var hasAll = (p !== '' && qty !== '' && mrp !== '');
+
+                    if(hasAll) hasItem = true;
+
+                    // If row has partial data, highlight empty fields
+                    if(hasAny && !hasAll){
+                        hasIncompleteItem = true;
+                        if(!p) $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','#dc2626');
+                        if(!qty) $tr.find('input[name="Qty[]"]').css('border-color','#dc2626');
+                        if(!mrp) $tr.find('input[name="MRP[]"]').css('border-color','#dc2626');
+                    } else {
+                        $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','');
+                        $tr.find('input[name="Qty[]"], input[name="MRP[]"]').css('border-color','');
+                    }
+                });
+                if(!hasItem) missing.push('At least one Line Item (Particular, Qty, MRP required)');
+                if(hasIncompleteItem) missing.push('Fill Particular, Qty & MRP in all rows or remove empty rows');
+                break;
+
+            case 'hired-vehicle':
+                if(!chk($('#selVendor').val())) missing.push('Agency Name');
+                if(!chk($('#selBuyer').val())) missing.push('Billing Name');
+                if(!chk($('input[name="Vehicle_No"]').val())) missing.push('Vehicle No');
+                if(!chk($('input[name="Invoice_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Invoice_Date"]').val())) missing.push('Invoice Date');
+                if(!chk($('input[name="Per_KM_Rate"]').val()) || parseFloat($('input[name="Per_KM_Rate"]').val()) <= 0) missing.push('Per KM Rate (must be greater than 0)');
+                if(!chk($('input[name="Journey_Start"]').val())) missing.push('Booking Date');
+                if(!chk($('input[name="Journey_End"]').val())) missing.push('End Date');
+                if(!chk($('input[name="Opening_Reading"]').val())) missing.push('Start Reading');
+                if(!chk($('input[name="Closing_Reading"]').val())) missing.push('Closing Reading');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'vehicle-fuel':
+                if(!chk($('#selVendor').val())) missing.push('Vendor Name');
+                if(!chk($('#selBuyer').val())) missing.push('Billing To');
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                if(!chk($('input[name="Vehicle_No"]').val())) missing.push('Vehicle No');
+                if(!chk($('input[name="Liters"]').val())) missing.push('Liter');
+                break;
+
+            case 'vehicle-maintenance':
+                if(!chk($('#selVendor').val())) missing.push('Vendor Name');
+                if(!chk($('#selBuyer').val())) missing.push('Billing To');
+                if(!chk($('input[name="InvoiceNo"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                break;
+
+            case 'cash-voucher':
+                if(!chk($('input[name="Voucher_No"]').val())) missing.push('Voucher No');
+                if(!chk($('input[name="Voucher_Date"]').val())) missing.push('Voucher Date');
+                if(!chk($('input[name="Payee"]').val())) missing.push('Payee');
+                if(!chk($('input[name="Payer"]').val())) missing.push('Payer');
+                if(!chk($('input[name="Particular"]').val())) missing.push('Particular');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'cash-receipt':
+                if(!chk($('#selVendor').val())) missing.push('Received From');
+                if(!chk($('#selBuyer').val())) missing.push('Receiver');
+                if(!chk($('input[name="Grand_Total"]').val())) missing.push('Amount');
+                break;
+
+            case 'cash-deposits':
+                if(!chk($('select[name="Type"]').val())) missing.push('Type');
+                if(!chk($('input[name="Date"]').val())) missing.push('Date');
+                if(!chk($('input[name="Bank_Name"]').val())) missing.push('Bank Name');
+                if(!chk($('input[name="Branch"]').val())) missing.push('Branch');
+                if(!chk($('input[name="Account_No"]').val())) missing.push('Account No');
+                if(!chk($('input[name="Beneficiary_Name"]').val())) missing.push('Beneficiary Name');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'miscellaneous':
+                if(!chk($('input[name="VoucherNo"]').val())) missing.push('Voucher No');
+                if(!chk($('input[name="Voucher_Date"]').val())) missing.push('Voucher Date');
+                if(!chk($('input[name="File_Date"]').val())) missing.push('Date');
+                if(!chk($('#selBuyer').val())) missing.push('Company (From)');
+                if(!chk($('#selVendor').val())) missing.push('Vendor (To)');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Particular"]').val())) missing.push('Particular / Description');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'machine-operation':
+                if(!chk($('#selBuyer').val())) missing.push('Company');
+                if(!chk($('#selVendor').val())) missing.push('Vendor');
+                break;
+
+            case 'local-conveyance':
+                if(!chk($('select[name="Travel_Mode"]').val())) missing.push('Mode');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('#selLocalEmployee').val())) missing.push('Employee');
+                if(!chk($('input[name="Vehicle_No"]').val())) missing.push('Vehicle No');
+                if(!chk($('select[name="Month"]').val())) missing.push('Month');
+                if(!chk($('input[name="Rate_Per_KM"]').val()) || parseFloat($('input[name="Rate_Per_KM"]').val()) <= 0) missing.push($('#calBySelect').val() === 'Fixed' ? 'Fixed Amount (must be greater than 0)' : 'Per KM Rate (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // For KM_Base mode: at least one trip row required
+                if ($('#calBySelect').val() !== 'Fixed') {
+                    var hasTrip = false;
+                    var hasIncompleteTrip = false;
+                    $('#itemsBody tr').each(function(){
+                        var $tr = $(this);
+                        var dt = $tr.find('input[name="Date[]"]').val().trim();
+                        var op = $tr.find('input[name="Dist_Opening[]"]').val().trim();
+                        var cl = $tr.find('input[name="Dist_Closing[]"]').val().trim();
+                        var hasAny = (dt !== '' || op !== '' || cl !== '');
+                        var hasAll = (dt !== '' && op !== '' && cl !== '');
+                        if(hasAll) hasTrip = true;
+                        if(hasAny && !hasAll){
+                            hasIncompleteTrip = true;
+                            if(!dt) $tr.find('input[name="Date[]"]').css('border-color','#dc2626');
+                            if(!op) $tr.find('input[name="Dist_Opening[]"]').css('border-color','#dc2626');
+                            if(!cl) $tr.find('input[name="Dist_Closing[]"]').css('border-color','#dc2626');
+                        } else {
+                            $tr.find('input[name="Date[]"], input[name="Dist_Opening[]"], input[name="Dist_Closing[]"]').css('border-color','');
+                        }
+                    });
+                    if(!hasTrip) missing.push('At least one Trip Detail row (Date, Opening, Closing)');
+                    if(hasIncompleteTrip) missing.push('Fill Date, Opening & Closing in all rows or remove empty rows');
+                }
+                break;
+
+            case 'air':
+                if(!chk($('input[name="Base_Fare"]').val())) missing.push('Base Fare');
+                break;
+
+            case 'rail':
+                if(!chk($('input[name="Base_Fare"]').val())) missing.push('Base Fare');
+                break;
+
+            case 'sale-bill':
+                // Sale bill has no fields marked with * — minimal validation
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                break;
+
+            case 'credit-note':
+                // Credit note has no fields marked with * — minimal validation
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                break;
+
+            case 'electricity-bill':
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="PaymentDate"]').val())) missing.push('Payment Date');
+                if(!chk($('input[name="Biller_Name"]').val())) missing.push('Biller Name');
+                if(!chk($('input[name="BP_No"]').val())) missing.push('BP No');
+                if(!chk($('input[name="Period"]').val())) missing.push('Bill Period');
+                if(!chk($('input[name="Meter_No"]').val())) missing.push('Meter Number');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Bill No');
+                if(!chk($('input[name="Previous_Reading"]').val())) missing.push('Previous Reading');
+                if(!chk($('input[name="Current_Reading"]').val())) missing.push('Current Reading');
+                if(!chk($('input[name="Unit_Consumed"]').val())) missing.push('Unit Consumed');
+                if(!chk($('input[name="Bill_Amount"]').val()) || parseFloat($('input[name="Bill_Amount"]').val()) <= 0) missing.push('Bill Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'telephone-bill':
+                // No explicit required markers — basic validation
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                break;
+
+            case 'gst-challan':
+                // No explicit required markers — basic validation
+                if(!chk($('input[name="Deposit_Date"]').val())) missing.push('Deposit Date');
+                break;
+
+            case 'income-tax':
+                if(!chk($('select[name="Section"]').val())) missing.push('Section');
+                if(!chk($('#selBuyer').val())) missing.push('Company');
+                if(!chk($('select[name="Payment_Nature"]').val())) missing.push('Nature of Payment');
+                if(!chk($('select[name="Assessment_Year"]').val())) missing.push('Assessment Year');
+                if(!chk($('input[name="Bank_Name"]').val())) missing.push('Bank Name');
+                if(!chk($('input[name="BSR_Code"]').val())) missing.push('BSR Code');
+                if(!chk($('input[name="Challan_No"]').val())) missing.push('Challan No');
+                if(!chk($('input[name="Challan_Date"]').val())) missing.push('Challan Date');
+                if(!chk($('input[name="Ref_No"]').val())) missing.push('Bank Reference No');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'insurance':
+                if(!chk($('select[name="Insurance_Type"]').val())) missing.push('Insurance Type');
+                if(!chk($('input[name="Insurance_Company"]').val())) missing.push('Insurance Company');
+                if(!chk($('input[name="Policy_Number"]').val())) missing.push('Policy Number');
+                if(!chk($('input[name="Policy_Date"]').val())) missing.push('Policy Date');
+                if(!chk($('input[name="From_Date"]').val())) missing.push('From Date');
+                if(!chk($('input[name="To_Date"]').val())) missing.push('To Date');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Premium_Amount"]').val()) || parseFloat($('input[name="Premium_Amount"]').val()) <= 0) missing.push('Premium Amount (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'lodging':
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Bill_No"]').val())) missing.push('Bill No');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                if(!chk($('#selBuyer').val())) missing.push('Billing Name');
+                if(!chk($('#selHotel').val())) missing.push('Hotel Name');
+                if(!chk($('input[name="Arrival_Date"]').val())) missing.push('Arrival Date');
+                if(!chk($('input[name="Departure_Date"]').val())) missing.push('Departure Date');
+                if(!chk($('input[name="No_Room"]').val())) missing.push('No. of Rooms');
+                if(!chk($('input[name="Room_Rate"]').val()) || parseFloat($('input[name="Room_Rate"]').val()) <= 0) missing.push('Room Rate (must be greater than 0)');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'meals':
+                if(!chk($('#selMealsHotel').val())) missing.push('Hotel / Restaurant');
+                if(!chk($('input[name="Date"]').val())) missing.push('Bill Date');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('select[name="Detail"]').val())) missing.push('Occasion / Purpose');
+                if(!chk($('input[name="Amount"]').val()) || parseFloat($('input[name="Amount"]').val()) <= 0) missing.push('Amount (must be greater than 0)');
+                // At least one employee
+                var hasEmp = false;
+                $('#mealsEmpBody tr').each(function(){
+                    var empVal = $(this).find('select[name="Employee[]"]').val();
+                    if(empVal && empVal.trim() !== '') hasEmp = true;
+                });
+                if(!hasEmp) missing.push('At least one Employee');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                break;
+
+            case 'labour-payment':
+                // No explicit required markers — basic validation
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Payment Date');
+                break;
+
+            case 'ticket-cancellation':
+                // No explicit required markers — basic validation
+                if(!chk($('input[name="BillDate"]').val())) missing.push('Date');
+                break;
+
+            default:
+                // Fallback — check common required fields
+                if($('input[name="Bill_No"]').length && !chk($('input[name="Bill_No"]').val())) missing.push('Bill No');
+                if($('input[name="Bill_Date"]').length && !chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                if($('#selVendor').length && !chk($('#selVendor').val())) missing.push('Vendor');
+                if($('#selLocation').length && !chk($('#selLocation').val())) missing.push('Location');
+                break;
+        }
+
+        return missing;
+    }
 
     // ========== Save (Draft / Final Submit) ==========
     function showAlert(msg, type){
@@ -470,22 +1399,31 @@ $(function(){
     }
 
     function save(action){
+        // Form-specific validation on final submit
+        if(action === 'final_submit'){
+            const missing = validateForm();
+            if (missing.length) {
+                showAlert('Please fill required fields: ' + missing.join(', '), 'error');
+                return;
+            }
+            // Show custom confirmation modal
+            showConfirmModal();
+            return;
+        }
+
+        doSave(action);
+    }
+
+    function doSave(action){
+
         const formData = $('#entryForm').serializeArray();
         formData.push({ name: 'action', value: action });
 
-        // Validate required fields
-        const billNo = $('input[name="Bill_No"]').val();
-        const billDate = $('input[name="Bill_Date"]').val();
-        const buyer = $('#selBuyer').val();
-        const vendor = $('#selVendor').val();
-        const location = $('#selLocation').val();
-
-        if(action === 'final_submit'){
-            if(!billNo || !billDate || !buyer || !vendor || !location){
-                showAlert('Please fill all required fields (Invoice No, Date, Buyer, Vendor, Location)', 'error');
-                return;
-            }
-        }
+        // Disable buttons & show loader
+        $('#btnDraft, #btnSubmit').prop('disabled', true).css('opacity', '0.6');
+        const $btn = action === 'final_submit' ? $('#btnSubmit') : $('#btnDraft');
+        const origText = $btn.text();
+        $btn.html('<span class="spinner"></span> Processing...');
 
         $.ajax({
             url: R.save,
@@ -500,18 +1438,69 @@ $(function(){
                     setTimeout(function(){
                         window.location.href = '{{ route("workflow.punching.index") }}';
                     }, 1000);
+                } else {
+                    // Re-enable buttons after draft save
+                    $('#btnDraft, #btnSubmit').prop('disabled', false).css('opacity', '1');
+                    $btn.text(origText);
                 }
             } else {
                 showAlert(res.message || 'Save failed.', 'error');
+                $('#btnDraft, #btnSubmit').prop('disabled', false).css('opacity', '1');
+                $btn.text(origText);
             }
         }).fail(function(xhr){
             const msg = xhr.responseJSON?.message || 'An error occurred.';
             showAlert(msg, 'error');
+            $('#btnDraft, #btnSubmit').prop('disabled', false).css('opacity', '1');
+            $btn.text(origText);
         });
     }
 
     $('#btnDraft').on('click', function(){ save('draft'); });
     $('#btnSubmit').on('click', function(){ save('final_submit'); });
+
+    // ========== Custom Confirm Modal ==========
+    function showConfirmModal(){
+        $('#confirmOverlay').css('display','flex');
+    }
+    function hideConfirmModal(){
+        $('#confirmOverlay').css('display','none');
+    }
+    $('#confirmCancel').on('click', hideConfirmModal);
+    $('#confirmOverlay').on('click', function(e){
+        if(e.target === this) hideConfirmModal();
+    });
+    $('#confirmSubmit').on('click', function(){
+        hideConfirmModal();
+        doSave('final_submit');
+    });
+
+    // ========== History Offcanvas ==========
+    $('#btnHistory').on('click', function(){
+        openHistory();
+    });
 });
+
+function openHistory(){
+    $('#historyOverlay').show();
+    $('#historyPanel').css('right', '0');
+    // Load history via AJAX
+    $.ajax({
+        url: `/workflow/punching/entry/{{ $scanData->Scan_Id }}/history`,
+        method: 'GET',
+        dataType: 'json'
+    }).done(function(res){
+        if(res.html){
+            $('#historyContent').html(res.html);
+        }
+    }).fail(function(){
+        $('#historyContent').html('<div style="text-align:center;color:#b91c1c;font-size:.7rem;padding:2rem 0">Failed to load history.</div>');
+    });
+}
+
+function closeHistory(){
+    $('#historyPanel').css('right', '-380px');
+    $('#historyOverlay').hide();
+}
 </script>
 @endpush

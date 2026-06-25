@@ -1,87 +1,62 @@
 {{-- Cash Deposits/Withdrawals Form Partial --}}
 {{-- Variables: $punchDetail (nullable), $tempData (nullable), $scanData --}}
 
-{{-- Row 1: Bill No, Bill Date, Payment Mode --}}
+{{-- Row 1: Type, Date, Bank Name --}}
 <div class="f-row cols-3">
     <div class="f-group">
-        <label>Slip / Receipt No</label>
-        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
-    </div>
-    <div class="f-group">
-        <label>Date</label>
-        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
-    </div>
-    <div class="f-group">
-        <label>Payment Mode</label>
+        <label>Type <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->payment_mode ?? false))<span class="hint">{{ $tempData->payment_mode }}</span>@endif
-        <select name="Payment_Mode" class="f-input">
+        <select name="Type" class="f-input" required>
             <option value="">Select</option>
             @foreach(['Cash Deposit','Cash Withdrawal','Cheque Deposit'] as $mode)
-                <option value="{{ $mode }}" {{ ($punchDetail->NatureOfPayment ?? '') === $mode ? 'selected' : '' }}>{{ $mode }}</option>
+                <option value="{{ $mode }}" {{ ($punchDetail->File_Type ?? '') === $mode ? 'selected' : '' }}>{{ $mode }}</option>
             @endforeach
         </select>
     </div>
-</div>
+    <div class="f-group">
+        <label>Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Date" 
+        onfocus="if (this.showPicker) this.showPicker(); else this.click();"  @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
+                                    min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
+                                    max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}"
+                                @endif
+                                
+                                class="f-input" value="{{ $punchDetail->BillDate ?? '' }}" required>
+    </div>
+    <div class="f-group">
+        <label>Bank Name <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Bank_Name" class="f-input" value="{{ $punchDetail->BankName ?? '' }}" required>
+    </div>
+    </div>
 
-{{-- Row 2: From, To, Location --}}
-<div class="f-row cols-3">
+    {{-- Row 2: Branch, Account No, Beneficiary Name --}}
+    <div class="f-row cols-3">
     <div class="f-group">
-        <label>From <span style="color:#dc2626">*</span></label>
-        @if($tempData && ($tempData->from_name ?? false))<span class="hint">{{ $tempData->from_name }}</span>@endif
-        <select name="From" id="selVendor" style="width:100%">
-            <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
-        </select>
+        <label>Branch <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Branch" class="f-input" value="{{ $punchDetail->BankAddress ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>To <span style="color:#dc2626">*</span></label>
-        @if($tempData && ($tempData->to_name ?? false))<span class="hint">{{ $tempData->to_name }}</span>@endif
-        <select name="To" id="selBuyer" style="width:100%">
-            <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
-        </select>
+        <label>Account No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Account_No" class="f-input" value="{{ $punchDetail->BankAccountNo ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Location</label>
-        @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
-        <select name="Location" id="selLocation" style="width:100%">
-            <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
-        </select>
-    </div>
-</div>
-
-{{-- Row 3: Department, Category, Ledger --}}
-<div class="f-row cols-3">
-    <div class="f-group">
-        <label>Department</label>
-        <select name="Department" id="selDept" style="width:100%">
-            <option value="{{ $punchDetail->DepartmentID ?? '' }}">{{ $punchDetail->Department ?? 'Select' }}</option>
-        </select>
-    </div>
-    <div class="f-group">
-        <label>Category</label>
-        <select name="Category" id="selCategory" style="width:100%">
-            <option value="{{ $punchDetail->Category ?? '' }}">{{ $punchDetail->Category ?? 'Select' }}</option>
-        </select>
-    </div>
-    <div class="f-group">
-        <label>Ledger</label>
-        <select name="Ledger" id="selLedger" style="width:100%">
-            <option value="{{ $punchDetail->Ledger ?? '' }}">{{ $punchDetail->Ledger ?? 'Select' }}</option>
-        </select>
+        <label>Beneficiary Name <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Beneficiary_Name" class="f-input" value="{{ $punchDetail->Related_Person ?? '' }}" required>
     </div>
 </div>
 
-{{-- Row 4: Grand Total --}}
+{{-- Row 3: Amount --}}
 <div class="f-row cols-1">
     <div class="f-group">
         <label>Amount <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Grand_Total" id="grandTotal" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Grand_Total ?? '' }}">
+        <input type="text" name="Amount" class="f-input" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}" required>
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
-    <div class="f-group">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+    <div class="f-group" style="margin-bottom:.5rem">
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>

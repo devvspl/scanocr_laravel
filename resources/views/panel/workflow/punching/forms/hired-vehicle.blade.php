@@ -6,8 +6,10 @@
     <div class="f-group">
         <label>Agency Name <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->agency_name ?? false))<span class="hint">{{ $tempData->agency_name }}</span>@endif
-        <select name="From" id="selVendor" style="width:100%">
-            <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
+        <select name="Agency_Name" id="selVendor" style="width:100%">
+            @if($punchDetail && ($punchDetail->From_ID ?? false))
+                <option value="{{ $punchDetail->From_ID }}" selected>{{ $punchDetail->FromName ?? '' }}</option>
+            @endif
         </select>
     </div>
     <div class="f-group">
@@ -21,8 +23,10 @@
     <div class="f-group">
         <label>Billing Name <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->billing_name ?? false))<span class="hint">{{ $tempData->billing_name }}</span>@endif
-        <select name="To" id="selBuyer" style="width:100%">
-            <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
+        <select name="Billing_Name" id="selBuyer" style="width:100%">
+            @if($punchDetail && ($punchDetail->To_ID ?? false))
+                <option value="{{ $punchDetail->To_ID }}" selected>{{ $punchDetail->ToName ?? '' }}</option>
+            @endif
         </select>
     </div>
     <div class="f-group">
@@ -36,7 +40,11 @@
     <div class="f-group">
         <label>Employee</label>
         @if($tempData && ($tempData->employee_name ?? false))<span class="hint">{{ $tempData->employee_name }}</span>@endif
-        <input type="text" name="Employee" class="f-input" value="{{ $punchDetail->EmployeeName ?? '' }}">
+        <select name="Employee" id="selHiredEmployee" style="width:100%">
+            @if($punchDetail && ($punchDetail->EmployeeID ?? false))
+                <option value="{{ $punchDetail->EmployeeID }}" selected>{{ $punchDetail->Employee_Name ?? '' }}</option>
+            @endif
+        </select>
     </div>
     <div class="f-group">
         <label>Emp Code</label>
@@ -51,7 +59,7 @@
 {{-- Row 4: Location, Invoice No, Invoice Date, Per KM Rate --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Location</label>
+        <label>Location <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
         <select name="Location" id="selLocation" style="width:100%">
             <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
@@ -59,15 +67,18 @@
     </div>
     <div class="f-group">
         <label>Invoice No <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
+        <input type="text" name="Invoice_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Invoice Date <span style="color:#dc2626">*</span></label>
-        <input type="date" name="Bill_Date" class="f-input" value="{{ $punchDetail->File_Date ?? '' }}" required>
+        <input type="date" onfocus="if (this.showPicker) this.showPicker(); else this.click();"  @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
+                                    min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
+                                    max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}"
+                                @endif name="Invoice_Date" class="f-input" value="{{ $punchDetail->File_Date ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Per KM Rate <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Rate_Per_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
+        <input type="text" name="Per_KM_Rate" class="f-input hv-calc" inputmode="decimal" value="{{ $punchDetail->VehicleRs_PerKM ?? '' }}" required>
     </div>
 </div>
 
@@ -75,19 +86,19 @@
 <div class="f-row">
     <div class="f-group">
         <label>Booking Date <span style="color:#dc2626">*</span></label>
-        <input type="date" name="Journey_Start" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}" required>
+        <input type="date" name="Journey_Start" class="f-input" value="{{ $punchDetail->FromDateTime ? \Carbon\Carbon::parse($punchDetail->FromDateTime)->format('Y-m-d') : '' }}" required>
     </div>
     <div class="f-group">
         <label>End Date <span style="color:#dc2626">*</span></label>
-        <input type="date" name="Journey_End" class="f-input" value="{{ $punchDetail->ToDateTime ?? '' }}" required>
+        <input type="date" name="Journey_End" class="f-input" value="{{ $punchDetail->ToDateTime ? \Carbon\Carbon::parse($punchDetail->ToDateTime)->format('Y-m-d') : '' }}" required>
     </div>
     <div class="f-group">
         <label>Start Reading <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Opening_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->OpeningKM ?? '' }}" required>
+        <input type="text" name="Opening_Reading" class="f-input hv-calc" inputmode="decimal" value="{{ $punchDetail->OpeningKm ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Closing Reading <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Closing_KM" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->ClosingKM ?? '' }}" required>
+        <input type="text" name="Closing_Reading" class="f-input hv-calc" inputmode="decimal" value="{{ $punchDetail->ClosingKm ?? '' }}" required>
     </div>
 </div>
 
@@ -99,18 +110,18 @@
     </div>
     <div class="f-group">
         <label>Other Charges</label>
-        <input type="text" name="Other_Charge" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->OthCharge_Amount ?? '' }}">
+        <input type="text" name="Other_Charge" class="f-input hv-calc" inputmode="decimal" value="{{ $punchDetail->OthCharge_Amount ?? '' }}">
     </div>
     <div class="f-group">
         <label>Total Amount</label>
-        <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Grand_Total ?? '' }}">
+        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>
