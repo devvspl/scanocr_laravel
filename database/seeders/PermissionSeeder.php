@@ -198,13 +198,6 @@ class PermissionSeeder extends Seeder
                 'direct-scanning.export',               // export excel / pdf
             ],
 
-            // ── PDF Compressor (Tools) ────────────────────────────────────
-            'PDF Compressor' => [
-                'pdf-compressor.view',                  // playground page + history list
-                'pdf-compressor.compress',              // upload + compress AJAX action
-                'pdf-compressor.download',              // download compressed file
-                'pdf-compressor.delete',                // delete job record + temp files
-            ],
 
             // ── Bill Approval (Workflow) ──────────────────────────────────
             // All workflow.bill-approval.* routes are in ALWAYS_ALLOW — gated

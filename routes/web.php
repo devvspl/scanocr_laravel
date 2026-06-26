@@ -23,7 +23,6 @@ use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
-use App\Http\Controllers\Panel\PdfCompressorController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Workflow\BillApprovalController;
 use App\Http\Controllers\Workflow\ClassificationController;
@@ -143,13 +142,6 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
         Route::delete('dept-rules/{id}', [DocumentAiController::class, 'deleteDeptRule'])->name('dept-rules.delete');
     });
 
-    // ── Tools ─────────────────────────────────────────────────────────────────
-    Route::prefix('tools')->name('tools.')->group(function () {
-        Route::get('pdf-compressor', [PdfCompressorController::class, 'index'])->name('pdf-compressor.index');
-        Route::post('pdf-compressor/compress', [PdfCompressorController::class, 'compress'])->name('pdf-compressor.compress');
-        Route::get('pdf-compressor/{id}/download', [PdfCompressorController::class, 'download'])->name('pdf-compressor.download');
-        Route::delete('pdf-compressor/{id}', [PdfCompressorController::class, 'destroy'])->name('pdf-compressor.destroy');
-    });
 
     // ── Profile ───────────────────────────────────────────────────────────────
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
@@ -411,19 +403,6 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/entry/{scan}/items',        [PunchingEntryController::class, 'getItems'])         ->name('entry.items');
             Route::get('/entry/{scan}/history',      [PunchingEntryController::class, 'history'])          ->name('entry.history');
             Route::post('/entry/{scan}/save',        [PunchingEntryController::class, 'save'])             ->name('entry.save');
-        });
-
-    });
-
-    // ── Tools ─────────────────────────────────────────────────────────────────
-    Route::prefix('tools')->name('tools.')->group(function () {
-
-        // PDF Compressor Playground
-        Route::prefix('pdf-compressor')->name('pdf-compressor.')->group(function () {
-            Route::get('/',           [PdfCompressorController::class, 'index'])    ->name('index');
-            Route::post('/compress',  [PdfCompressorController::class, 'compress']) ->name('compress');
-            Route::get('/{id}/download', [PdfCompressorController::class, 'download']) ->name('download');
-            Route::delete('/{id}',    [PdfCompressorController::class, 'destroy'])  ->name('destroy');
         });
 
     });

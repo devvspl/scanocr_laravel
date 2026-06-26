@@ -9,7 +9,7 @@
     </div>
     <div class="f-group">
         <label>Date</label>
-        <input type="date" name="BillDate" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <input type="date" name="BillDate" class="f-input"  onfocus="if (this.showPicker) this.showPicker(); else this.click();"   @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}" value="{{ $punchDetail->BillDate ?? '' }}">
     </div>
     <div class="f-group">
         <label>Date of Booking</label>

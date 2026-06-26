@@ -49,11 +49,6 @@ class MenuPermission
     ];
 
     private const ROUTE_OVERRIDES = [
-        // ── PDF Compressor ────────────────────────────────────────────────
-        'tools.pdf-compressor.index'    => 'pdf-compressor.view',
-        'tools.pdf-compressor.compress' => 'pdf-compressor.compress',
-        'tools.pdf-compressor.download' => 'pdf-compressor.download',
-        'tools.pdf-compressor.destroy'  => 'pdf-compressor.delete',
     ];
 
     /**

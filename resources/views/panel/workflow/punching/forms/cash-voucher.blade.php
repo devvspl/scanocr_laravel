@@ -5,16 +5,11 @@
 <div class="f-row cols-3">
     <div class="f-group">
         <label>Voucher No <span style="color:#dc2626">*</span></label>
-        <input type="text" name="Voucher_No" class="f-input" onfocus="if (this.showPicker) this.showPicker(); else this.click();"  @if(\App\Helpers\BillDateValidator::getCurrentFyRange())
-                                    min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}"
-                                    max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}"
-                                @endif
-                                
-                                value="{{ $punchDetail->File_No ?? '' }}" required>
+        <input type="text" name="Voucher_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Voucher Date <span style="color:#dc2626">*</span></label>
-        <input type="date" name="Voucher_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}" required>
+        <input type="date" name="Voucher_Date" class="f-input" onfocus="if (this.showPicker) this.showPicker(); else this.click();"   @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}" value="{{ $punchDetail->BillDate ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Location <span style="color:#dc2626">*</span></label>

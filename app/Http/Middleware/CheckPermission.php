@@ -186,11 +186,6 @@ class CheckPermission
     // Explicit route → permission map (checked before derive()).
     // Add entries here for routes whose names don't follow the auto-derive pattern.
     private const ROUTE_OVERRIDES = [
-        // ── PDF Compressor ────────────────────────────────────────────────
-        'tools.pdf-compressor.index'    => 'pdf-compressor.view',
-        'tools.pdf-compressor.compress' => 'pdf-compressor.compress',
-        'tools.pdf-compressor.download' => 'pdf-compressor.download',
-        'tools.pdf-compressor.destroy'  => 'pdf-compressor.delete',
     ];
 
     private const STRIP_PREFIXES = ['master.', 'settings.'];
