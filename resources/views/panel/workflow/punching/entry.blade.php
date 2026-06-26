@@ -179,7 +179,9 @@ $(function(){
         selFiles: '{{ route("workflow.punching.entry.select.files") }}',
         selEmployees: '{{ route("workflow.punching.entry.select.employees") }}',
         selLastReading: '{{ route("workflow.punching.entry.select.lastReading") }}',
-        selHotels: '{{ route("workflow.punching.entry.select.hotels") }}'
+        selHotels: '{{ route("workflow.punching.entry.select.hotels") }}',
+        selAgents: '{{ route("workflow.punching.entry.select.agents") }}',
+        selAirlines: '{{ route("workflow.punching.entry.select.airlines") }}'
     };
 
     // ========== File Tabs ==========
@@ -1139,6 +1141,42 @@ $(function(){
                 if(hasIncompleteItem) missing.push('Fill Particular, Qty & MRP in all rows or remove empty rows');
                 break;
 
+            case 'credit-note':
+                if(!chk($('input[name="CreditNo"]').val())) missing.push('Credit Note No');
+                if(!chk($('input[name="CreditDate"]').val())) missing.push('Credit Note Date');
+                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                if(!chk($('#selBuyer').val())) missing.push('Buyer');
+                if(!chk($('#selVendor').val())) missing.push('Vendor');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // Validate line items - at least 1 row with Particular + Qty + MRP
+                var hasItem = false;
+                var hasIncompleteItem = false;
+                $('#itemsBody tr').each(function(){
+                    var $tr = $(this);
+                    var p = ($tr.find('select[name="Particular[]"]').val() || $tr.find('input[name="Particular[]"]').val() || '').trim();
+                    var qty = $tr.find('input[name="Qty[]"]').val().trim();
+                    var mrp = $tr.find('input[name="MRP[]"]').val().trim();
+                    var hasAny = (p !== '' || qty !== '' || mrp !== '');
+                    var hasAll = (p !== '' && qty !== '' && mrp !== '');
+
+                    if(hasAll) hasItem = true;
+
+                    // If row has partial data, highlight empty fields
+                    if(hasAny && !hasAll){
+                        hasIncompleteItem = true;
+                        if(!p) $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','#dc2626');
+                        if(!qty) $tr.find('input[name="Qty[]"]').css('border-color','#dc2626');
+                        if(!mrp) $tr.find('input[name="MRP[]"]').css('border-color','#dc2626');
+                    } else {
+                        $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','');
+                        $tr.find('input[name="Qty[]"], input[name="MRP[]"]').css('border-color','');
+                    }
+                });
+                if(!hasItem) missing.push('At least one Line Item (Particular, Qty, MRP required)');
+                if(hasIncompleteItem) missing.push('Fill Particular, Qty & MRP in all rows or remove empty rows');
+                break;
+
             case 'hired-vehicle':
                 if(!chk($('#selVendor').val())) missing.push('Agency Name');
                 if(!chk($('#selBuyer').val())) missing.push('Billing Name');
@@ -1262,23 +1300,81 @@ $(function(){
                 break;
 
             case 'air':
-                if(!chk($('input[name="Base_Fare"]').val())) missing.push('Base Fare');
+                if(!chk($('input[name="Agent_Name"]:visible, select[name="Agent_Name"]:visible').val())) missing.push('Agent Name');
+                if(!chk($('input[name="PNR_Number"]').val())) missing.push('PNR Number');
+                if(!chk($('input[name="Booking_Date"]').val())) missing.push('Booking Date');
+                if(!chk($('input[name="Journey_Date"]').val())) missing.push('Journey Date');
+                if(!chk($('input[name="Airline"]:visible, select[name="Airline"]:visible').val())) missing.push('Airline');
+                if(!chk($('input[name="Ticket_Number"]').val())) missing.push('Ticket Number');
+                if(!chk($('input[name="Journey_From"]').val())) missing.push('Journey From');
+                if(!chk($('input[name="Journey_To"]').val())) missing.push('Journey To');
+                if(!chk($('select[name="Travel_Class"]').val())) missing.push('Travel Class');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Total_Amount"]').val()) || parseFloat($('input[name="Total_Amount"]').val()) <= 0) missing.push('Total Amount (must be greater than 0)');
+                // At least one employee
+                var hasAirEmp = false;
+                $('#airEmpBody tr').each(function(){
+                    var empVal = $(this).find('select[name="Employee[]"]').val();
+                    if(empVal && empVal.trim() !== '') hasAirEmp = true;
+                });
+                if(!hasAirEmp) missing.push('At least one Employee');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'rail':
-                if(!chk($('input[name="Base_Fare"]').val())) missing.push('Base Fare');
+                if(!chk($('input[name="Agent_Name"]:visible, select[name="Agent_Name"]:visible').val())) missing.push('Agent Name');
+                if(!chk($('input[name="Train_Number"]').val())) missing.push('Train Number');
+                if(!chk($('input[name="PNR_Number"]').val())) missing.push('PNR Number');
+                if(!chk($('input[name="Booking_Date"]').val())) missing.push('Booking Date');
+                if(!chk($('input[name="Journey_Date"]').val())) missing.push('Journey Date');
+                if(!chk($('input[name="Booking_Id"]').val())) missing.push('Booking ID');
+                if(!chk($('input[name="Journey_From"]').val())) missing.push('Journey From');
+                if(!chk($('input[name="Journey_To"]').val())) missing.push('Journey To');
+                if(!chk($('select[name="Travel_Class"]').val())) missing.push('Travel Class');
+                if(!chk($('#selLocation').val())) missing.push('Location');
+                if(!chk($('input[name="Total_Amount"]').val()) || parseFloat($('input[name="Total_Amount"]').val()) <= 0) missing.push('Total Amount (must be greater than 0)');
+                // At least one employee
+                var hasRailEmp = false;
+                $('#railEmpBody tr').each(function(){
+                    var empVal = $(this).find('select[name="Employee[]"]').val();
+                    if(empVal && empVal.trim() !== '') hasRailEmp = true;
+                });
+                if(!hasRailEmp) missing.push('At least one Employee');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'sale-bill':
-                // Sale bill has no fields marked with * — minimal validation
                 if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
                 if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
-                break;
+                if(!chk($('#selBuyer').val())) missing.push('Vendor');
+                if(!chk($('#selVendor').val())) missing.push('Buyer');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                // Validate line items - at least 1 row with Particular + Qty + MRP
+                var hasItem = false;
+                var hasIncompleteItem = false;
+                $('#itemsBody tr').each(function(){
+                    var $tr = $(this);
+                    var p = ($tr.find('select[name="Particular[]"]').val() || $tr.find('input[name="Particular[]"]').val() || '').trim();
+                    var qty = $tr.find('input[name="Qty[]"]').val().trim();
+                    var mrp = $tr.find('input[name="MRP[]"]').val().trim();
+                    var hasAny = (p !== '' || qty !== '' || mrp !== '');
+                    var hasAll = (p !== '' && qty !== '' && mrp !== '');
 
-            case 'credit-note':
-                // Credit note has no fields marked with * — minimal validation
-                if(!chk($('input[name="Bill_No"]').val())) missing.push('Invoice No');
-                if(!chk($('input[name="Bill_Date"]').val())) missing.push('Invoice Date');
+                    if(hasAll) hasItem = true;
+
+                    // If row has partial data, highlight empty fields
+                    if(hasAny && !hasAll){
+                        hasIncompleteItem = true;
+                        if(!p) $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','#dc2626');
+                        if(!qty) $tr.find('input[name="Qty[]"]').css('border-color','#dc2626');
+                        if(!mrp) $tr.find('input[name="MRP[]"]').css('border-color','#dc2626');
+                    } else {
+                        $tr.find('select[name="Particular[]"]').next('.select2-container').find('.select2-selection').css('border-color','');
+                        $tr.find('input[name="Qty[]"], input[name="MRP[]"]').css('border-color','');
+                    }
+                });
+                if(!hasItem) missing.push('At least one Line Item (Particular, Qty, MRP required)');
+                if(hasIncompleteItem) missing.push('Fill Particular, Qty & MRP in all rows or remove empty rows');
                 break;
 
             case 'electricity-bill':
@@ -1298,13 +1394,22 @@ $(function(){
                 break;
 
             case 'telephone-bill':
-                // No explicit required markers — basic validation
+                // Required fields
                 if(!chk($('input[name="Bill_Date"]').val())) missing.push('Bill Date');
+                if(!chk($('input[name="Invoice_No"]').val())) missing.push('Invoice No');
+                if(!chk($('input[name="Biller_Name"]').val())) missing.push('Biller Name');
+                if(!chk($('input[name="Phone_No"]').val())) missing.push('Phone No');
+                if(!chk($('input[name="Amount_Outstanding"]').val())) missing.push('Total Amount Outstanding');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'gst-challan':
-                // No explicit required markers — basic validation
+                // Required fields
+                if(!chk($('input[name="CPIN"]').val())) missing.push('CPIN');
                 if(!chk($('input[name="Deposit_Date"]').val())) missing.push('Deposit Date');
+                if(!chk($('input[name="GSTIN"]').val())) missing.push('GSTIN');
+                if(!chk($('#grandTotal').val())) missing.push('Total Challan Amount');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
                 break;
 
             case 'income-tax':
@@ -1393,8 +1498,38 @@ $(function(){
                 break;
 
             case 'ticket-cancellation':
-                // No explicit required markers — basic validation
+                // Required fields
                 if(!chk($('input[name="BillDate"]').val())) missing.push('Date');
+                if(!chk($('#selTicketCancelAgent').val())) missing.push('Agent Name');
+                if(!chk($('input[name="File_Date"]').val())) missing.push('Cancelled Date');
+                if(!chk($('#ticketCancelSubTotal').val())) missing.push('Sub Total');
+                if(!chk($('#ticketCancelGrandTotal').val())) missing.push('Grand Total');
+                if(!chk($('textarea[name="Remark"]').val())) missing.push('Remark');
+                
+                // Check at least one employee row
+                var hasEmployee = false;
+                var hasIncompleteRow = false;
+                $('#ticketCancelItemsBody tr').each(function(){
+                    var $tr = $(this);
+                    var emp = ($tr.find('select[name="Employee[]"]').val() || '').trim();
+                    var pnr = $tr.find('input[name="PNR[]"]').val().trim();
+                    var amt = $tr.find('input[name="Amount[]"]').val().trim();
+                    if(emp && pnr && amt) hasEmployee = true;
+                    if(emp && (!pnr || !amt)){
+                        hasIncompleteRow = true;
+                        if(!pnr) $tr.find('input[name="PNR[]"]').css('border-color','#dc2626');
+                        if(!amt) $tr.find('input[name="Amount[]"]').css('border-color','#dc2626');
+                    } else if(!emp && (pnr || amt)){
+                        hasIncompleteRow = true;
+                        $tr.find('select[name="Employee[]"]').next('.select2-container').find('.select2-selection').css('border-color','#dc2626');
+                    } else {
+                        $tr.find('input[name="PNR[]"]').css('border-color','');
+                        $tr.find('input[name="Amount[]"]').css('border-color','');
+                        $tr.find('select[name="Employee[]"]').next('.select2-container').find('.select2-selection').css('border-color','');
+                    }
+                });
+                if(!hasEmployee) missing.push('At least one Employee with PNR and Amount');
+                if(hasIncompleteRow) missing.push('Fill Employee, PNR & Amount in each row');
                 break;
 
             default:
@@ -1484,13 +1619,306 @@ $(function(){
         $('#confirmOverlay').css('display','none');
     }
     $('#confirmCancel').on('click', hideConfirmModal);
+
     $('#confirmOverlay').on('click', function(e){
         if(e.target === this) hideConfirmModal();
     });
+
     $('#confirmSubmit').on('click', function(){
         hideConfirmModal();
         doSave('final_submit');
     });
+
+    // ========== Air Travel Form — Employee Select2 & Add/Remove ==========
+    if ($('#airEmpBody').length) {
+        // Agent Name Select2 with "Other" option
+        if ($('#selAirAgent').length) {
+            $('#selAirAgent').select2({
+                placeholder: 'Select Agent',
+                allowClear: true,
+                minimumInputLength: 0,
+                tags: true, // Allow custom values
+                ajax: {
+                    url: R.selAgents,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1, doc_type_id: 51 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                }
+            }).on('select2:select', function(e){
+                var val = e.params.data.id;
+                if (val === '__other__') {
+                    // Clear selection and show input for manual entry
+                    $(this).val(null).trigger('change');
+                    $('#airAgentInput').show().focus().prop('required', true);
+                    $(this).hide();
+                } else {
+                    $('#airAgentInput').val(val).hide().prop('required', false);
+                }
+            });
+        }
+
+        // Airline Select2 with "Other" option
+        if ($('#selAirline').length) {
+            $('#selAirline').select2({
+                placeholder: 'Select Airline',
+                allowClear: true,
+                minimumInputLength: 0,
+                tags: true, // Allow custom values
+                ajax: {
+                    url: R.selAirlines,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                }
+            }).on('select2:select', function(e){
+                var val = e.params.data.id;
+                if (val === '__other__') {
+                    // Clear selection and show input for manual entry
+                    $(this).val(null).trigger('change');
+                    $('#airlineInput').show().focus().prop('required', true);
+                    $(this).hide();
+                } else {
+                    $('#airlineInput').val(val).hide().prop('required', false);
+                }
+            });
+        }
+
+        function initAirEmpSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Employee',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selEmployees,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+                }
+            }).on('select2:select', function(e){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val(e.params.data.emp_code || '');
+            }).on('select2:clear', function(){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val('');
+            });
+        }
+        initAirEmpSel('.air-emp-sel');
+
+        // Add/remove employee rows
+        $(document).on('click', '#airEmpBody .btn-add-emp', function(){
+            var count = $('#airEmpBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Employee[]" class="air-emp-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="EmpCode[]" readonly></td>
+                <td><button type="button" class="btn-del-emp">−</button></td>
+            </tr>`;
+            $('#airEmpBody').append(tr);
+            initAirEmpSel('#airEmpBody tr:last .air-emp-sel');
+        });
+        $(document).on('click', '#airEmpBody .btn-del-emp', function(){
+            if ($('#airEmpBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#airEmpBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+        });
+
+        // Auto-calculate Air total
+        function calcAirTotal(){
+            var baseFare = parseFloat($('input[name="Base_Fare"]').val()) || 0;
+            var gst = parseFloat($('input[name="GST"]').val()) || 0;
+            var surcharge = parseFloat($('input[name="Surcharge"]').val()) || 0;
+            var cuteCharge = parseFloat($('input[name="Cute_Charge"]').val()) || 0;
+            var extraLuggage = parseFloat($('input[name="Extra_Luggage"]').val()) || 0;
+            var other = parseFloat($('input[name="Other"]').val()) || 0;
+            var total = baseFare + gst + surcharge + cuteCharge + extraLuggage + other;
+            $('#grandTotal').val(total > 0 ? total.toFixed(2) : '0.00');
+        }
+        $(document).on('input', '.calc-trigger', function(){
+            if ($('[name="Cute_Charge"]').length) calcAirTotal();
+        });
+    }
+
+    // ========== Rail Travel Form — Employee Select2 & Add/Remove ==========
+    if ($('#railEmpBody').length) {
+        // Agent Name Select2 with "Other" option
+        if ($('#selRailAgent').length) {
+            $('#selRailAgent').select2({
+                placeholder: 'Select Agent',
+                allowClear: true,
+                minimumInputLength: 0,
+                tags: true, // Allow custom values
+                ajax: {
+                    url: R.selAgents,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1, doc_type_id: 52 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                }
+            }).on('select2:select', function(e){
+                var val = e.params.data.id;
+                if (val === '__other__') {
+                    // Clear selection and show input for manual entry
+                    $(this).val(null).trigger('change');
+                    $('#railAgentInput').show().focus().prop('required', false);
+                    $(this).hide();
+                } else {
+                    $('#railAgentInput').val(val).hide().prop('required', false);
+                }
+            });
+        }
+
+        function initRailEmpSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Employee',
+                allowClear: true,
+                minimumInputLength: 0,
+                ajax: {
+                    url: R.selEmployees,
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(p){ return { q: p.term || '', page: p.page || 1 }; },
+                    processResults: function(d){ return { results: d.results, pagination: d.pagination }; }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+                }
+            }).on('select2:select', function(e){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val(e.params.data.emp_code || '');
+            }).on('select2:clear', function(){
+                $(this).closest('tr').find('input[name="EmpCode[]"]').val('');
+            });
+        }
+        initRailEmpSel('.rail-emp-sel');
+
+        // Add/remove employee rows
+        $(document).on('click', '#railEmpBody .btn-add-emp', function(){
+            var count = $('#railEmpBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Employee[]" class="rail-emp-sel" style="width:100%"><option value="">Select</option></select></td>
+                <td><input type="text" name="EmpCode[]" readonly></td>
+                <td><button type="button" class="btn-del-emp">−</button></td>
+            </tr>`;
+            $('#railEmpBody').append(tr);
+            initRailEmpSel('#railEmpBody tr:last .rail-emp-sel');
+        });
+        $(document).on('click', '#railEmpBody .btn-del-emp', function(){
+            if ($('#railEmpBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#railEmpBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+        });
+
+        // Auto-calculate Rail total
+        function calcRailTotal(){
+            var baseFare = parseFloat($('input[name="Base_Fare"]').val()) || 0;
+            var gst = parseFloat($('input[name="GST"]').val()) || 0;
+            var surcharge = parseFloat($('input[name="Surcharge"]').val()) || 0;
+            var other = parseFloat($('input[name="Other"]').val()) || 0;
+            var total = baseFare + gst + surcharge + other;
+            $('#grandTotal').val(total > 0 ? total.toFixed(2) : '0.00');
+        }
+        $(document).on('input', '.calc-trigger', function(){
+            if ($('[name="Train_Number"]').length) calcRailTotal();
+        });
+    }
+
+    // ========== Ticket Cancellation Form ==========
+    if ($('#ticketCancelItemsBody').length) {
+        // Agent Name Select2
+        $('#selTicketCancelAgent').select2({
+            placeholder: 'Select Agent',
+            allowClear: true,
+            ajax: {
+                url: R.selAgents,
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term,
+                        page: params.page || 1,
+                        doc_type_id: {{ $scanData->DocType_Id }}
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.results,
+                        pagination: data.pagination
+                    };
+                }
+            }
+        });
+
+        // Employee Select2 initialization
+        function initTicketCancelEmpSel(sel){
+            $(sel).select2({
+                placeholder: 'Search Employee',
+                allowClear: true,
+                ajax: {
+                    url: R.selEmployees,
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results,
+                            pagination: data.pagination
+                        };
+                    }
+                },
+                templateResult: function(item){
+                    if(item.loading) return item.text;
+                    return $('<span>').text(item.text + (item.emp_code ? ' [' + item.emp_code + ']' : ''));
+                }
+            });
+        }
+        initTicketCancelEmpSel('.ticket-cancel-emp-sel');
+
+        // Add/remove rows
+        $(document).off('click', '.btn-add-row').on('click', '.btn-add-row', function(){
+            if(!$('#ticketCancelItemsBody').length) return; // Only for ticket cancellation
+            var count = $('#ticketCancelItemsBody tr').length + 1;
+            var tr = `<tr>
+                <td>${count}</td>
+                <td><select name="Employee[]" class="ticket-cancel-emp-sel" style="width:100%" required><option value="">Select</option></select></td>
+                <td><input type="text" name="PNR[]" required></td>
+                <td><input type="text" name="Amount[]" class="calc-trigger" inputmode="decimal" required></td>
+                <td><button type="button" class="btn-del-row">−</button></td>
+            </tr>`;
+            $('#ticketCancelItemsBody').append(tr);
+            initTicketCancelEmpSel('#ticketCancelItemsBody tr:last .ticket-cancel-emp-sel');
+        });
+        $(document).on('click', '.btn-del-row', function(){
+            if(!$('#ticketCancelItemsBody').length) return; // Only for ticket cancellation
+            if ($('#ticketCancelItemsBody tr').length <= 1) return;
+            $(this).closest('tr').remove();
+            $('#ticketCancelItemsBody tr').each(function(i){ $(this).find('td:first').text(i + 1); });
+            calcTicketCancelTotal();
+        });
+
+        // Auto-calculate totals
+        function calcTicketCancelTotal(){
+            var subTotal = parseFloat($('#ticketCancelSubTotal').val()) || 0;
+            var other = parseFloat($('#ticketCancelOther').val()) || 0;
+            var refund = parseFloat($('#ticketCancelRefund').val()) || 0;
+            var grandTotal = subTotal + other - refund;
+            $('#ticketCancelGrandTotal').val(grandTotal > 0 ? grandTotal.toFixed(2) : '0.00');
+        }
+        $(document).on('input', '#ticketCancelSubTotal, #ticketCancelOther, #ticketCancelRefund', calcTicketCancelTotal);
+        
+        // Initial calculation
+        calcTicketCancelTotal();
+    }
 
     // ========== History Offcanvas ==========
     $('#btnHistory').on('click', function(){
@@ -1519,5 +1947,6 @@ function closeHistory(){
     $('#historyPanel').css('right', '-380px');
     $('#historyOverlay').hide();
 }
+
 </script>
 @endpush

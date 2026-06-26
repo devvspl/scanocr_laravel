@@ -4,12 +4,12 @@
 {{-- Row 1: CPIN, Deposit Date, CIN, Bank Name --}}
 <div class="f-row">
     <div class="f-group">
-        <label>CPIN</label>
-        <input type="text" name="CPIN" class="f-input" value="{{ $punchDetail->CPIN ?? '' }}">
+        <label>CPIN <span style="color:#dc2626">*</span></label>
+        <input type="text" name="CPIN" class="f-input" required value="{{ $punchDetail->CPIN ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Deposit Date</label>
-        <input type="date" name="Deposit_Date" class="f-input" value="{{ $punchDetail->File_Date ?? '' }}">
+        <label>Deposit Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Deposit_Date" class="f-input" required value="{{ $punchDetail->File_Date ?? '' }}">
     </div>
     <div class="f-group">
         <label>CIN</label>
@@ -28,8 +28,8 @@
         <input type="text" name="BRN" class="f-input" value="{{ $punchDetail->BankBSRCode ?? '' }}">
     </div>
     <div class="f-group">
-        <label>GSTIN</label>
-        <input type="text" name="GSTIN" class="f-input" value="{{ $punchDetail->GSTIN ?? '' }}">
+        <label>GSTIN <span style="color:#dc2626">*</span></label>
+        <input type="text" name="GSTIN" class="f-input" required value="{{ $punchDetail->GSTIN ?? '' }}">
     </div>
     <div class="f-group">
         <label>Email ID</label>
@@ -87,15 +87,15 @@
 {{-- Total Challan Amount --}}
 <div class="f-row cols-1">
     <div class="f-group">
-        <label>Total Challan Amount</label>
-        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
+        <label>Total Challan Amount <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Total_Amount" id="grandTotal" class="f-input" readonly required value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
 </div>
 
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>

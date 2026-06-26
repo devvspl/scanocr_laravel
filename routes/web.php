@@ -117,7 +117,6 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::post('/master/import/api-connections', [ImportController::class, 'storeApiConnection'])->name('master.import.api-connections.store');
     Route::post('/master/import/api-connections/{connection}/test', [ImportController::class, 'testApiConnection'])->name('master.import.api-connections.test');
     Route::delete('/master/import/api-connections/{connection}', [ImportController::class, 'destroyApiConnection'])->name('master.import.api-connections.destroy');
-
     Route::get('/master/{tab}', [MasterController::class, 'tab'])->name('master.tab');
 
     // ── Document AI Predictor ─────────────────────────────────────────────────
@@ -399,6 +398,8 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/entry/select/employees',   [PunchingEntryController::class, 'employeesSelect']) ->name('entry.select.employees');
             Route::get('/entry/select/last-reading', [PunchingEntryController::class, 'lastReading'])     ->name('entry.select.lastReading');
             Route::get('/entry/select/hotels',       [PunchingEntryController::class, 'hotelsSelect'])    ->name('entry.select.hotels');
+            Route::get('/entry/select/agents',       [PunchingEntryController::class, 'agentNamesSelect'])->name('entry.select.agents');
+            Route::get('/entry/select/airlines',     [PunchingEntryController::class, 'airlinesSelect'])  ->name('entry.select.airlines');
             Route::get('/entry/{scan}',              [PunchingEntryController::class, 'show'])             ->name('entry');
             Route::get('/entry/{scan}/items',        [PunchingEntryController::class, 'getItems'])         ->name('entry.items');
             Route::get('/entry/{scan}/history',      [PunchingEntryController::class, 'history'])          ->name('entry.history');

@@ -4,24 +4,24 @@
 {{-- Row 1: Bill Date, Invoice No, Biller Name --}}
 <div class="f-row cols-3">
     <div class="f-group">
-        <label>Bill / Invoice Date</label>
-        <input type="date"  onfocus="if (this.showPicker) this.showPicker(); else this.click();"   @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}"  name="Bill_Date" class="f-input" value="{{ $punchDetail->BillDate ?? '' }}">
+        <label>Bill / Invoice Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Bill_Date" class="f-input" required onfocus="if (this.showPicker) this.showPicker(); else this.click();" @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}" @endif value="{{ $punchDetail->BillDate ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Invoice / Bill No</label>
-        <input type="text" name="Invoice_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <label>Invoice / Bill No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Invoice_No" class="f-input" required value="{{ $punchDetail->File_No ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Biller Name</label>
-        <input type="text" name="Biller_Name" class="f-input" value="{{ $punchDetail->FromName ?? '' }}">
+        <label>Biller Name <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Biller_Name" class="f-input" required value="{{ $punchDetail->FromName ?? '' }}">
     </div>
 </div>
 
 {{-- Row 2: Telephone No, Invoice Period, Taxable Value --}}
 <div class="f-row cols-3">
     <div class="f-group">
-        <label>Telephone No</label>
-        <input type="text" name="Phone_No" class="f-input" value="{{ $punchDetail->MobileNo ?? '' }}">
+        <label>Telephone No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Phone_No" class="f-input" required value="{{ $punchDetail->MobileNo ?? '' }}">
     </div>
     <div class="f-group">
         <label>Invoice Period</label>
@@ -56,8 +56,8 @@
         <input type="text" name="Amount_Due" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
     <div class="f-group">
-        <label>Total Amount Outstanding</label>
-        <input type="text" name="Amount_Outstanding" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Grand_Total ?? '' }}">
+        <label>Total Amount Outstanding <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Amount_Outstanding" class="f-input calc-trigger" inputmode="decimal" required value="{{ $punchDetail->Grand_Total ?? '' }}">
     </div>
     <div class="f-group">
         <label>Last Payment Date</label>
@@ -68,7 +68,7 @@
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>

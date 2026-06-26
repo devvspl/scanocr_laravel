@@ -8,12 +8,19 @@
         <input type="text" name="mode" class="f-input" value="Rail" readonly>
     </div>
     <div class="f-group">
-        <label>Train Number</label>
-        <input type="text" name="Train_Number" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <label>Train Number <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Train_Number" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Agent Name</label>
-        <input type="text" name="Agent_Name" class="f-input" value="{{ $punchDetail->AgentName ?? '' }}">
+        <label>Agent Name <span style="color:#dc2626">*</span></label>
+        <select name="Agent_Name" id="selRailAgent" style="width:100%" required>
+            @if($punchDetail && $punchDetail->AgentName)
+                <option value="{{ $punchDetail->AgentName }}" selected>{{ $punchDetail->AgentName }}</option>
+            @else
+                <option value="">Select Agent</option>
+            @endif
+        </select>
+        <input type="text" name="Agent_Name" id="railAgentInput" class="f-input" style="display:none;margin-top:0.3rem" placeholder="Type agent name manually" value="{{ $punchDetail->AgentName ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>PNR Number <span style="color:#dc2626">*</span></label>
@@ -32,8 +39,8 @@
         <input type="date" name="Journey_Date" class="f-input" value="{{ $punchDetail->FromDateTime ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Booking ID</label>
-        <input type="text" name="Booking_Id" class="f-input" value="{{ $punchDetail->FDRNo ?? '' }}">
+        <label>Booking ID <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Booking_Id" class="f-input" value="{{ $punchDetail->FDRNo ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Transaction ID</label>
@@ -44,17 +51,17 @@
 {{-- Row 3: Journey From, Journey To, Travel Class, Quota --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Journey From</label>
-        <input type="text" name="Journey_From" class="f-input" value="{{ $punchDetail->TripStarted ?? '' }}">
+        <label>Journey From <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Journey_From" class="f-input" value="{{ $punchDetail->TripStarted ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Journey To</label>
-        <input type="text" name="Journey_To" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}">
+        <label>Journey To <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Journey_To" class="f-input" value="{{ $punchDetail->TripEnded ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Travel Class</label>
+        <label>Travel Class <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->travel_class ?? false))<span class="hint">{{ $tempData->travel_class }}</span>@endif
-        <select name="Travel_Class" class="f-input">
+        <select name="Travel_Class" class="f-input" required>
             <option value="">Select</option>
             @foreach(['Sleeper','III AC','II AC','I AC'] as $cls)
                 <option value="{{ $cls }}" {{ ($punchDetail->TravelClass ?? '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
@@ -76,9 +83,9 @@
 {{-- Row 4: Location --}}
 <div class="f-row cols-1">
     <div class="f-group">
-        <label>Location</label>
+        <label>Location <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->location ?? false))<span class="hint">{{ $tempData->location }}</span>@endif
-        <select name="location_id" id="selLocation" style="width:100%">
+        <select name="location_id" id="selLocation" style="width:100%" required>
             <option value="{{ $punchDetail->Loc_Name ?? '' }}">{{ $punchDetail->Loc_Name ?? 'Select' }}</option>
         </select>
     </div>

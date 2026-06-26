@@ -4,12 +4,12 @@
 {{-- Row 1: Invoice No, Invoice Date, Payment Mode, Suppliers Ref --}}
 <div class="f-row">
     <div class="f-group">
-        <label>Invoice No</label>
-        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}">
+        <label>Invoice No <span style="color:#dc2626">*</span></label>
+        <input type="text" name="Bill_No" class="f-input" value="{{ $punchDetail->File_No ?? '' }}" required>
     </div>
     <div class="f-group">
-        <label>Invoice Date</label>
-        <input type="date" name="Bill_Date" class="f-input"  onfocus="if (this.showPicker) this.showPicker(); else this.click();"   @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}" value="{{ $punchDetail->BillDate ?? '' }}">
+        <label>Invoice Date <span style="color:#dc2626">*</span></label>
+        <input type="date" name="Bill_Date" class="f-input" onfocus="if (this.showPicker) this.showPicker(); else this.click();" @if(\App\Helpers\BillDateValidator::getCurrentFyRange()) min="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['start'] }}" max="{{ \App\Helpers\BillDateValidator::getCurrentFyRange()['end'] }}" @endif value="{{ $punchDetail->BillDate ?? '' }}" required>
     </div>
     <div class="f-group">
         <label>Payment Mode</label>
@@ -30,16 +30,16 @@
 {{-- Row 2: Vendor, Buyer --}}
 <div class="f-row cols-2">
     <div class="f-group">
-        <label>Vendor</label>
+        <label>Vendor <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->vendor ?? false))<span class="hint">{{ $tempData->vendor }}</span>@endif
-        <select name="From" id="selBuyer" style="width:100%">
+        <select name="From" id="selBuyer" style="width:100%" required>
             <option value="{{ $punchDetail->From_ID ?? '' }}">{{ $punchDetail->FromName ?? 'Select' }}</option>
         </select>
     </div>
     <div class="f-group">
-        <label>Buyer</label>
+        <label>Buyer <span style="color:#dc2626">*</span></label>
         @if($tempData && ($tempData->buyer ?? false))<span class="hint">{{ $tempData->buyer }}</span>@endif
-        <select name="To" id="selVendor" style="width:100%">
+        <select name="To" id="selVendor" style="width:100%" required>
             <option value="{{ $punchDetail->To_ID ?? '' }}">{{ $punchDetail->ToName ?? 'Select' }}</option>
         </select>
     </div>
@@ -171,21 +171,40 @@
     </table>
 </div>
 
-{{-- Totals --}}
-<div class="f-row">
-    <div class="f-group">
+{{-- Totals - All 6 fields in one row --}}
+<div class="f-row" style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <div class="f-group" style="flex:1;min-width:100px">
         <label>Sub Total</label>
         <input type="text" name="Sub_Total" id="subTotal" class="f-input" readonly value="{{ $punchDetail->SubTotal ?? '' }}">
     </div>
-    <div class="f-group">
+    <div class="f-group" style="flex:0.7;min-width:80px">
         <label>TCS %</label>
         <input type="text" name="TCS" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->TCS ?? '' }}">
     </div>
-    <div class="f-group">
+    <div class="f-group" style="flex:1;min-width:100px">
+        <label>Total Discount</label>
+        <input type="text" name="Total_Discount" class="f-input calc-trigger" inputmode="decimal" value="{{ $punchDetail->Total_Discount ?? '' }}">
+    </div>
+    <div class="f-group" style="flex:1.3;min-width:140px">
+        <label>Round Off</label>
+        <div style="display:flex;border:1px solid #d6d3d1;border-radius:.5rem;overflow:hidden;height:24px;background:#fafaf9">
+            <label style="font-size:.6rem;font-weight:600;cursor:pointer;padding:0 .35rem;display:flex;align-items:center;border-right:1px solid #d6d3d1;user-select:none;transition:all .15s;margin-bottom:0" class="round-opt" data-val="upper">
+                <input type="radio" name="Round_Off_Type" value="upper" style="display:none" {{ ($punchDetail->Round_Off_Type ?? '') === 'upper' ? 'checked' : '' }}>▲
+            </label>
+            <label style="font-size:.6rem;font-weight:600;cursor:pointer;padding:0 .35rem;display:flex;align-items:center;border-right:1px solid #d6d3d1;user-select:none;transition:all .15s;margin-bottom:0" class="round-opt" data-val="lower">
+                <input type="radio" name="Round_Off_Type" value="lower" style="display:none" {{ ($punchDetail->Round_Off_Type ?? '') === 'lower' ? 'checked' : '' }}>▼
+            </label>
+            <label style="font-size:.58rem;font-weight:500;cursor:pointer;padding:0 .3rem;display:flex;align-items:center;border-right:1px solid #d6d3d1;user-select:none;transition:all .15s;margin-bottom:0" class="round-opt" data-val="none">
+                <input type="radio" name="Round_Off_Type" value="none" style="display:none" {{ !in_array(($punchDetail->Round_Off_Type ?? ''), ['upper','lower']) ? 'checked' : '' }}>✕
+            </label>
+            <input type="text" name="Round_Off_Value" id="saleBillRoundOff" style="flex:1;border:none;outline:none;background:transparent;font-size:.7rem;padding:0 .4rem;min-width:0" readonly>
+        </div>
+    </div>
+    <div class="f-group" style="flex:1;min-width:100px">
         <label>Total</label>
         <input type="text" name="Total" id="totalField" class="f-input" readonly value="{{ $punchDetail->Total_Amount ?? '' }}">
     </div>
-    <div class="f-group">
+    <div class="f-group" style="flex:1;min-width:100px">
         <label>Grand Total</label>
         <input type="text" name="Grand_Total" id="grandTotal" class="f-input" readonly value="{{ $punchDetail->Grand_Total ?? '' }}">
     </div>
@@ -194,7 +213,7 @@
 {{-- Remark --}}
 <div class="f-row cols-1">
     <div class="f-group" style="margin-bottom:.5rem">
-        <label>Remark</label>
-        <textarea name="Remark" class="f-input">{{ $punchDetail->Remark ?? '' }}</textarea>
+        <label>Remark <span style="color:#dc2626">*</span></label>
+        <textarea name="Remark" class="f-input" required>{{ $punchDetail->Remark ?? '' }}</textarea>
     </div>
 </div>
