@@ -256,6 +256,16 @@ class PunchingController extends Controller
     }
 
     /**
+     * GET /workflow/punching/{scan}/view
+     * View punched details (read-only) for all document types
+     */
+    public function view($scanId)
+    {
+        // Reuse entry form in view-only mode
+        return redirect()->route('workflow.punching.entry', ['scan' => $scanId->Scan_Id, 'view' => 1]);
+    }
+
+    /**
      * GET /workflow/punching/scanners  (Select2 AJAX)
      * Distinct scanners from scan_file for current company/FY.
      */

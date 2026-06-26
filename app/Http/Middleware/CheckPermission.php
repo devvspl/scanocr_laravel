@@ -181,6 +181,13 @@ class CheckPermission
         'workflow.punching.entry.select.ledgers',
         'workflow.punching.entry.select.files',
         'workflow.punching.entry.select.locations',
+        'workflow.punching.entry.select.employees',
+        'workflow.punching.entry.select.last-reading',
+        'workflow.punching.entry.select.hotels',
+        'workflow.punching.entry.select.agents',
+        'workflow.punching.entry.select.airlines',
+        'workflow.punching.entry.history',
+        'workflow.punching.view',
     ];
 
     // Explicit route → permission map (checked before derive()).

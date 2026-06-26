@@ -244,7 +244,17 @@ const dt=$('#punchTable').DataTable({
     createdRow(row,data){$(row).attr('data-scan-id',data.Scan_Id||data.scan_id||'')},
 });
 
-$('#punchTable tbody').on('click','tr',function(){const id=$(this).attr('data-scan-id');if(id)window.location.href='/workflow/punching/entry/'+id});
+$('#punchTable tbody').on('click','tr',function(){
+    const id=$(this).attr('data-scan-id');
+    if(id){
+        // If on "My Punching" tab, open view page; otherwise open entry page
+        if(currentTab==='my-punching'){
+            window.location.href='/workflow/punching/'+id+'/view';
+        }else{
+            window.location.href='/workflow/punching/entry/'+id;
+        }
+    }
+});
 $('#dtLength').on('change',function(){dt.page.len(+$(this).val()).draw()});
 let st;$('#dtSearch').on('input',function(){clearTimeout(st);const v=$(this).val();st=setTimeout(()=>dt.search(v).draw(),300)});
 $('.tab-btn').on('click',function(){currentTab=$(this).data('tab');$('.tab-btn').removeClass('active');$(this).addClass('active');$('#editPermCheckWrap').toggle(currentTab==='rejected');dt.ajax.reload()});

@@ -1,6 +1,10 @@
 @extends('layouts.app')
-@section('title', 'Invoice Entry - Scan #' . $scanData->Scan_Id)
-@section('page-title', 'Invoice Entry')
+@section('title', ($isViewMode ?? false) ? 'View Entry - Scan #' . $scanData->Scan_Id : 'Invoice Entry - Scan #' . $scanData->Scan_Id)
+@section('page-title', ($isViewMode ?? false) ? 'View Punched Entry' : 'Invoice Entry')
+
+@php
+    $viewMode = $isViewMode ?? false;
+@endphp
 
 @push('head')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
@@ -67,6 +71,13 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn-draft:disabled,.btn-submit:disabled{cursor:not-allowed;pointer-events:none}
+/* View Mode Styles */
+@if($viewMode)
+.f-input, .select2-selection, textarea.f-input { pointer-events: none !important; opacity: 0.8 !important; background: #f5f5f4 !important; }
+.items-table input, .items-table select { pointer-events: none !important; opacity: 0.8 !important; background: #f5f5f4 !important; }
+.btn-add-row, .btn-del-row, .btn-add-emp, .btn-del-emp, .btn-add-meals-emp, .btn-del-meals-emp, .btn-add-labour, .btn-del-labour { display: none !important; }
+.round-opt { pointer-events: none !important; }
+@endif
 </style>
 @endpush
 
@@ -94,13 +105,17 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
         <div class="form-panel" id="formPanel">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
                 <div>
-                    <h2 style="font-size:.85rem;font-weight:700;color:#292524">Invoice Entry — Scan #{{ $scanData->Scan_Id }}</h2>
+                    <h2 style="font-size:.85rem;font-weight:700;color:#292524">
+                        {{ $viewMode ? 'View Punched Entry' : 'Invoice Entry' }} — Scan #{{ $scanData->Scan_Id }}
+                    </h2>
                     <p style="font-size:.6rem;color:#78716c">{{ $scanData->company_name }} • {{ $scanData->doc_type_label }}</p>
                 </div>
                 <div style="display:flex;align-items:center;gap:.4rem">
+                    @if(!$viewMode)
                     <button type="button" id="btnHistory" class="btn-back" style="background:#fafaf9">
                         <svg style="width:12px;height:12px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>History
                     </button>
+                    @endif
                     <a href="{{ route('workflow.punching.index') }}" class="btn-back">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
                     </a>
@@ -123,11 +138,20 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
         </div>
 
         {{-- Footer Buttons --}}
+        @if(!$viewMode)
         <div class="form-footer">
             <a href="{{ route('workflow.punching.index') }}" class="btn-cancel btn-back">Cancel</a>
             <button type="button" id="btnDraft" class="btn-draft">Save Draft</button>
             <button type="button" id="btnSubmit" class="btn-submit">Final Submit</button>
         </div>
+        @else
+        <div class="form-footer">
+            <a href="{{ route('workflow.punching.index') }}" class="btn-back" style="margin-right:auto">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                Back to List
+            </a>
+        </div>
+        @endif
     </div>
 </div>
 

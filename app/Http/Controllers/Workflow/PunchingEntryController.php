@@ -38,9 +38,28 @@ class PunchingEntryController extends Controller
 
     // ─── Show Entry Form ─────────────────────────────────────────────────────
 
-    public function show($scan)
+    public function show(Request $request, $scan)
     {
         $scanId = is_object($scan) ? $scan->Scan_Id : (int) $scan;
+        $isViewMode = $request->query('view') == 1; // Check if in view-only mode
+        // dd(app()->isLocal());
+        // ── Gate check (skipped in local dev) ─────────────────────────────────
+        // In production, only allow access to this form when the scan has been
+        // rejected back for editing: Edit_Permission=Y, File_Punched=N, Punch_By > 0.
+        // In local env we bypass the gate so developers can open any scan directly.
+        if (!app()->isLocal() && !$isViewMode) {
+            $gate = DB::table('scan_file')
+                ->where('Scan_Id', $scanId)
+                ->where('Edit_Permission', 'Y')
+                ->where('File_Punched', 'N')
+                ->where('Punch_By', '>', 0)
+                ->exists();
+
+            if (!$gate) {
+                return response(view('errors.scan-not-editable'), 403);
+            }
+        }
+        // ──────────────────────────────────────────────────────────────────────
 
         $scanData = DB::table('scan_file as s')
             ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
@@ -78,7 +97,7 @@ class PunchingEntryController extends Controller
             $kmRows = DB::table('vehicle_traveling')->where('Scan_Id', $scanId)->get();
         }
 
-        return view('panel.workflow.punching.entry', compact('scanData', 'punchDetail', 'supportFiles', 'tempData', 'formPartial', 'kmRows'));
+        return view('panel.workflow.punching.entry', compact('scanData', 'punchDetail', 'supportFiles', 'tempData', 'formPartial', 'kmRows', 'isViewMode'));
     }
 
     // ─── Get Line Items (paginated) ──────────────────────────────────────────

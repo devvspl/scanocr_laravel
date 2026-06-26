@@ -376,9 +376,6 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/',                    [PunchingController::class, 'index'])       ->name('index');
             Route::get('/data',                [PunchingController::class, 'data'])        ->name('data');
             Route::get('/tab-counts',          [PunchingController::class, 'tabCounts'])   ->name('tab-counts');
-            Route::get('/{scan}/detail',       [PunchingController::class, 'scanDetail'])  ->name('detail');
-            Route::get('/{scan}/support-list', [PunchingController::class, 'supportList'])->name('support-list');
-            Route::post('/{scan}/mark-punched',[PunchingController::class, 'markPunched'])->name('mark-punched');
             Route::get('/scanners',            [PunchingController::class, 'scannersSelect']) ->name('scanners');
             Route::get('/approvers',           [PunchingController::class, 'approversSelect'])->name('approvers');
             Route::get('/doc-types',           [PunchingController::class, 'docTypesSelect']) ->name('doc-types');
@@ -404,6 +401,12 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/entry/{scan}/items',        [PunchingEntryController::class, 'getItems'])         ->name('entry.items');
             Route::get('/entry/{scan}/history',      [PunchingEntryController::class, 'history'])          ->name('entry.history');
             Route::post('/entry/{scan}/save',        [PunchingEntryController::class, 'save'])             ->name('entry.save');
+            
+            // View routes - must come after entry routes
+            Route::get('/{scan}/view',         [PunchingController::class, 'view'])        ->name('view');
+            Route::get('/{scan}/detail',       [PunchingController::class, 'scanDetail'])  ->name('detail');
+            Route::get('/{scan}/support-list', [PunchingController::class, 'supportList'])->name('support-list');
+            Route::post('/{scan}/mark-punched',[PunchingController::class, 'markPunched'])->name('mark-punched');
         });
 
     });
