@@ -581,7 +581,7 @@
 
         .dt-btn.blue:hover {
             background: #eff6ff;
-            color: #2563eb
+            color: #7f1d1d
         }
 
         .dt-btn.green:hover {

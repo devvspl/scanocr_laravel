@@ -166,7 +166,7 @@
         <button id="btnResetFilters" class="filter-btn filter-btn-secondary">Reset</button>
     </div>
     <div class="dt-ctrl-bar border-b border-stone-100">
-        <div class="flex items-center gap-2 text-xs text-stone-500"><span>Show</span><select class="dt-length-sel" id="dtLength"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option></select><span>entries</span></div>
+        <div class="flex items-center gap-2 text-xs text-stone-500"><span>Show</span><select class="dt-length-sel" id="dtLength"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option></select><span>entries</span></div>
         <div><input type="text" class="dt-search-input" id="dtSearch" placeholder="Search…"></div>
     </div>
     <div class="overflow-x-auto flex-1">

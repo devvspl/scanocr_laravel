@@ -65,12 +65,17 @@ class PunchingEntryController extends Controller
             ->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
             ->leftJoin('companies as c', 'c.id', '=', 's.Group_Id')
             ->leftJoin('document_types as dt', 'dt.id', '=', 's.DocType_Id')
+            ->leftJoin('users as puncher', 'puncher.id', '=', 's.Punch_By')
+            ->leftJoin('users as approver', 'approver.id', '=', 's.Approve_By')
             ->where('s.Scan_Id', $scanId)
             ->select([
                 's.Scan_Id', 's.File', 's.File_Location', 's.File_Ext',
                 's.Document_name', 's.DocType_Id', 'dt.label as doc_type_label',
                 'dt.key as doc_type_key', 'c.name as company_name',
                 'l.location_name', 's.Group_Id', 's.Location',
+                's.File_Punched', 's.Punch_Date', 'puncher.name as punched_by_name',
+                's.File_Approved', 's.Approve_Date', 'approver.name as approved_by_name',
+                's.Is_Rejected', 's.Reject_Date', 's.Reject_Remark',
             ])
             ->first();
 
@@ -97,7 +102,21 @@ class PunchingEntryController extends Controller
             $kmRows = DB::table('vehicle_traveling')->where('Scan_Id', $scanId)->get();
         }
 
-        return view('panel.workflow.punching.entry', compact('scanData', 'punchDetail', 'supportFiles', 'tempData', 'formPartial', 'kmRows', 'isViewMode'));
+        // Check if scan is eligible for approval (only in view mode)
+        $canApprove = false;
+        if ($isViewMode) {
+            $approvalCheck = DB::table('scan_file')
+                ->where('Scan_Id', $scanId)
+                ->where('File_Punched', 'Y')
+                ->where('File_Approved', 'N')
+                ->where(function ($q) {
+                    $q->whereNull('Is_Rejected')->orWhere('Is_Rejected', 'N');
+                })
+                ->exists();
+            $canApprove = $approvalCheck;
+        }
+
+        return view('panel.workflow.punching.entry', compact('scanData', 'punchDetail', 'supportFiles', 'tempData', 'formPartial', 'kmRows', 'isViewMode', 'canApprove'));
     }
 
     // ─── Get Line Items (paginated) ──────────────────────────────────────────
@@ -295,7 +314,7 @@ class PunchingEntryController extends Controller
                 'done' => '#15803d',
                 'in-progress' => '#d97706',
                 'rejected' => '#b91c1c',
-                'info' => '#2563eb',
+                'info' => '#7f1d1d',
                 default => '#a8a29e',
             };
             $icon = match($stage['status']) {

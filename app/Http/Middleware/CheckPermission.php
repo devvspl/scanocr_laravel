@@ -188,6 +188,18 @@ class CheckPermission
         'workflow.punching.entry.select.airlines',
         'workflow.punching.entry.history',
         'workflow.punching.view',
+        // Workflow — Punch Approval (gated by role)
+        'workflow.punch-approval.index',
+        'workflow.punch-approval.data',
+        'workflow.punch-approval.tab-counts',
+        'workflow.punch-approval.companies',
+        'workflow.punch-approval.financial-years',
+        'workflow.punch-approval.locations',
+        'workflow.punch-approval.doc-types',
+        'workflow.punch-approval.detail',
+        'workflow.punch-approval.support-list',
+        'workflow.punch-approval.approve',
+        'workflow.punch-approval.reject',
     ];
 
     // Explicit route → permission map (checked before derive()).
@@ -220,6 +232,15 @@ class CheckPermission
         'generate'     => 'generate',
         'info'         => 'update',
         'password'     => 'password.change',
+        'approve'      => 'approve',
+        'reject'       => 'reject',
+        'tab-counts'   => 'view',
+        'detail'       => 'view',
+        'support-list' => 'view',
+        'companies'    => 'view',
+        'financial-years' => 'view',
+        'locations'    => 'view',
+        'doc-types'    => 'view',
     ];
 
     public function handle(Request $request, Closure $next): Response

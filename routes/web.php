@@ -29,6 +29,7 @@ use App\Http\Controllers\Workflow\ClassificationController;
 use App\Http\Controllers\Workflow\DirectScannerController;
 use App\Http\Controllers\Workflow\PunchingController;
 use App\Http\Controllers\Workflow\PunchingEntryController;
+use App\Http\Controllers\Workflow\PunchApprovalController;
 use App\Http\Controllers\Workflow\SuperScannerController;
 use App\Http\Controllers\Workflow\TempScannerController;
 use Illuminate\Support\Facades\Route;
@@ -407,6 +408,21 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
             Route::get('/{scan}/detail',       [PunchingController::class, 'scanDetail'])  ->name('detail');
             Route::get('/{scan}/support-list', [PunchingController::class, 'supportList'])->name('support-list');
             Route::post('/{scan}/mark-punched',[PunchingController::class, 'markPunched'])->name('mark-punched');
+        });
+
+        // Punch Approval
+        Route::prefix('punch-approval')->name('punch-approval.')->group(function () {
+            Route::get('/',                    [PunchApprovalController::class, 'index'])              ->name('index');
+            Route::get('/data',                [PunchApprovalController::class, 'data'])               ->name('data');
+            Route::get('/tab-counts',          [PunchApprovalController::class, 'tabCounts'])          ->name('tab-counts');
+            Route::get('/companies',           [PunchApprovalController::class, 'companiesSelect'])    ->name('companies');
+            Route::get('/financial-years',     [PunchApprovalController::class, 'financialYearsSelect'])->name('financial-years');
+            Route::get('/locations',           [PunchApprovalController::class, 'locationsSelect'])    ->name('locations');
+            Route::get('/doc-types',           [PunchApprovalController::class, 'docTypesSelect'])     ->name('doc-types');
+            Route::get('/{scan}/detail',       [PunchApprovalController::class, 'scanDetail'])         ->name('detail');
+            Route::get('/{scan}/support-list', [PunchApprovalController::class, 'supportList'])        ->name('support-list');
+            Route::post('/{scan}/approve',     [PunchApprovalController::class, 'approve'])            ->name('approve');
+            Route::post('/{scan}/reject',      [PunchApprovalController::class, 'reject'])             ->name('reject');
         });
 
     });

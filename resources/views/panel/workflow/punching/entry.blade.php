@@ -64,6 +64,10 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 .btn-draft:hover{background:#6b1a1a}
 .btn-submit{height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#16a34a;color:#fff;cursor:pointer}
 .btn-submit:hover{background:#15803d}
+.btn-approve{height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
+.btn-approve:hover{background:#6b1a1a}
+.btn-reject{height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#dc2626;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
+.btn-reject:hover{background:#b91c1c}
 .btn-back{height:34px;padding:0 1rem;font-size:.72rem;font-weight:600;border:1px solid #d6d3d1;border-radius:.5rem;background:#fff;color:#57534e;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem}
 #alertBox{display:none;padding:.5rem .75rem;border-radius:.5rem;font-size:.7rem;margin-bottom:.5rem}
 #alertBox.error{display:block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
@@ -72,15 +76,16 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn-draft:disabled,.btn-submit:disabled{cursor:not-allowed;pointer-events:none}
 /* View Mode Styles */
+</style>
+@endpush
 @if($viewMode)
+<style>
 .f-input, .select2-selection, textarea.f-input { pointer-events: none !important; opacity: 0.8 !important; background: #f5f5f4 !important; }
 .items-table input, .items-table select { pointer-events: none !important; opacity: 0.8 !important; background: #f5f5f4 !important; }
 .btn-add-row, .btn-del-row, .btn-add-emp, .btn-del-emp, .btn-add-meals-emp, .btn-del-meals-emp, .btn-add-labour, .btn-del-labour { display: none !important; }
 .round-opt { pointer-events: none !important; }
-@endif
 </style>
-@endpush
-
+@endif
 @section('content')
 <div class="entry-grid">
     {{-- Left: File Viewer Panel --}}
@@ -108,7 +113,39 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
                     <h2 style="font-size:.85rem;font-weight:700;color:#292524">
                         {{ $viewMode ? 'View Punched Entry' : 'Invoice Entry' }} — Scan #{{ $scanData->Scan_Id }}
                     </h2>
-                    <p style="font-size:.6rem;color:#78716c">{{ $scanData->company_name }} • {{ $scanData->doc_type_label }}</p>
+                    <p style="font-size:.6rem;color:#78716c;margin-bottom:.25rem">{{ $scanData->company_name }} • {{ $scanData->doc_type_label }}</p>
+                    @if($viewMode && $scanData->File_Punched === 'Y')
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-top:.35rem">
+                        @if($scanData->Is_Rejected === 'Y')
+                        <span style="display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .5rem;background:#fee2e2;color:#991b1b;border-radius:.375rem;font-size:.6rem;font-weight:600">
+                            <svg style="width:10px;height:10px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            Rejected
+                        </span>
+                        <span style="font-size:.58rem;color:#78716c">
+                            by {{ $scanData->approved_by_name ?? 'N/A' }} on {{ $scanData->Reject_Date ? \Carbon\Carbon::parse($scanData->Reject_Date)->format('d M Y') : 'N/A' }}
+                        </span>
+                        @if($scanData->Reject_Remark)
+                        <span style="font-size:.58rem;color:#dc2626;font-weight:500">• {{ $scanData->Reject_Remark }}</span>
+                        @endif
+                        @elseif($scanData->File_Approved === 'Y')
+                        <span style="display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .5rem;background:#dcfce7;color:#166534;border-radius:.375rem;font-size:.6rem;font-weight:600">
+                            <svg style="width:10px;height:10px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Approved
+                        </span>
+                        <span style="font-size:.58rem;color:#78716c">
+                            by {{ $scanData->approved_by_name ?? 'N/A' }} on {{ $scanData->Approve_Date ? \Carbon\Carbon::parse($scanData->Approve_Date)->format('d M Y') : 'N/A' }}
+                        </span>
+                        @else
+                        <span style="display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .5rem;background:#fef3c7;color:#92400e;border-radius:.375rem;font-size:.6rem;font-weight:600">
+                            <svg style="width:10px;height:10px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Pending Approval
+                        </span>
+                        <span style="font-size:.58rem;color:#78716c">
+                            Punched by {{ $scanData->punched_by_name ?? 'N/A' }} on {{ $scanData->Punch_Date ? \Carbon\Carbon::parse($scanData->Punch_Date)->format('d M Y') : 'N/A' }}
+                        </span>
+                        @endif
+                    </div>
+                    @endif
                 </div>
                 <div style="display:flex;align-items:center;gap:.4rem">
                     @if(!$viewMode)
@@ -116,9 +153,9 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
                         <svg style="width:12px;height:12px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>History
                     </button>
                     @endif
-                    <a href="{{ route('workflow.punching.index') }}" class="btn-back">
+                    <button type="button" onclick="window.history.back()" class="btn-back" style="text-decoration:none">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -140,16 +177,26 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
         {{-- Footer Buttons --}}
         @if(!$viewMode)
         <div class="form-footer">
-            <a href="{{ route('workflow.punching.index') }}" class="btn-cancel btn-back">Cancel</a>
+            <button type="button" onclick="window.history.back()" class="btn-cancel btn-back" style="text-decoration:none">Cancel</button>
             <button type="button" id="btnDraft" class="btn-draft">Save Draft</button>
             <button type="button" id="btnSubmit" class="btn-submit">Final Submit</button>
         </div>
         @else
         <div class="form-footer">
-            <a href="{{ route('workflow.punching.index') }}" class="btn-back" style="margin-right:auto">
+            <button type="button" onclick="window.history.back()" class="btn-back" style="margin-right:auto;text-decoration:none">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Back to List
-            </a>
+            </button>
+            @if($canApprove)
+            <button type="button" id="btnReject" class="btn-reject" style="height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#dc2626;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem">
+                <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                Reject
+            </button>
+            <button type="button" id="btnApprove" class="btn-approve" style="height:34px;padding:0 1.25rem;font-size:.72rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem">
+                <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Approve
+            </button>
+            @endif
         </div>
         @endif
     </div>
@@ -157,6 +204,28 @@ textarea.f-input{height:60px;resize:vertical;padding:.4rem .5rem}
 
 {{-- History Offcanvas --}}
 <div id="historyOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9998" onclick="closeHistory()"></div>
+
+{{-- Approval/Rejection Modal --}}
+<div id="approvalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9998;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:.75rem;box-shadow:0 20px 60px rgba(0,0,0,.15);max-width:480px;width:90%;padding:1.5rem">
+        <h3 id="approvalModalTitle" style="font-size:.9rem;font-weight:700;color:#292524;margin:0 0 1rem">Approval Action</h3>
+        <div id="approvalAlertBox" style="display:none;padding:.5rem .75rem;border-radius:.5rem;font-size:.7rem;margin-bottom:.75rem"></div>
+        <div style="margin-bottom:1rem">
+            <label style="display:block;font-size:.7rem;font-weight:600;color:#44403c;margin-bottom:.35rem">Remark <span id="remarkRequired" style="color:#dc2626">*</span></label>
+            <textarea id="approvalRemark" rows="3" style="width:100%;padding:.5rem;font-size:.7rem;border:1px solid #d6d3d1;border-radius:.5rem;resize:vertical" placeholder="Enter remark..."></textarea>
+        </div>
+        <div id="editPermissionSection" style="margin-bottom:1rem;display:none">
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.7rem;color:#44403c;cursor:pointer">
+                <input type="checkbox" id="editPermissionCheck" style="cursor:pointer">
+                <span>Allow edit permission to puncher</span>
+            </label>
+        </div>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end">
+            <button type="button" id="approvalModalCancel" style="padding:.5rem 1.2rem;font-size:.7rem;font-weight:600;border:1px solid #d6d3d1;border-radius:.5rem;background:#fff;color:#57534e;cursor:pointer">Cancel</button>
+            <button type="button" id="approvalModalConfirm" style="padding:.5rem 1.2rem;font-size:.7rem;font-weight:600;border:none;border-radius:.5rem;background:#7f1d1d;color:#fff;cursor:pointer">Confirm</button>
+        </div>
+    </div>
+</div>
 
 {{-- Confirm Submit Modal --}}
 <div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9998;display:none;align-items:center;justify-content:center">
@@ -1948,6 +2017,100 @@ $(function(){
     $('#btnHistory').on('click', function(){
         openHistory();
     });
+
+    @if($viewMode && $canApprove)
+    // ========== Approve/Reject Actions ==========
+    let currentAction = null;
+    
+    $('#btnApprove').on('click', function(){
+        currentAction = 'approve';
+        $('#approvalModalTitle').text('Approve Scan').css('color', '#7f1d1d');
+        $('#remarkRequired').hide();
+        $('#editPermissionSection').hide();
+        $('#approvalRemark').attr('placeholder', 'Enter approval remark (optional)...');
+        $('#approvalModalConfirm').css('background', '#7f1d1d').text('Approve');
+        $('#approvalOverlay').css('display', 'flex');
+        $('#approvalRemark').val('').focus();
+    });
+
+    $('#btnReject').on('click', function(){
+        currentAction = 'reject';
+        $('#approvalModalTitle').text('Reject Scan').css('color', '#dc2626');
+        $('#remarkRequired').show();
+        $('#editPermissionSection').show();
+        $('#approvalRemark').attr('placeholder', 'Enter rejection reason (required)...');
+        $('#approvalModalConfirm').css('background', '#dc2626').text('Reject');
+        $('#approvalOverlay').css('display', 'flex');
+        $('#approvalRemark').val('').focus();
+        $('#editPermissionCheck').prop('checked', false);
+    });
+
+    $('#approvalModalCancel').on('click', function(){
+        $('#approvalOverlay').hide();
+        currentAction = null;
+    });
+
+    $('#approvalModalConfirm').on('click', function(){
+        const remark = $('#approvalRemark').val().trim();
+        const editPermission = $('#editPermissionCheck').is(':checked') ? 'Y' : 'N';
+        
+        // Validation: reject requires remark
+        if(currentAction === 'reject' && !remark){
+            showApprovalAlert('Rejection remark is required.', 'error');
+            return;
+        }
+
+        // Disable button and show spinner
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.prop('disabled', true).html('<span class="spinner"></span> Processing...');
+
+        const url = currentAction === 'approve' 
+            ? `/workflow/punch-approval/{{ $scanData->Scan_Id }}/approve`
+            : `/workflow/punch-approval/{{ $scanData->Scan_Id }}/reject`;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+            data: currentAction === 'approve' 
+                ? { remark: remark }
+                : { remark: remark, edit_permission: editPermission },
+            dataType: 'json'
+        }).done(function(res){
+            if(res.success){
+                showApprovalAlert(res.message, 'success');
+                // Set flag in sessionStorage to trigger refresh on previous page
+                sessionStorage.setItem('refreshPunchApproval', 'true');
+                console.log('Set refreshPunchApproval flag');
+                setTimeout(function(){
+                    window.history.back();
+                }, 1500);
+            } else {
+                showApprovalAlert(res.message || 'Operation failed.', 'error');
+                $btn.prop('disabled', false).text(originalText);
+            }
+        }).fail(function(xhr){
+            let msg = 'An error occurred. Please try again.';
+            if(xhr.responseJSON && xhr.responseJSON.message){
+                msg = xhr.responseJSON.message;
+            }
+            showApprovalAlert(msg, 'error');
+            $btn.prop('disabled', false).text(originalText);
+        });
+    });
+
+    function showApprovalAlert(message, type){
+        const $box = $('#approvalAlertBox');
+        $box.removeClass('alert-success alert-error');
+        if(type === 'success'){
+            $box.addClass('alert-success').css({background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0'});
+        } else {
+            $box.addClass('alert-error').css({background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca'});
+        }
+        $box.text(message).show();
+    }
+    @endif
 });
 
 function openHistory(){
