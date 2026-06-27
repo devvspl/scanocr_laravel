@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class MasterFile extends Model
 {
-    protected $table = 'master_department';
-    protected $primaryKey = 'department_id';
+    protected $table = 'master_file';
+    protected $primaryKey = 'file_id';
 
     protected $fillable = [
+        'file_name',
+        'file_code',
         'company_id',
-        'department_name',
-        'department_code',
         'status',
         'created_by',
         'updated_by',
@@ -46,6 +46,6 @@ class Department extends Model
 
     public function getRouteKeyName()
     {
-        return 'department_id';
+        return 'file_id';
     }
 }

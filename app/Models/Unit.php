@@ -4,19 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class Unit extends Model
 {
-    protected $table = 'master_department';
-    protected $primaryKey = 'department_id';
+    protected $table = 'master_unit';
+    protected $primaryKey = 'unit_id';
 
     protected $fillable = [
-        'company_id',
-        'department_name',
-        'department_code',
+        'unit_name',
+        'unit_code',
         'status',
+        'is_deleted',
         'created_by',
         'updated_by',
-        'is_deleted',
     ];
 
     protected $casts = [
@@ -27,11 +26,6 @@ class Department extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function company()
-    {
-        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function scopeActive($query)
@@ -46,6 +40,6 @@ class Department extends Model
 
     public function getRouteKeyName()
     {
-        return 'department_id';
+        return 'unit_id';
     }
 }

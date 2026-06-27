@@ -40,6 +40,14 @@ class MasterFirm extends Model
     public const CREATED_AT = 'created_at';
 
     /**
+     * Creator relationship
+     */
+    public function creator()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+    /**
      * Scope for active firms
      */
     public function scopeActive($query)
@@ -65,5 +73,10 @@ class MasterFirm extends Model
             return "{$this->firm_name} ({$this->firm_code})";
         }
         return $this->firm_name;
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'firm_id';
     }
 }

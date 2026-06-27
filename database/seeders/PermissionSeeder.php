@@ -111,6 +111,70 @@ class PermissionSeeder extends Seeder
                 'document-types.delete',                // destroy
             ],
 
+            // ── Master Data — Work Locations ──────────────────────────────
+            'Work Locations' => [
+                'work-locations.view',                  // index, data, show
+                'work-locations.create',                // store
+                'work-locations.edit',                  // update
+                'work-locations.delete',                // destroy
+            ],
+
+            // ── Master Data — Ledgers ─────────────────────────────────────
+            'Ledgers' => [
+                'ledgers.view',                         // index, data, show
+                'ledgers.create',                       // store
+                'ledgers.edit',                         // update
+                'ledgers.delete',                       // destroy
+            ],
+
+            // ── Master Data — Firms ───────────────────────────────────────
+            'Firms' => [
+                'firms.view',                           // index, data, show
+                'firms.create',                         // store
+                'firms.edit',                           // update
+                'firms.delete',                         // destroy
+            ],
+
+            // ── Master Data — Departments ─────────────────────────────────
+            'Departments' => [
+                'departments.view',                     // index, data, show
+                'departments.create',                   // store
+                'departments.edit',                     // update
+                'departments.delete',                   // destroy
+            ],
+
+            // ── Master Data — Files ───────────────────────────────────────
+            'Files' => [
+                'files.view',                           // index, data, show
+                'files.create',                         // store
+                'files.edit',                           // update
+                'files.delete',                         // destroy
+            ],
+
+            // ── Master Data — Units ───────────────────────────────────────
+            'Units' => [
+                'units.view',                           // index, data, show
+                'units.create',                         // store
+                'units.edit',                           // update
+                'units.delete',                         // destroy
+            ],
+
+            // ── Master Data — Hotels ──────────────────────────────────────
+            'Hotels' => [
+                'hotels.view',                          // index, data, show
+                'hotels.create',                        // store
+                'hotels.edit',                          // update
+                'hotels.delete',                        // destroy
+            ],
+
+            // ── Master Data — Items ───────────────────────────────────────
+            'Items' => [
+                'items.view',                           // index, data, show
+                'items.create',                         // store
+                'items.edit',                           // update
+                'items.delete',                         // destroy
+            ],
+
             // ── Ext Master — API Control ──────────────────────────────────
             'Ext API Control' => [
                 'ext-api-control.view',                 // index, data, show

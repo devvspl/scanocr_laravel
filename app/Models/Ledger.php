@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class Ledger extends Model
 {
-    protected $table = 'master_department';
-    protected $primaryKey = 'department_id';
+    protected $table = 'master_ledger';
+    protected $primaryKey = 'ledger_id';
 
     protected $fillable = [
-        'company_id',
-        'department_name',
-        'department_code',
+        'ledger_name',
+        'ledger_code',
+        'ledger_head',
         'status',
         'created_by',
         'updated_by',
@@ -29,11 +29,6 @@ class Department extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function company()
-    {
-        return $this->belongsTo(Company::class, 'company_id');
-    }
-
     public function scopeActive($query)
     {
         return $query->where('status', 'A')->where('is_deleted', 'N');
@@ -46,6 +41,6 @@ class Department extends Model
 
     public function getRouteKeyName()
     {
-        return 'department_id';
+        return 'ledger_id';
     }
 }

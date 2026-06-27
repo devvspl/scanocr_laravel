@@ -227,7 +227,7 @@ s2('#filterLocation',R.locations,'All Locations');
 const dt=$('#punchTable').DataTable({
     serverSide:true,processing:true,
     ajax:{url:R.data,type:'GET',data:d=>Object.assign(d,filters,{tab:currentTab})},
-    order:[[7,'desc']],pageLength:25,dom:'rtp',
+    order:[[7,'desc']],pageLength:10,dom:'rtp',
     columns:[
         {data:'DT_RowIndex',orderable:false,searchable:false,className:'text-center'},
         {data:'location_name',defaultContent:'—'},

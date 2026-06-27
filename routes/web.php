@@ -6,10 +6,16 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TokenLoginController;
 use App\Http\Controllers\Panel\CompanyController;
 use App\Http\Controllers\Panel\DashboardController;
+use App\Http\Controllers\Panel\DepartmentController;
 use App\Http\Controllers\Panel\DocumentTypeController;
+use App\Http\Controllers\Panel\FileController;
+use App\Http\Controllers\Panel\FirmController;
 use App\Http\Controllers\Panel\FinancialYearController;
 use App\Http\Controllers\Panel\GeneratorController;
+use App\Http\Controllers\Panel\HotelController;
 use App\Http\Controllers\Panel\ImportController;
+use App\Http\Controllers\Panel\ItemController;
+use App\Http\Controllers\Panel\LedgerController;
 use App\Http\Controllers\Panel\MasterController;
 use App\Http\Controllers\Panel\NumberingController;
 use App\Http\Controllers\Panel\PageBuilderController;
@@ -23,7 +29,9 @@ use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
+use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
+use App\Http\Controllers\Panel\WorkLocationController;
 use App\Http\Controllers\Workflow\BillApprovalController;
 use App\Http\Controllers\Workflow\ClassificationController;
 use App\Http\Controllers\Workflow\DirectScannerController;
@@ -182,6 +190,70 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings/document-types/{documentType}', [DocumentTypeController::class, 'show'])->name('settings.document-types.show');
     Route::put('/settings/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('settings.document-types.update');
     Route::delete('/settings/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('settings.document-types.destroy');
+
+    // Master Tables - Work Locations
+    Route::get('/settings/work-locations', [WorkLocationController::class, 'index'])->name('settings.work-locations');
+    Route::get('/settings/work-locations/data', [WorkLocationController::class, 'data'])->name('settings.work-locations.data');
+    Route::post('/settings/work-locations', [WorkLocationController::class, 'store'])->name('settings.work-locations.store');
+    Route::get('/settings/work-locations/{workLocation}', [WorkLocationController::class, 'show'])->name('settings.work-locations.show');
+    Route::put('/settings/work-locations/{workLocation}', [WorkLocationController::class, 'update'])->name('settings.work-locations.update');
+    Route::delete('/settings/work-locations/{workLocation}', [WorkLocationController::class, 'destroy'])->name('settings.work-locations.destroy');
+
+    // Master Tables - Ledgers
+    Route::get('/settings/ledgers', [LedgerController::class, 'index'])->name('settings.ledgers');
+    Route::get('/settings/ledgers/data', [LedgerController::class, 'data'])->name('settings.ledgers.data');
+    Route::post('/settings/ledgers', [LedgerController::class, 'store'])->name('settings.ledgers.store');
+    Route::get('/settings/ledgers/{ledger}', [LedgerController::class, 'show'])->name('settings.ledgers.show');
+    Route::put('/settings/ledgers/{ledger}', [LedgerController::class, 'update'])->name('settings.ledgers.update');
+    Route::delete('/settings/ledgers/{ledger}', [LedgerController::class, 'destroy'])->name('settings.ledgers.destroy');
+
+    // Master Tables - Firms
+    Route::get('/settings/firms', [FirmController::class, 'index'])->name('settings.firms');
+    Route::get('/settings/firms/data', [FirmController::class, 'data'])->name('settings.firms.data');
+    Route::post('/settings/firms', [FirmController::class, 'store'])->name('settings.firms.store');
+    Route::get('/settings/firms/{firm}', [FirmController::class, 'show'])->name('settings.firms.show');
+    Route::put('/settings/firms/{firm}', [FirmController::class, 'update'])->name('settings.firms.update');
+    Route::delete('/settings/firms/{firm}', [FirmController::class, 'destroy'])->name('settings.firms.destroy');
+
+    // Master Tables - Departments
+    Route::get('/settings/departments', [DepartmentController::class, 'index'])->name('settings.departments');
+    Route::get('/settings/departments/data', [DepartmentController::class, 'data'])->name('settings.departments.data');
+    Route::post('/settings/departments', [DepartmentController::class, 'store'])->name('settings.departments.store');
+    Route::get('/settings/departments/{department}', [DepartmentController::class, 'show'])->name('settings.departments.show');
+    Route::put('/settings/departments/{department}', [DepartmentController::class, 'update'])->name('settings.departments.update');
+    Route::delete('/settings/departments/{department}', [DepartmentController::class, 'destroy'])->name('settings.departments.destroy');
+
+    // Master Tables - Files
+    Route::get('/settings/files', [FileController::class, 'index'])->name('settings.files');
+    Route::get('/settings/files/data', [FileController::class, 'data'])->name('settings.files.data');
+    Route::post('/settings/files', [FileController::class, 'store'])->name('settings.files.store');
+    Route::get('/settings/files/{file}', [FileController::class, 'show'])->name('settings.files.show');
+    Route::put('/settings/files/{file}', [FileController::class, 'update'])->name('settings.files.update');
+    Route::delete('/settings/files/{file}', [FileController::class, 'destroy'])->name('settings.files.destroy');
+
+    // Master Tables - Units
+    Route::get('/settings/units', [UnitController::class, 'index'])->name('settings.units');
+    Route::get('/settings/units/data', [UnitController::class, 'data'])->name('settings.units.data');
+    Route::post('/settings/units', [UnitController::class, 'store'])->name('settings.units.store');
+    Route::get('/settings/units/{unit}', [UnitController::class, 'show'])->name('settings.units.show');
+    Route::put('/settings/units/{unit}', [UnitController::class, 'update'])->name('settings.units.update');
+    Route::delete('/settings/units/{unit}', [UnitController::class, 'destroy'])->name('settings.units.destroy');
+
+    // Master Tables - Hotels
+    Route::get('/settings/hotels', [HotelController::class, 'index'])->name('settings.hotels');
+    Route::get('/settings/hotels/data', [HotelController::class, 'data'])->name('settings.hotels.data');
+    Route::post('/settings/hotels', [HotelController::class, 'store'])->name('settings.hotels.store');
+    Route::get('/settings/hotels/{hotel}', [HotelController::class, 'show'])->name('settings.hotels.show');
+    Route::put('/settings/hotels/{hotel}', [HotelController::class, 'update'])->name('settings.hotels.update');
+    Route::delete('/settings/hotels/{hotel}', [HotelController::class, 'destroy'])->name('settings.hotels.destroy');
+
+    // Master Tables - Items
+    Route::get('/settings/items', [ItemController::class, 'index'])->name('settings.items');
+    Route::get('/settings/items/data', [ItemController::class, 'data'])->name('settings.items.data');
+    Route::post('/settings/items', [ItemController::class, 'store'])->name('settings.items.store');
+    Route::get('/settings/items/{item}', [ItemController::class, 'show'])->name('settings.items.show');
+    Route::put('/settings/items/{item}', [ItemController::class, 'update'])->name('settings.items.update');
+    Route::delete('/settings/items/{item}', [ItemController::class, 'destroy'])->name('settings.items.destroy');
 
     // Ext Master — API Control
     Route::get('/settings/ext-api-control', [ExtMasterController::class, 'apiIndex'])->name('settings.ext-api-control');

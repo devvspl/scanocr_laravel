@@ -282,7 +282,7 @@ s2('#filterScannedBy',R.users,'All Scanned By');
 const dt=$('#billTable').DataTable({
     serverSide:true,processing:true,
     ajax:{url:R.data,type:'GET',data:d=>Object.assign(d,filters,{tab:currentTab})},
-    order:[[5,'desc']],pageLength:25,dom:'rtp',
+    order:[[5,'desc']],pageLength:10,dom:'rtp',
     columns:[
         {data:'DT_RowIndex',orderable:false,searchable:false,className:'text-center'},
         {data:'company_name',defaultContent:'—'},
