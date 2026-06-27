@@ -1361,7 +1361,7 @@
                     data: d => Object.assign(d, scansFilters, { tab: currentFilter || 'all' }),
                 },
                 order: [[3, 'desc']],
-                pageLength: 25,
+                pageLength: 10,
                 dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
@@ -1438,7 +1438,7 @@
                     data: d => Object.assign(d, pnFilters),
                 },
                 order: [[3, 'desc']],
-                pageLength: 25,
+                pageLength: 10,
                 dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
@@ -1496,7 +1496,7 @@
                     data: d => Object.assign(d, pvFilters),
                 },
                 order: [[4, 'desc']],
-                pageLength: 25,
+                pageLength: 10,
                 dom: 'rtp',
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },

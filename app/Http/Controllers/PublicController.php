@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ScanActionLog;
 use Illuminate\Http\Request;
 
 class PublicController extends Controller
@@ -40,6 +41,8 @@ class PublicController extends Controller
         foreach ($items as $queue) {
             $endpoint = null; $fileUrl = null; $responseCode = null; $message = null; $status = 'started';
 
+            ScanActionLog::log($queue->scan_id, 'extraction_started', 'Extraction Started');
+
             try {
                 $endpoint = $service->getApiEndpoint($queue->type_id);
                 if (!$endpoint) throw new \Exception('API endpoint not found.');
@@ -57,10 +60,14 @@ class PublicController extends Controller
 
                 $service->updateQueueStatus($queue->id, 'completed');
                 $status = 'success'; $message = 'Processed successfully'; $successCount++;
+
+                ScanActionLog::log($queue->scan_id, 'extraction_completed', 'Extraction Completed');
             } catch (\Exception $e) {
                 $service->updateQueueStatus($queue->id, 'failed');
                 $status = 'failed'; $message = $e->getMessage(); $failCount++;
                 $errors[] = "ID {$queue->id}: " . $e->getMessage();
+
+                ScanActionLog::log($queue->scan_id, 'extraction_failed', 'Extraction Failed', $e->getMessage());
             }
 
             $service->logQueueProcess([

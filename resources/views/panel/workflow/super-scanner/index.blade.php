@@ -315,7 +315,7 @@ const dt = $('#summaryTable').DataTable({
         data: d => Object.assign(d, currentFilters),
     },
     order: [[1, 'asc']],
-    pageLength: 25,
+    pageLength: 10,
     dom: 'rtp',
     columns: [
         { data: 'DT_RowIndex',   orderable: false, searchable: false, className: 'text-center', width: '40px' },

@@ -229,7 +229,7 @@
                 },
             },
         ],
-        order: [[1, 'asc']], pageLength: 25, pagingType: 'simple_numbers',
+        order: [[1, 'asc']], pageLength: 10, pagingType: 'simple_numbers',
         dom: '<"top"lf>t<"bottom"ip>',
         columnDefs: [
             { targets: 0, width: '36px' }, { targets: 1, width: '46px' },
@@ -540,7 +540,7 @@
                     serverSide: true, processing: true, destroy: true,
                     ajax: { url: '{{ route("settings.core-api-sync.modal-data") }}', type: 'GET', data: { table_name: tbl } },
                     columns: cols.map(c => ({ data: null, orderable: true, render: row => `<span class="whitespace-nowrap">${escHtml(row[c] ?? '')}</span>` })),
-                    order: [[0, 'asc']], pageLength: 25, pagingType: 'simple_numbers',
+                    order: [[0, 'asc']], pageLength: 10, pagingType: 'simple_numbers',
                     dom: '<"top"lf>t<"bottom"ip>',
                     language: { emptyTable: '<div class="py-8 text-center text-sm text-stone-400">No rows in this table.</div>', processing: '<div class="py-4 text-center text-xs text-stone-400">Loading…</div>' },
                 });

@@ -243,7 +243,7 @@ function ledgersPage() {
                         }
                     },
                 ],
-                order: [[0, 'asc']], pageLength: 25, pagingType: 'simple_numbers',
+                order: [[0, 'asc']], pageLength: 10, pagingType: 'simple_numbers',
                 dom: '<"top"lf>t<"bottom"ip>',
                 language: {
                     emptyTable: '<div class="py-12 text-center text-sm text-stone-400">No ledgers found</div>',
