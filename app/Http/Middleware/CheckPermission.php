@@ -249,6 +249,16 @@ class CheckPermission
         'settings.items.show',
         'settings.items.update',
         'settings.items.destroy',
+        // Reports
+        'reports',
+        'reports.generate',
+        'reports.export-logs',
+        'reports.select.companies',
+        'reports.select.locations',
+        'reports.select.doc-types',
+        'reports.select.vendors',
+        'reports.select.users',
+        'reports.select.financial-years',
     ];
 
     // Explicit route → permission map (checked before derive()).

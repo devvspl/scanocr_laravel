@@ -6,6 +6,7 @@ use App\Helpers\BillDateValidator;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\FinancialYear;
+use App\Models\ScanActionLog;
 use App\Models\Location;
 use App\Models\User;
 use App\Models\ScanFile;
@@ -312,6 +313,8 @@ class SuperScannerController extends Controller
             'Temp_Scan_Date'      => now(),
         ]);
 
+        ScanActionLog::log($scan->Scan_Id, 'super_scan_uploaded', 'Super Scanner Upload');
+
         return response()->json([
             'success' => true,
             'scan'    => [
@@ -360,6 +363,8 @@ class SuperScannerController extends Controller
                 'document_received_date' => $documentReceivedDate,
             ]);
 
+        ScanActionLog::log($scanId, 'document_verified', 'Document Verified');
+
         return response()->json(['success' => true, 'message' => 'Document verified successfully.']);
     }
 
@@ -396,6 +401,8 @@ class SuperScannerController extends Controller
                 'Scan_Complete'      => 'Y',
             ]);
 
+        ScanActionLog::log($request->input('scan_id'), 'document_named', 'Document Named & Approved');
+
         return response()->json(['success' => true, 'message' => 'Document named and approved successfully.']);
     }
 
@@ -427,6 +434,8 @@ class SuperScannerController extends Controller
                 'temp_scan_reject_by'     => Auth::id(),
                 'temp_scan_reject_date'   => now()->toDateString(),
             ]);
+
+        ScanActionLog::log($request->input('scan_id'), 'naming_rejected', 'Naming Rejected', $request->input('reason'));
 
         return response()->json(['success' => true, 'message' => 'Scan rejected.']);
     }

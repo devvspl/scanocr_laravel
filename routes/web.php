@@ -29,6 +29,7 @@ use App\Http\Controllers\Panel\ScanFileBillDateSyncController;
 use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
+use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WorkLocationController;
@@ -190,6 +191,17 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::get('/settings/document-types/{documentType}', [DocumentTypeController::class, 'show'])->name('settings.document-types.show');
     Route::put('/settings/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('settings.document-types.update');
     Route::delete('/settings/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('settings.document-types.destroy');
+
+    // Reports
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    Route::get('/reports/export-logs', [ReportController::class, 'exportLogs'])->name('reports.export-logs');
+    Route::get('/reports/select/companies', [ReportController::class, 'companiesSelect'])->name('reports.select.companies');
+    Route::get('/reports/select/locations', [ReportController::class, 'locationsSelect'])->name('reports.select.locations');
+    Route::get('/reports/select/doc-types', [ReportController::class, 'docTypesSelect'])->name('reports.select.doc-types');
+    Route::get('/reports/select/vendors', [ReportController::class, 'vendorsSelect'])->name('reports.select.vendors');
+    Route::get('/reports/select/users', [ReportController::class, 'usersSelect'])->name('reports.select.users');
+    Route::get('/reports/select/financial-years', [ReportController::class, 'financialYearsSelect'])->name('reports.select.financial-years');
 
     // Master Tables - Work Locations
     Route::get('/settings/work-locations', [WorkLocationController::class, 'index'])->name('settings.work-locations');

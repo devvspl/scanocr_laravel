@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Workflow;
 
 use App\Helpers\BillDateValidator;
 use App\Http\Controllers\Controller;
+use App\Models\ScanActionLog;
 use App\Models\ScanFile;
 use App\Models\User;
 use App\Models\Location;
@@ -348,6 +349,8 @@ class DirectScannerController extends Controller
             'Scan_Date'          => now(),
         ]);
 
+        ScanActionLog::log($scan->Scan_Id, 'direct_scan_uploaded', 'Direct Scan Uploaded');
+
         return response()->json([
             'success' => true,
             'scan'    => [
@@ -414,6 +417,7 @@ class DirectScannerController extends Controller
     {
         $this->authorizeOwner($scan);
         $scan->update(['Final_Submit' => 'Y']);
+        ScanActionLog::log($scan->Scan_Id, 'final_submitted', 'Final Submitted');
         return response()->json(['success' => true]);
     }
 
@@ -431,6 +435,7 @@ class DirectScannerController extends Controller
         }
 
         $scan->update($updates);
+        ScanActionLog::log($scan->Scan_Id, 'resubmitted', 'Resubmitted for Approval');
         return response()->json(['success' => true, 'message' => 'Scan resubmitted for approval']);
     }
 
@@ -445,6 +450,7 @@ class DirectScannerController extends Controller
             DB::table('support_file')->where('Scan_Id', $scan->Scan_Id)->delete();
             $scan->update(['Is_Deleted' => 'Y', 'Delete_Date' => now(), 'Deleted_By' => Auth::id()]);
         });
+        ScanActionLog::log($scan->Scan_Id, 'scan_deleted', 'Scan Deleted');
 
         return response()->json(['success' => true]);
     }

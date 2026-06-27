@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workflow;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\FinancialYear;
+use App\Models\ScanActionLog;
 use App\Models\RejectionReason;
 use App\Models\ScanFile;
 use App\Services\UserAccessService;
@@ -291,6 +292,8 @@ class BillApprovalController extends Controller
             'Bill_Approver_Remark' => $request->input('remark', null),
         ]);
 
+        ScanActionLog::log($scan->Scan_Id, 'bill_approved', 'Bill Approved', $request->input('remark'));
+
         return response()->json(['success' => true, 'message' => 'Bill approved successfully.']);
     }
 
@@ -308,6 +311,8 @@ class BillApprovalController extends Controller
             'Bill_Approver_Date'      => now()->toDateString(),
             'Bill_Approver_Remark'    => $request->input('reason'),
         ]);
+
+        ScanActionLog::log($scan->Scan_Id, 'bill_rejected', 'Bill Rejected', $request->input('reason'));
 
         return response()->json(['success' => true, 'message' => 'Bill rejected.']);
     }

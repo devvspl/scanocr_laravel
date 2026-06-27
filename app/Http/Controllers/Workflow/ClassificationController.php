@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workflow;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\DocumentType;
+use App\Models\ScanActionLog;
 use App\Models\FinancialYear;
 use App\Models\QueueItem;
 use App\Services\UserAccessService;
@@ -199,6 +200,8 @@ class ClassificationController extends Controller
                 'classified_by'    => Auth::id(),
                 'classified_date'  => now(),
             ]);
+
+        ScanActionLog::log($scanId, 'classified', 'Document Classified', null, ['doc_type' => $doctype->label ?? $doctype->key]);
 
         return response()->json(['success' => true, 'message' => 'Document classified successfully.']);
     }

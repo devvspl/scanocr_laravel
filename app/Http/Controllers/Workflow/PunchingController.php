@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workflow;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\FinancialYear;
+use App\Models\ScanActionLog;
 use App\Models\ScanFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -251,6 +252,8 @@ class PunchingController extends Controller
             'Punch_By'     => Auth::id(),
             'Punch_Date'   => now(),
         ]);
+
+        ScanActionLog::log($scan->Scan_Id, 'marked_punched', 'Marked as Punched');
 
         return response()->json(['success' => true, 'message' => 'Marked as punched.']);
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Models\ScanActionLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -363,9 +364,20 @@ class PunchingEntryController extends Controller
         $method  = 'save' . str_replace('-', '', ucwords($formKey, '-'));
 
         if (method_exists($this, $method)) {
-            return $this->$method($request, $scanId, $scanRecord, $isFinal);
+            $response = $this->$method($request, $scanId, $scanRecord, $isFinal);
+        } else {
+            $response = $this->saveInvoice($request, $scanId, $scanRecord, $isFinal);
         }
-        return $this->saveInvoice($request, $scanId, $scanRecord, $isFinal);
+
+        // Log the action if save was successful
+        $responseData = json_decode($response->getContent(), true);
+        if (!empty($responseData['success'])) {
+            $action = $isFinal ? 'punch_submitted' : 'punch_draft_saved';
+            $label  = $isFinal ? 'Punch Data Submitted' : 'Punch Draft Saved';
+            ScanActionLog::log($scanId, $action, $label, null, ['doc_type' => $formKey]);
+        }
+
+        return $response;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

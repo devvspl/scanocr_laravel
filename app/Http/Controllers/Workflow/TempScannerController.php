@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Workflow;
 
 use App\Helpers\BillDateValidator;
 use App\Http\Controllers\Controller;
+use App\Models\ScanActionLog;
 use App\Models\ScanFile;
 use App\Models\User;
 use App\Models\Location;
@@ -325,6 +326,8 @@ class TempScannerController extends Controller
             'Temp_Scan_Date'    => now(),
         ]);
 
+        ScanActionLog::log($scan->Scan_Id, 'temp_scan_uploaded', 'Temp Scan Uploaded');
+
         return response()->json([
             'success' => true,
             'scan' => [
@@ -393,6 +396,7 @@ class TempScannerController extends Controller
     {
         $this->authorizeOwner($scan);
         $scan->update(['Final_Submit' => 'Y']);
+        ScanActionLog::log($scan->Scan_Id, 'final_submitted', 'Final Submitted');
         return response()->json(['success' => true]);
     }
 
@@ -413,6 +417,7 @@ class TempScannerController extends Controller
             $updates['Bill_Approver'] = $request->input('bill_approver');
         }
         $scan->update($updates);
+        ScanActionLog::log($scan->Scan_Id, 'resubmitted', 'Resubmitted for Approval');
         return response()->json(['success' => true, 'message' => 'Scan resubmitted for approval']);
     }
 
@@ -430,6 +435,7 @@ class TempScannerController extends Controller
                 'Deleted_By' => Auth::id(),
             ]);
         });
+        ScanActionLog::log($scan->Scan_Id, 'scan_deleted', 'Scan Deleted');
 
         return response()->json(['success' => true]);
     }

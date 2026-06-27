@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Models\ScanActionLog;
 use App\Models\ScanFile;
 use App\Services\UserAccessService;
 use Illuminate\Http\Request;
@@ -355,6 +356,8 @@ class PunchApprovalController extends Controller
         // Sync to secondary DB
         app(\App\Http\Controllers\AgrisoftController::class)->sendForAccounting($scan->Scan_Id);
 
+        ScanActionLog::log($scan->Scan_Id, 'punch_approved', 'Punch Approved', $request->input('remark'));
+
         return response()->json(['success' => true, 'message' => 'File Approved Successfully.']);
     }
 
@@ -378,6 +381,7 @@ class PunchApprovalController extends Controller
         $this->clearPunchApprovalCache($userId);
 
         if ($result) {
+            ScanActionLog::log($scan->Scan_Id, 'punch_rejected', 'Punch Rejected', $request->input('remark'));
             return response()->json(['success' => true,  'message' => 'File Rejected Successfully.']);
         }
 
