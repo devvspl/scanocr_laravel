@@ -130,34 +130,21 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
-  // ── Filters ────────────────────────────────────────────────────────────────
+  // ── Filters (paginated + searchable) ────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> filterCompanies() async {
-    final res = await http.get(Uri.parse('${AppConfig.baseUrl}/filters/companies'), headers: await _headers());
+  static Future<Map<String, dynamic>> fetchFilterData(String endpoint, {String q = '', int page = 1}) async {
+    final params = <String, String>{
+      'page': page.toString(),
+      if (q.isNotEmpty) 'q': q,
+    };
+    final uri = Uri.parse('${AppConfig.baseUrl}/filters/$endpoint').replace(queryParameters: params);
+    final res = await http.get(uri, headers: await _headers());
     if (res.statusCode == 401) throw AuthException();
     final data = jsonDecode(res.body);
-    return List<Map<String, dynamic>>.from(data['data'] ?? []);
-  }
-
-  static Future<List<Map<String, dynamic>>> filterLocations() async {
-    final res = await http.get(Uri.parse('${AppConfig.baseUrl}/filters/locations'), headers: await _headers());
-    if (res.statusCode == 401) throw AuthException();
-    final data = jsonDecode(res.body);
-    return List<Map<String, dynamic>>.from(data['data'] ?? []);
-  }
-
-  static Future<List<Map<String, dynamic>>> filterFinancialYears() async {
-    final res = await http.get(Uri.parse('${AppConfig.baseUrl}/filters/financial-years'), headers: await _headers());
-    if (res.statusCode == 401) throw AuthException();
-    final data = jsonDecode(res.body);
-    return List<Map<String, dynamic>>.from(data['data'] ?? []);
-  }
-
-  static Future<List<Map<String, dynamic>>> filterUsers() async {
-    final res = await http.get(Uri.parse('${AppConfig.baseUrl}/filters/users'), headers: await _headers());
-    if (res.statusCode == 401) throw AuthException();
-    final data = jsonDecode(res.body);
-    return List<Map<String, dynamic>>.from(data['data'] ?? []);
+    return {
+      'items': List<Map<String, dynamic>>.from(data['data'] ?? []),
+      'has_more': data['has_more'] ?? false,
+    };
   }
 
   // ── FCM ───────────────────────────────────────────────────────────────────

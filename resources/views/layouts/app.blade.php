@@ -469,10 +469,14 @@
                     </div>
                 </div>
 
-                {{-- Company & FY Switcher --}}
+                {{-- Company & FY Switcher (only for roles that work within a company context) --}}
                 @php
                     $__user        = auth()->user();
                     $__isSuperAdmin = $__user?->hasRole('Super Admin') ?? false;
+
+                    // Roles that need company/FY context switching
+                    $__switcherRoles = ['Temp Scanning', 'Super Scanner', 'Direct Scanning', 'Data Punching', 'Classification'];
+                    $__showSwitcher = $__user && $__user->roles->pluck('name')->intersect($__switcherRoles)->isNotEmpty();
 
                     $__companies   = $__user
                         ? \App\Services\UserAccessService::allowedCompanies($__user->id, $__isSuperAdmin)
@@ -483,6 +487,7 @@
                     $__currentFy      = \App\Models\FinancialYear::getCurrent();
                     $__fys            = \App\Models\FinancialYear::orderByDesc('start_date')->get(['id', 'label', 'is_current']);
                 @endphp
+                @if($__showSwitcher)
                 <div x-data="{ cfOpen: false }" class="relative">
                     <button @click="cfOpen = !cfOpen" @click.outside="cfOpen = false"
                         class="flex items-center gap-1.5 h-8 px-2.5 text-xs border border-stone-200 rounded-lg bg-white hover:bg-stone-50 transition-colors">
@@ -521,6 +526,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'Admin') }}&background=7f1d1d&color=fca5a5&size=80"
                     alt="Avatar"

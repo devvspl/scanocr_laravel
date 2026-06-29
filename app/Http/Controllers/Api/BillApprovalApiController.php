@@ -77,9 +77,9 @@ class BillApprovalApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'pending'  => (clone $base)->where('Bill_Approved', 'N')->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))->count(),
+                'pending'  => (clone $base)->where('Bill_Approved', 'N')->count(),
                 'approved' => (clone $base)->where('Bill_Approved', 'Y')->count(),
-                'rejected' => (clone $base)->where(fn($q) => $q->where('Bill_Approved', 'R')->orWhere('temp_scan_reject', 'Y'))->count(),
+                'rejected' => (clone $base)->where('Bill_Approved', 'R')->count(),
                 'all'      => (clone $base)->count(),
             ],
         ]);
@@ -115,9 +115,9 @@ class BillApprovalApiController extends Controller
 
         // Tab filter
         match ($tab) {
-            'pending'  => $query->where('s.Bill_Approved', 'N')->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N')),
+            'pending'  => $query->where('s.Bill_Approved', 'N'),
             'approved' => $query->where('s.Bill_Approved', 'Y'),
-            'rejected' => $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')->orWhere('s.temp_scan_reject', 'Y')),
+            'rejected' => $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')),
             default    => null,
         };
 
@@ -136,7 +136,7 @@ class BillApprovalApiController extends Controller
         $rows = $query->select([
                 's.Scan_Id', 's.Document_name', 's.File', 's.File_Location', 's.File_Ext',
                 's.bill_voucher_date', 's.bill_no_voucher_no', 's.Bill_Approved',
-                's.Bill_Approver_Date', 's.Bill_Approver_Remark', 's.temp_scan_reject',
+                's.Bill_Approver_Date', 's.Bill_Approver_Remark',
                 'c.name as company_name', 'l.location_name',
                 'mf.firm_name as vendor_name',
                 'u.name as scanned_by',
@@ -307,47 +307,87 @@ class BillApprovalApiController extends Controller
 
     // ── Filter Data Endpoints ────────────────────────────────────────────────
 
-    public function filterCompanies()
+    public function filterCompanies(Request $request)
     {
         $allowedIds = $this->allowedCompanyIds();
-        $companies  = DB::table('companies')
+        $q    = $request->input('q', '');
+        $page = max(1, (int) $request->input('page', 1));
+        $per  = 20;
+
+        $query = DB::table('companies')
             ->whereIn('id', $allowedIds)
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+            ->orderBy('name');
 
-        return response()->json(['success' => true, 'data' => $companies]);
+        if ($q !== '') $query->where('name', 'like', "%{$q}%");
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['id', 'name']);
+
+        return response()->json(['success' => true, 'data' => $results, 'has_more' => ($page * $per) < $total]);
     }
 
-    public function filterLocations()
+    public function filterLocations(Request $request)
     {
-        $locations = DB::table('master_work_location')
+        $q    = $request->input('q', '');
+        $page = max(1, (int) $request->input('page', 1));
+        $per  = 20;
+
+        $query = DB::table('master_work_location')
             ->where('status', 'A')
             ->where('is_deleted', 'N')
-            ->orderBy('location_name')
-            ->get(['location_id as id', 'location_name as name']);
+            ->orderBy('location_name');
 
-        return response()->json(['success' => true, 'data' => $locations]);
+        if ($q !== '') $query->where(fn($qb) => $qb->where('location_name', 'like', "%{$q}%")->orWhere('location_code', 'like', "%{$q}%"));
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['location_id as id', 'location_name as name']);
+
+        return response()->json(['success' => true, 'data' => $results, 'has_more' => ($page * $per) < $total]);
     }
 
-    public function filterFinancialYears()
+    public function filterFinancialYears(Request $request)
     {
-        $fys = DB::table('financial_years')
-            ->orderByDesc('start_date')
-            ->get(['id', 'label as name', 'is_current']);
+        $q    = $request->input('q', '');
+        $page = max(1, (int) $request->input('page', 1));
+        $per  = 20;
 
-        return response()->json(['success' => true, 'data' => $fys]);
+        $query = DB::table('financial_years')->orderByDesc('start_date');
+        if ($q !== '') $query->where('label', 'like', "%{$q}%");
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['id', 'label as name', 'is_current']);
+
+        return response()->json(['success' => true, 'data' => $results, 'has_more' => ($page * $per) < $total]);
     }
 
-    public function filterUsers()
+    public function filterUsers(Request $request)
     {
-        $users = DB::table('users')
-            ->where('is_active', true)
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $userId     = Auth::id();
+        $allowedIds = $this->allowedCompanyIds();
+        $q    = $request->input('q', '');
+        $page = max(1, (int) $request->input('page', 1));
+        $per  = 20;
 
-        return response()->json(['success' => true, 'data' => $users]);
+        $subQuery = DB::table('scan_file')
+            ->whereIn('Group_Id', $allowedIds)
+            ->where('Bill_Approver', $userId)
+            ->where('Is_Deleted', 'N')
+            ->where('Final_Submit', 'Y')
+            ->selectRaw("DISTINCT IF(Temp_Scan = 'Y', Temp_Scan_By, Scan_By) as scanner_id")
+            ->whereRaw("IF(Temp_Scan = 'Y', Temp_Scan_By, Scan_By) IS NOT NULL");
+
+        $query = DB::table('users')
+            ->joinSub($subQuery, 'scanners', fn($j) => $j->on('users.id', '=', 'scanners.scanner_id'))
+            ->where('users.is_active', true)
+            ->orderBy('users.name');
+
+        if ($q !== '') $query->where('users.name', 'like', "%{$q}%");
+
+        $total   = $query->count();
+        $results = $query->offset(($page - 1) * $per)->limit($per)->get(['users.id', 'users.name']);
+
+        return response()->json(['success' => true, 'data' => $results, 'has_more' => ($page * $per) < $total]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -373,7 +413,7 @@ class BillApprovalApiController extends Controller
 
     private function resolveStatus($row): string
     {
-        if (($row->temp_scan_reject ?? null) === 'Y' || $row->Bill_Approved === 'R') return 'rejected';
+        if ($row->Bill_Approved === 'R') return 'rejected';
         if ($row->Bill_Approved === 'Y') return 'approved';
         return 'pending';
     }

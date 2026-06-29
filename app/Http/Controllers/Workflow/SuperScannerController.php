@@ -532,20 +532,27 @@ class SuperScannerController extends Controller
         $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
         $companyIds   = $companies->pluck('id')->toArray();
 
-        $fyId     = FinancialYear::currentId();
+        // Filter: specific company or all
+        if ($request->filled('company_id') && in_array((int)$request->input('company_id'), $companyIds, true)) {
+            $companyIds = [(int)$request->input('company_id')];
+        }
+
+        $fyId     = $request->filled('fy_id') ? $request->input('fy_id') : FinancialYear::currentId();
         $fromDate = $request->input('from_date');
         $toDate   = $request->input('to_date');
+        $locationId = $request->input('location_id');
 
         $rows = DB::table('companies as c')
             ->whereIn('c.id', $companyIds)
             ->where('c.is_active', true)
-            ->leftJoin('scan_file as s', function ($join) use ($fyId, $fromDate, $toDate) {
+            ->leftJoin('scan_file as s', function ($join) use ($fyId, $fromDate, $toDate, $locationId) {
                 $join->on('s.Group_Id', '=', 'c.id')
                      ->where('s.Temp_Scan', '=', 'Y')
                      ->where('s.Is_Deleted', '=', 'N')
-                     ->when($fyId,     fn($j) => $j->where('s.year_id', $fyId))
-                     ->when($fromDate, fn($j) => $j->whereDate('s.Temp_Scan_Date', '>=', $fromDate))
-                     ->when($toDate,   fn($j) => $j->whereDate('s.Temp_Scan_Date', '<=', $toDate));
+                     ->when($fyId,       fn($j) => $j->where('s.year_id', $fyId))
+                     ->when($fromDate,   fn($j) => $j->whereDate('s.Temp_Scan_Date', '>=', $fromDate))
+                     ->when($toDate,     fn($j) => $j->whereDate('s.Temp_Scan_Date', '<=', $toDate))
+                     ->when($locationId, fn($j) => $j->where('s.Location', $locationId));
             })
             ->select([
                 'c.id   as company_id',
@@ -575,17 +582,23 @@ class SuperScannerController extends Controller
         $companies    = UserAccessService::allowedCompanies($user->id, $isSuperAdmin);
         $companyIds   = $companies->pluck('id')->toArray();
 
-        $fyId     = FinancialYear::currentId();
+        if ($request->filled('company_id') && in_array((int)$request->input('company_id'), $companyIds, true)) {
+            $companyIds = [(int)$request->input('company_id')];
+        }
+
+        $fyId     = $request->filled('fy_id') ? $request->input('fy_id') : FinancialYear::currentId();
         $fromDate = $request->input('from_date');
         $toDate   = $request->input('to_date');
+        $locationId = $request->input('location_id');
 
         $q = DB::table('scan_file')
             ->whereIn('Group_Id', $companyIds)
             ->where('Temp_Scan', 'Y')
             ->where('Is_Deleted', 'N')
-            ->when($fyId,     fn($q) => $q->where('year_id', $fyId))
-            ->when($fromDate, fn($q) => $q->whereDate('Temp_Scan_Date', '>=', $fromDate))
-            ->when($toDate,   fn($q) => $q->whereDate('Temp_Scan_Date', '<=', $toDate));
+            ->when($fyId,       fn($q) => $q->where('year_id', $fyId))
+            ->when($fromDate,   fn($q) => $q->whereDate('Temp_Scan_Date', '>=', $fromDate))
+            ->when($toDate,     fn($q) => $q->whereDate('Temp_Scan_Date', '<=', $toDate))
+            ->when($locationId, fn($q) => $q->where('Location', $locationId));
 
         return response()->json([
             'total_scan'           => (clone $q)->count(),

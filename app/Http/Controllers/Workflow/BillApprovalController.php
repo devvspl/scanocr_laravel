@@ -65,14 +65,13 @@ class BillApprovalController extends Controller
         $tab = $request->input('tab', 'pending');
         switch ($tab) {
             case 'pending':
-                $query->where('s.Bill_Approved', 'N')
-                      ->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
+                $query->where('s.Bill_Approved', 'N');
                 break;
             case 'approved':
                 $query->where('s.Bill_Approved', 'Y');
                 break;
             case 'rejected':
-                $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')->orWhere('s.temp_scan_reject', 'Y'));
+                $query->where('s.Bill_Approved', 'R');
                 break;
         }
 
@@ -145,9 +144,9 @@ class BillApprovalController extends Controller
 
         return response()->json([
             'all'      => (clone $base)->count(),
-            'pending'  => (clone $base)->where('Bill_Approved', 'N')->where(fn($q) => $q->whereNull('temp_scan_reject')->orWhere('temp_scan_reject', 'N'))->count(),
+            'pending'  => (clone $base)->where('Bill_Approved', 'N')->count(),
             'approved' => (clone $base)->where('Bill_Approved', 'Y')->count(),
-            'rejected' => (clone $base)->where(fn($q) => $q->where('Bill_Approved', 'R')->orWhere('temp_scan_reject', 'Y'))->count(),
+            'rejected' => (clone $base)->where('Bill_Approved', 'R')->count(),
         ]);
     }
 
@@ -470,13 +469,13 @@ class BillApprovalController extends Controller
         $tab = $request->input('tab', 'all');
         switch ($tab) {
             case 'pending':
-                $query->where('s.Bill_Approved', 'N')->where(fn($q) => $q->whereNull('s.temp_scan_reject')->orWhere('s.temp_scan_reject', 'N'));
+                $query->where('s.Bill_Approved', 'N');
                 break;
             case 'approved':
                 $query->where('s.Bill_Approved', 'Y');
                 break;
             case 'rejected':
-                $query->where(fn($q) => $q->where('s.Bill_Approved', 'R')->orWhere('s.temp_scan_reject', 'Y'));
+                $query->where('s.Bill_Approved', 'R');
                 break;
         }
 

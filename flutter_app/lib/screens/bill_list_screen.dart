@@ -5,6 +5,7 @@ import '../config/app_config.dart';
 import '../models/bill_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/searchable_select.dart';
 import 'bill_detail_screen.dart';
 
 class BillListScreen extends StatefulWidget {
@@ -31,16 +32,17 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
   String _userName = '';
 
   // Filter data from API
-  List<Map<String, dynamic>> _companies = [];
-  List<Map<String, dynamic>> _locations = [];
-  List<Map<String, dynamic>> _financialYears = [];
-  List<Map<String, dynamic>> _users = [];
+  // (no longer pre-loaded — fetched on demand via SearchableSelect)
 
   // Selected filter values
   String? _selCompany;
+  String? _selCompanyName;
   String? _selLocation;
+  String? _selLocationName;
   String? _selFy;
+  String? _selFyName;
   String? _selUser;
+  String? _selUserName;
   String? _selFromDate;
   String? _selToDate;
 
@@ -56,9 +58,13 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
       }
     });
     _loadUserName();
-    _loadFilterData();
     _loadCounts();
     _loadBills();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => _userName = prefs.getString('user_name') ?? 'User');
   }
 
   Map<String, String> get _activeFilters => {
@@ -69,28 +75,6 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
     if (_selFromDate != null && _selFromDate!.isNotEmpty) 'from_date': _selFromDate!,
     if (_selToDate != null && _selToDate!.isNotEmpty) 'to_date': _selToDate!,
   };
-
-  Future<void> _loadFilterData() async {
-    try {
-      final results = await Future.wait([
-        ApiService.filterCompanies(),
-        ApiService.filterLocations(),
-        ApiService.filterFinancialYears(),
-        ApiService.filterUsers(),
-      ]);
-      if (mounted) setState(() {
-        _companies = results[0];
-        _locations = results[1];
-        _financialYears = results[2];
-        _users = results[3];
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() => _userName = prefs.getString('user_name') ?? 'User');
-  }
 
   Future<void> _loadCounts() async {
     try {
@@ -147,43 +131,16 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
 
   void _resetFilters() {
     setState(() {
-      _selCompany = null;
-      _selFy = null;
-      _selLocation = null;
-      _selUser = null;
+      _selCompany = null; _selCompanyName = null;
+      _selFy = null; _selFyName = null;
+      _selLocation = null; _selLocationName = null;
+      _selUser = null; _selUserName = null;
       _selFromDate = null;
       _selToDate = null;
       _searchCtrl.clear();
     });
     _loadCounts();
     _loadBills();
-  }
-
-  Widget _buildDropdown(String hint, List<Map<String, dynamic>> items, String? value, ValueChanged<String?> onChanged) {
-    return SizedBox(
-      height: 32,
-      child: DropdownButtonFormField<String>(
-        value: value,
-        isExpanded: true,
-        isDense: true,
-        decoration: InputDecoration(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E5E4))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E5E4))),
-          filled: true, fillColor: const Color(0xFFFAFAF9),
-        ),
-        hint: Text(hint, style: const TextStyle(fontSize: 11, color: Color(AppConfig.textSecondary))),
-        style: const TextStyle(fontSize: 11, color: Color(AppConfig.textPrimary)),
-        items: [
-          const DropdownMenuItem<String>(value: null, child: Text('All', style: TextStyle(fontSize: 11))),
-          ...items.map((i) => DropdownMenuItem<String>(
-            value: i['id'].toString(),
-            child: Text(i['name']?.toString() ?? '', style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
-          )),
-        ],
-        onChanged: onChanged,
-      ),
-    );
   }
 
   Widget _buildDateField(String label, String? value, ValueChanged<String?> onChanged) {
@@ -428,31 +385,43 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
                     // Row 1: Company + FY
                     Row(
                       children: [
-                        Expanded(child: _buildDropdown('Company', _companies, _selCompany, (v) => setState(() => _selCompany = v))),
+                        Expanded(child: SearchableSelect(
+                          label: 'Company', endpoint: 'companies',
+                          selectedId: _selCompany, selectedName: _selCompanyName,
+                          onChanged: (v) => setState(() { _selCompany = v.key; _selCompanyName = v.value; }),
+                        )),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildDropdown('Financial Year', _financialYears, _selFy, (v) => setState(() => _selFy = v))),
+                        Expanded(child: SearchableSelect(
+                          label: 'Financial Year', endpoint: 'financial-years',
+                          selectedId: _selFy, selectedName: _selFyName,
+                          onChanged: (v) => setState(() { _selFy = v.key; _selFyName = v.value; }),
+                        )),
                       ],
                     ),
                     const SizedBox(height: 8),
                     // Row 2: Location + Scanned By
                     Row(
                       children: [
-                        Expanded(child: _buildDropdown('Location', _locations, _selLocation, (v) => setState(() => _selLocation = v))),
+                        Expanded(child: SearchableSelect(
+                          label: 'Location', endpoint: 'locations',
+                          selectedId: _selLocation, selectedName: _selLocationName,
+                          onChanged: (v) => setState(() { _selLocation = v.key; _selLocationName = v.value; }),
+                        )),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildDropdown('Scanned By', _users, _selUser, (v) => setState(() => _selUser = v))),
+                        Expanded(child: SearchableSelect(
+                          label: 'Scanned By', endpoint: 'users',
+                          selectedId: _selUser, selectedName: _selUserName,
+                          onChanged: (v) => setState(() { _selUser = v.key; _selUserName = v.value; }),
+                        )),
                       ],
                     ),
                     const SizedBox(height: 8),
                     // Row 3: Dates + Apply/Reset
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildDateField('From', _selFromDate, (v) => setState(() => _selFromDate = v)),
-                        ),
+                        Expanded(child: _buildDateField('From', _selFromDate, (v) => setState(() => _selFromDate = v))),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildDateField('To', _selToDate, (v) => setState(() => _selToDate = v)),
-                        ),
+                        Expanded(child: _buildDateField('To', _selToDate, (v) => setState(() => _selToDate = v))),
                         const SizedBox(width: 8),
                         SizedBox(
                           height: 32,

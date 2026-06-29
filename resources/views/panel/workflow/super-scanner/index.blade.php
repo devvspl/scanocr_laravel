@@ -2,6 +2,7 @@
 @section('title','Scan Summary')
 @section('page-title','Scan Summary')
 @push('head')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
 /* ── Table ─────────────────────────────────────────────────── */
 #summaryTable{border-collapse:collapse;width:100% !important;table-layout:auto}
@@ -33,6 +34,20 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
     font-weight: 600;
     border-bottom: none;
 }
+.select2-container--default .select2-selection--single {height: 24px;border: 1px solid #d6d3d1;border-radius: .5rem;background: #fafaf9;display: flex;align-items: center;min-height: 24px}
+.select2-container--default .select2-selection--single .select2-selection__rendered {font-size: .75rem;color: #292524;padding-left: .75rem;line-height: 34px}
+.select2-container--default .select2-selection--single .select2-selection__arrow {height: 36px;right: .5rem}
+.select2-container--default .select2-selection--single .select2-selection__placeholder {color: #a8a29e}
+.select2-container--default .select2-results__option {font-size: .75rem;padding: .4rem .75rem}.select2-container--default .select2-results__option--highlighted {background: #7f1d1d;color: #fff}
+.select2-search--dropdown .select2-search__field {font-size: .75rem;border: 1px solid #d6d3d1;border-radius: .375rem;padding: .3rem .5rem}
+.select2-dropdown {border: 1px solid #d6d3d1;border-radius: .5rem;box-shadow: 0 4px 16px rgba(0, 0, 0, .08)}
+.select2-container--open .select2-selection--single {border-color: #7f1d1d;box-shadow: 0 0 0 3px rgba(127, 29, 29, .08)}.select2-container .select2-selection--single {height: 24px !important;border: 1px solid #d6d3d1 !important;border-radius: 0.5rem !important;background: #fafaf9 !important;padding: 0 !important}
+.select2-container .select2-selection--single .select2-selection__clear {background-color: transparent;border: none;font-size: smaller;color: #888888;}
+.select2-container--default .select2-selection--single .select2-selection__arrow {height: 26px;position: absolute;top: -4px;right: 1px;width: 20px;}
+.select2-container .select2-selection--single .select2-selection__rendered {padding: 0 0 0 12px !important;line-height: 34px !important;font-size: 10px !important;color: #292524 !important}
+.select2-container .select2-selection--single .select2-selection__arrow {height: 34px !important;right: 8px !important}
+.select2-container .select2-selection--single .select2-selection__arrow b {border-width: 4px 4px 0 4px !important;margin-top: -2px !important}.entry-grid{display:grid;grid-template-columns:1fr;height:calc(100vh - 120px)}
+
 /* ── Badges ──────────────────────────────────────────────────── */
 .badge{display:inline-flex;align-items:center;padding:.15rem .5rem;border-radius:9999px;font-size:.6rem;font-weight:600;white-space:nowrap}
 .badge-approved{background:#dcfce7;color:#15803d}.badge-pending{background:#fef9c3;color:#a16207}.badge-rejected{background:#fee2e2;color:#b91c1c}
@@ -118,15 +133,12 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
     </div>
 
     {{-- Filter bar --}}
-    <div class="filter-bar">
-        <div class="flex items-center gap-2">
-            <label class="text-[11px] font-semibold text-stone-600 uppercase">Scan Date From</label>
-            <input type="date" id="filterFromDate" class="filter-input" style="width:140px" onfocus="this.showPicker()">
-        </div>
-        <div class="flex items-center gap-2">
-            <label class="text-[11px] font-semibold text-stone-600 uppercase">To</label>
-            <input type="date" id="filterToDate" class="filter-input" style="width:140px" onfocus="this.showPicker()">
-        </div>
+    <div class="filter-bar" style="flex-wrap:nowrap">
+        <select id="filterCompany" style="width:155px"></select>
+        <select id="filterFY" style="width:110px"></select>
+        <select id="filterLocation" style="width:155px"></select>
+        <input type="date" id="filterFromDate" class="filter-input" style="width:120px" onfocus="this.showPicker()">
+        <input type="date" id="filterToDate" class="filter-input" style="width:120px" onfocus="this.showPicker()">
         <button id="btnApplyFilters" class="filter-btn filter-btn-primary">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>Apply
         </button>
@@ -275,6 +287,7 @@ tr.grand-total td{background:#fef9c3 !important;font-weight:700;font-size:.73rem
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(function(){
 const CSRF = $('meta[name="csrf-token"]').attr('content');
@@ -286,7 +299,21 @@ const R = {
     pdf:    '{{ route("workflow.super-scanner.export.pdf") }}',
 };
 
-let currentFilters = { from_date: '', to_date: '' };
+let currentFilters = { from_date: '', to_date: '', company_id: '', fy_id: '', location_id: '' };
+
+// ── Select2 for Company, FY & Location ───────────────────────────────────
+$('#filterCompany').select2({
+    placeholder: 'All Companies', allowClear: true, width: '100%',
+    ajax: { url: '/reports/select/companies', dataType:'json', delay:250, data: p=>({q:p.term, page:p.page||1}), processResults:d=>d },
+});
+$('#filterFY').select2({
+    placeholder: 'All FY', allowClear: true, width: '100%',
+    ajax: { url: '/reports/select/financial-years', dataType:'json', delay:250, data: p=>({q:p.term, page:p.page||1}), processResults:d=>d },
+});
+$('#filterLocation').select2({
+    placeholder: 'All Locations', allowClear: true, width: '100%',
+    ajax: { url: '/reports/select/locations', dataType:'json', delay:250, data: p=>({q:p.term, page:p.page||1}), processResults:d=>d },
+});
 
 // ── Metric labels ─────────────────────────────────────────────────────────
 const METRIC_LABELS = {
@@ -352,14 +379,22 @@ let st; $('#dtSearch').on('input', function(){ clearTimeout(st); const v=$(this)
 
 // ── Filters ───────────────────────────────────────────────────────────────
 $('#btnApplyFilters').on('click', function(){
-    currentFilters.from_date = $('#filterFromDate').val();
-    currentFilters.to_date   = $('#filterToDate').val();
+    currentFilters.from_date   = $('#filterFromDate').val();
+    currentFilters.to_date     = $('#filterToDate').val();
+    currentFilters.company_id  = $('#filterCompany').val() || '';
+    currentFilters.fy_id       = $('#filterFY').val() || '';
+    currentFilters.location_id = $('#filterLocation').val() || '';
     dt.ajax.reload();
+    loadTotals();
 });
 $('#btnResetFilters').on('click', function(){
     $('#filterFromDate,#filterToDate').val('');
-    currentFilters = { from_date:'', to_date:'' };
+    $('#filterCompany').val(null).trigger('change');
+    $('#filterFY').val(null).trigger('change');
+    $('#filterLocation').val(null).trigger('change');
+    currentFilters = { from_date:'', to_date:'', company_id:'', fy_id:'', location_id:'' };
     dt.ajax.reload();
+    loadTotals();
 });
 
 // ── Grand totals ──────────────────────────────────────────────────────────
