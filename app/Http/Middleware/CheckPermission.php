@@ -259,6 +259,13 @@ class CheckPermission
         'reports.select.vendors',
         'reports.select.users',
         'reports.select.financial-years',
+        // Git Deploy
+        'git-deploy',
+        'git-deploy.status',
+        'git-deploy.pull',
+        'git-deploy.commit',
+        'git-deploy.push',
+        'git-deploy.reset',
     ];
 
     // Explicit route → permission map (checked before derive()).

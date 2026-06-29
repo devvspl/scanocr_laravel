@@ -416,6 +416,17 @@
                     </svg>
                 </button>
 
+                {{-- Git Deploy (Super Admin only) --}}
+                @if(auth()->user()?->hasRole('Super Admin'))
+                <a href="{{ route('git-deploy') }}"
+                   class="relative w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition"
+                   title="Git Deploy">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </a>
+                @endif
+
                 {{-- Notifications --}}
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open=!open"

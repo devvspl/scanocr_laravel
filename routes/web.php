@@ -30,6 +30,7 @@ use App\Http\Controllers\Panel\SettingsController;
 use App\Http\Controllers\Panel\CoreApiSyncController;
 use App\Http\Controllers\Panel\ExtMasterController;
 use App\Http\Controllers\Panel\ReportController;
+use App\Http\Controllers\Panel\GitDeployController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WorkLocationController;
@@ -194,6 +195,14 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+
+    // Git Deploy (Super Admin only)
+    Route::get('/git-deploy', [GitDeployController::class, 'index'])->name('git-deploy');
+    Route::get('/git-deploy/status', [GitDeployController::class, 'status'])->name('git-deploy.status');
+    Route::post('/git-deploy/pull', [GitDeployController::class, 'pull'])->name('git-deploy.pull');
+    Route::post('/git-deploy/commit', [GitDeployController::class, 'commit'])->name('git-deploy.commit');
+    Route::post('/git-deploy/push', [GitDeployController::class, 'push'])->name('git-deploy.push');
+    Route::post('/git-deploy/reset', [GitDeployController::class, 'reset'])->name('git-deploy.reset');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     Route::get('/reports/export-logs', [ReportController::class, 'exportLogs'])->name('reports.export-logs');
     Route::get('/reports/select/companies', [ReportController::class, 'companiesSelect'])->name('reports.select.companies');
