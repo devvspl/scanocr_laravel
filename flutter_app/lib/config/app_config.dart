@@ -1,6 +1,6 @@
 class AppConfig {
   // Change this to your server URL
-  static const String baseUrl = 'http://192.168.34.59:8000/api';
+  static const String baseUrl = 'https://scan-ocr.nova.vnrin.in/api';
 
   // Theme colors (matching ScanOCR web - maroon/red theme)
   static const int primaryColor = 0xFF7F1D1D;      // Maroon

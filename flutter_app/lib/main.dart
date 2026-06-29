@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'config/app_config.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/bill_list_screen.dart';
+import 'screens/bill_detail_screen.dart';
+import 'services/notification_service.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Firebase init — uncomment when google-services.json is added
-  // await Firebase.initializeApp();
+  await Firebase.initializeApp();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Color(AppConfig.primaryColor),
@@ -32,6 +35,13 @@ class BillApproverApp extends StatelessWidget {
       child: MaterialApp(
         title: 'ScanOCR',
         debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
+        routes: {
+          '/bill-detail': (context) {
+            final scanId = ModalRoute.of(context)!.settings.arguments as int;
+            return BillDetailScreen(scanId: scanId);
+          },
+        },
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
@@ -111,6 +121,18 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    try {
+      await NotificationService.initialize(navKey: navigatorKey);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

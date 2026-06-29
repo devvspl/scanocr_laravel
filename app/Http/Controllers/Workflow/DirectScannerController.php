@@ -418,6 +418,16 @@ class DirectScannerController extends Controller
         $this->authorizeOwner($scan);
         $scan->update(['Final_Submit' => 'Y']);
         ScanActionLog::log($scan->Scan_Id, 'final_submitted', 'Final Submitted');
+
+        // Notify bill approver via push notification
+        if ($scan->Bill_Approver) {
+            \App\Services\FcmService::notifyBillAssigned(
+                $scan->Bill_Approver,
+                $scan->Scan_Id,
+                $scan->Document_name ?? $scan->File ?? 'New Bill'
+            );
+        }
+
         return response()->json(['success' => true]);
     }
 
