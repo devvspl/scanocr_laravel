@@ -207,6 +207,10 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::post('/git-deploy/commit', [GitDeployController::class, 'commit'])->name('git-deploy.commit');
     Route::post('/git-deploy/push', [GitDeployController::class, 'push'])->name('git-deploy.push');
     Route::post('/git-deploy/reset', [GitDeployController::class, 'reset'])->name('git-deploy.reset');
+
+    // Notification Logs (Super Admin)
+    Route::get('/notification-logs', [DashboardController::class, 'notificationLogs'])->name('notification-logs');
+    Route::get('/notification-logs/data', [DashboardController::class, 'notificationLogsData'])->name('notification-logs.data');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     Route::get('/reports/export-logs', [ReportController::class, 'exportLogs'])->name('reports.export-logs');
     Route::get('/reports/select/companies', [ReportController::class, 'companiesSelect'])->name('reports.select.companies');

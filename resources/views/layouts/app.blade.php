@@ -187,6 +187,7 @@
                             ['section' => 'Tools'],
                             ['label' => 'Bill Date Sync', 'route' => 'settings.bill-date-sync', 'permission' => 'bill-date-sync.view'],
                             ['label' => 'Core API Sync',  'route' => 'settings.core-api-sync',  'permission' => 'core-api-sync.view'],
+                            ['label' => 'Notification Logs', 'route' => 'notification-logs'],
                             ['section' => 'Users & Access'],
                             ['label' => 'Users',       'route' => 'settings.users',       'permission' => 'users.view'],
                             ['label' => 'Roles',       'route' => 'settings.roles',       'permission' => 'roles.view'],

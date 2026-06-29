@@ -269,6 +269,9 @@ class CheckPermission
         'git-deploy.commit',
         'git-deploy.push',
         'git-deploy.reset',
+        // Notification Logs
+        'notification-logs',
+        'notification-logs.data',
     ];
 
     // Explicit route → permission map (checked before derive()).

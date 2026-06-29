@@ -177,6 +177,43 @@ class DashboardController extends Controller
         ]);
     }
 
+    // ── Notification Logs ─────────────────────────────────────────────────────
+
+    public function notificationLogs()
+    {
+        if (!Auth::user()?->hasRole('Super Admin')) abort(403);
+        return view('panel.notification-logs');
+    }
+
+    public function notificationLogsData(Request $request)
+    {
+        if (!Auth::user()?->hasRole('Super Admin')) abort(403);
+
+        $query = DB::table('notification_logs as n')
+            ->leftJoin('users as u', 'u.id', '=', 'n.user_id')
+            ->select(['n.*', 'u.name as user_name'])
+            ->orderByDesc('n.sent_at');
+
+        if ($request->filled('status')) $query->where('n.status', $request->input('status'));
+        if ($request->filled('type'))   $query->where('n.type', $request->input('type'));
+        if ($request->filled('search')) {
+            $s = $request->input('search');
+            $query->where(fn($q) => $q->where('u.name', 'like', "%{$s}%")->orWhere('n.title', 'like', "%{$s}%")->orWhere('n.scan_id', $s));
+        }
+
+        $page = max(1, (int) $request->input('page', 1));
+        $per  = 25;
+        $total = $query->count();
+        $rows  = $query->offset(($page - 1) * $per)->limit($per)->get();
+
+        return response()->json([
+            'data'       => $rows,
+            'total'      => $total,
+            'page'       => $page,
+            'total_pages'=> ceil($total / $per),
+        ]);
+    }
+
     // ── Global Search (AJAX) ──────────────────────────────────────────────────
 
     public function globalSearch(Request $request)
