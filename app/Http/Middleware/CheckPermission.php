@@ -253,6 +253,9 @@ class CheckPermission
         'reports',
         'reports.generate',
         'reports.export-logs',
+        // Global Search
+        'global-search',
+        'dashboard.data',
         'reports.select.companies',
         'reports.select.locations',
         'reports.select.doc-types',

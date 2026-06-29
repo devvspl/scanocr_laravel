@@ -193,6 +193,10 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('settings.document-types.update');
     Route::delete('/settings/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('settings.document-types.destroy');
 
+    // Global Search
+    Route::get('/search', [DashboardController::class, 'globalSearch'])->name('global-search');
+    Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
 

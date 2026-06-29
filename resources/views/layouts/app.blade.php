@@ -371,48 +371,26 @@
                 </svg>
             </button>
 
-            <div class="flex-1 min-w-0" :class="mobileSearch ? 'hidden' : 'block'">
+            <div class="flex-1 min-w-0">
                 <h1 class="text-sm font-semibold text-stone-800 truncate">@yield('page-title', 'Dashboard')</h1>
                 @hasSection('breadcrumb')
                     <nav class="hidden sm:flex items-center gap-1 text-xs text-stone-400 mt-0.5">@yield('breadcrumb')</nav>
                 @endif
             </div>
 
-            <div x-show="mobileSearch"
-                class="flex-1 flex items-center gap-2 bg-stone-100 border border-stone-200 rounded-lg px-3 py-1.5 md:hidden">
-                <svg class="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input type="text" placeholder="Search…" autofocus
-                    class="bg-transparent flex-1 text-sm outline-none border-none p-0 placeholder-stone-400">
-                <button @click="mobileSearch=false"><svg class="w-4 h-4 text-stone-400" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg></button>
-            </div>
-
             <div class="flex items-center gap-1.5 shrink-0">
-                <div
-                    class="hidden md:flex items-center gap-2 bg-stone-100 border border-stone-200 rounded-lg px-3 py-1.5 w-52 xl:w-72">
-                    <svg class="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <div class="hidden md:flex items-center gap-2 bg-stone-100 border border-stone-200 rounded-lg px-3 py-1.5 w-52 xl:w-72" @click="$dispatch('open-search')">
+                    <svg class="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input type="text" placeholder="Search invoices, clients…"
-                        class="bg-transparent flex-1 text-sm text-stone-700 placeholder-stone-400 outline-none border-none p-0">
-                    <span
-                        class="text-[10px] text-stone-400 font-mono bg-stone-200 px-1.5 py-0.5 rounded hidden xl:inline">⌘K</span>
+                    <input type="text" placeholder="Search invoices, clients…" class="bg-transparent flex-1 text-sm text-stone-700 placeholder-stone-400 outline-none border-none p-0 cursor-pointer" readonly @focus="$dispatch('open-search')">
+                    <span class="text-[10px] text-stone-400 font-mono bg-stone-200 px-1.5 py-0.5 rounded hidden xl:inline">⌘K</span>
                 </div>
 
-                <button @click="mobileSearch=true" x-show="!mobileSearch"
+                <button @click="$dispatch('open-search')" x-show="!mobileSearch"
                     class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </button>
 
@@ -715,6 +693,111 @@
 
     @stack('scripts')
     @stack('modals')
+
+    {{-- ═══ Global Search Modal (Ctrl+K) ═══ --}}
+    <div x-data="globalSearchModal()" @open-search.window="open()" @keydown.window.ctrl.k.prevent="open()" @keydown.window.meta.k.prevent="open()">
+        <div x-show="isOpen" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm" @click="close()" style="display:none"></div>
+        <div x-show="isOpen" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="fixed inset-x-0 top-[10%] mx-auto z-[201] w-full max-w-xl" style="display:none" @keydown.escape="close()">
+            <div class="bg-white rounded-xl shadow-2xl border border-stone-200 overflow-hidden">
+                {{-- Search Input --}}
+                <div class="flex items-center gap-3 px-4 py-3 border-b border-stone-100">
+                    <svg class="w-5 h-5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input x-ref="searchInput" x-model="query" @input.debounce.300ms="search()" type="text" placeholder="Search by Scan ID, document, vendor, bill no..." class="flex-1 text-sm text-stone-800 outline-none border-none bg-transparent placeholder-stone-400">
+                    <span class="text-[10px] font-mono text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">ESC</span>
+                </div>
+                {{-- Results --}}
+                <div class="max-h-[400px] overflow-y-auto" @scroll="onScroll($event)">
+                    <template x-if="loading">
+                        <div class="flex items-center justify-center py-8"><svg class="w-5 h-5 animate-spin text-red-700" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></div>
+                    </template>
+                    <template x-if="!loading && query.length >= 2 && results.length === 0">
+                        <div class="py-8 text-center text-sm text-stone-400">No results found for "<span x-text="query" class="font-medium text-stone-600"></span>"</div>
+                    </template>
+                    <template x-if="!loading && query.length < 2 && results.length === 0">
+                        <div class="py-8 text-center">
+                            <svg class="w-10 h-10 text-stone-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <p class="text-xs text-stone-400">Type to search scans, vendors, documents...</p>
+                        </div>
+                    </template>
+                    <template x-for="r in results" :key="r.Scan_Id">
+                        <a :href="'/workflow/punching/entry/' + r.Scan_Id + '?view=1'" class="flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 transition-colors border-b border-stone-50 cursor-pointer">
+                            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <span class="text-[9px] font-bold text-red-700 uppercase" x-text="r.File_Ext || 'DOC'"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold text-stone-800 truncate" x-text="r.Document_name || r.File || 'Scan #' + r.Scan_Id"></span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0"
+                                          :class="{
+                                              'bg-green-100 text-green-700': r.status === 'Approved',
+                                              'bg-red-100 text-red-700': r.status === 'Rejected' || r.status === 'Bill Rejected',
+                                              'bg-blue-100 text-blue-700': r.status === 'Classified' || r.status === 'Bill Approved',
+                                              'bg-purple-100 text-purple-700': r.status === 'Punched',
+                                              'bg-amber-100 text-amber-700': r.status === 'Pending',
+                                          }" x-text="r.status"></span>
+                                </div>
+                                <p class="text-[11px] text-stone-400 truncate mt-0.5">
+                                    <span x-text="r.company_name"></span>
+                                    <template x-if="r.vendor_name"> &bull; <span x-text="r.vendor_name"></span></template>
+                                    <template x-if="r.bill_no_voucher_no"> &bull; Bill: <span x-text="r.bill_no_voucher_no"></span></template>
+                                </p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] text-stone-400 font-mono" x-text="'#' + r.Scan_Id"></span>
+                                <p class="text-[10px] text-stone-300" x-text="r.doc_type || ''"></p>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+                {{-- Footer --}}
+                <div class="px-4 py-2 border-t border-stone-100 bg-stone-50 flex items-center justify-between">
+                    <span class="text-[10px] text-stone-400" x-text="total > 0 ? total + ' results found' : 'Search by ID, name, vendor, bill no, file'"></span>
+                    <div class="flex items-center gap-2 text-[10px] text-stone-400">
+                        <template x-if="loadingMore"><span class="text-red-700">Loading more...</span></template>
+                        <span class="font-mono bg-stone-200 px-1 py-0.5 rounded">↵</span> open
+                        <span class="font-mono bg-stone-200 px-1 py-0.5 rounded">esc</span> close
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function globalSearchModal() {
+        return {
+            isOpen: false, query: '', results: [], loading: false, loadingMore: false, hasMore: false, page: 1, total: 0,
+            open() { this.isOpen = true; this.$nextTick(() => this.$refs.searchInput?.focus()); },
+            close() { this.isOpen = false; this.query = ''; this.results = []; this.page = 1; this.hasMore = false; this.total = 0; },
+            async search() {
+                if (this.query.length < 2) { this.results = []; this.hasMore = false; this.total = 0; return; }
+                this.loading = true; this.page = 1;
+                try {
+                    const res = await fetch('/search?q=' + encodeURIComponent(this.query) + '&page=1', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
+                    const json = await res.json();
+                    this.results = json.results || [];
+                    this.hasMore = json.has_more || false;
+                    this.total = json.total || 0;
+                } catch(e) { this.results = []; }
+                this.loading = false;
+            },
+            async loadMore() {
+                if (!this.hasMore || this.loadingMore) return;
+                this.loadingMore = true; this.page++;
+                try {
+                    const res = await fetch('/search?q=' + encodeURIComponent(this.query) + '&page=' + this.page, { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
+                    const json = await res.json();
+                    this.results = this.results.concat(json.results || []);
+                    this.hasMore = json.has_more || false;
+                } catch(e) {}
+                this.loadingMore = false;
+            },
+            onScroll(e) {
+                const el = e.target;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) this.loadMore();
+            }
+        };
+    }
+    </script>
+
     {{-- Tailwind safelist --}}
     <div class="hidden bg-red-500 bg-green-500 bg-blue-500 col-span-1 col-span-2 col-span-3 grid-cols-3"></div>
 </body>
