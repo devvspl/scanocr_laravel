@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class FcmService
 {
@@ -30,35 +31,44 @@ class FcmService
     }
 
     /**
-     * Send push notification to a specific FCM token.
+     * Send push notification via Firebase HTTP v1 API.
      */
     public static function send(string $fcmToken, string $title, string $body, string $type = 'general', ?int $userId = null, ?int $scanId = null, array $data = []): bool
     {
-        $serverKey = config('services.firebase.server_key');
+        $projectId = config('services.firebase.project_id');
+        $credentialsPath = config('services.firebase.credentials');
 
-        if (!$serverKey) {
-            self::log($userId, $scanId, $type, $title, $body, $fcmToken, 'failed', 'FCM server key not configured', $data);
-            Log::warning('FCM server key not configured.');
+        if (!$projectId || !$credentialsPath) {
+            self::log($userId, $scanId, $type, $title, $body, $fcmToken, 'failed', 'Firebase project_id or credentials not configured', $data);
             return false;
         }
 
         try {
+            $accessToken = self::getAccessToken($credentialsPath);
+
             $payload = [
-                'to' => $fcmToken,
-                'notification' => [
-                    'title' => $title,
-                    'body'  => $body,
-                    'sound' => 'default',
-                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'message' => [
+                    'token' => $fcmToken,
+                    'notification' => [
+                        'title' => $title,
+                        'body'  => $body,
+                    ],
+                    'data' => array_merge(
+                        array_map('strval', $data),
+                        ['type' => $type, 'scan_id' => (string) ($scanId ?? ''), 'click_action' => 'FLUTTER_NOTIFICATION_CLICK']
+                    ),
+                    'android' => [
+                        'priority' => 'high',
+                        'notification' => [
+                            'sound' => 'default',
+                            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        ],
+                    ],
                 ],
-                'data' => array_merge($data, ['type' => $type, 'scan_id' => (string) ($scanId ?? '')]),
-                'priority' => 'high',
             ];
 
-            $response = Http::withHeaders([
-                'Authorization' => 'key=' . $serverKey,
-                'Content-Type'  => 'application/json',
-            ])->post('https://fcm.googleapis.com/fcm/send', $payload);
+            $response = Http::withToken($accessToken)
+                ->post("https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send", $payload);
 
             $success = $response->successful();
             $responseCode = $response->status();
@@ -66,16 +76,56 @@ class FcmService
 
             self::log($userId, $scanId, $type, $title, $body, $fcmToken, $success ? 'sent' : 'failed', $errorMsg, $data, $responseCode);
 
-            if (!$success) {
-                Log::error('FCM send failed: ' . $response->body());
-            }
+            if (!$success) Log::error('FCM v1 send failed: ' . $response->body());
 
             return $success;
         } catch (\Exception $e) {
             self::log($userId, $scanId, $type, $title, $body, $fcmToken, 'failed', $e->getMessage(), $data);
-            Log::error('FCM send exception: ' . $e->getMessage());
+            Log::error('FCM v1 exception: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Get OAuth2 access token for Firebase HTTP v1 API.
+     */
+    private static function getAccessToken(string $credentialsPath): string
+    {
+        return Cache::remember('fcm_access_token', 3000, function () use ($credentialsPath) {
+            $fullPath = base_path($credentialsPath);
+            if (!file_exists($fullPath)) {
+                throw new \Exception("Firebase credentials file not found: {$fullPath}");
+            }
+
+            $credentials = json_decode(file_get_contents($fullPath), true);
+            $now = time();
+
+            // Create JWT
+            $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+            $claims = base64_encode(json_encode([
+                'iss' => $credentials['client_email'],
+                'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+                'aud' => 'https://oauth2.googleapis.com/token',
+                'iat' => $now,
+                'exp' => $now + 3600,
+            ]));
+
+            $toSign = $header . '.' . $claims;
+            openssl_sign($toSign, $signature, $credentials['private_key'], 'sha256');
+            $jwt = $toSign . '.' . base64_encode($signature);
+
+            // Exchange JWT for access token
+            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion'  => $jwt,
+            ]);
+
+            if (!$response->successful()) {
+                throw new \Exception('Failed to get FCM access token: ' . $response->body());
+            }
+
+            return $response->json('access_token');
+        });
     }
 
     /**

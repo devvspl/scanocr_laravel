@@ -35,6 +35,7 @@ class User extends Authenticatable
         'created_by',
         'last_company_id',
         'last_fy_id',
+        'fcm_token',
     ];
 
     /**
