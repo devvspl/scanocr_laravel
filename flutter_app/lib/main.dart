@@ -15,6 +15,8 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Color(AppConfig.primaryColor),
     statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFFF5F5F4),
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
 
   runApp(const BillApproverApp());

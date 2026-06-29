@@ -193,12 +193,16 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F4),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             // ═══ App Header ═══
             Container(
               color: const Color(AppConfig.primaryColor),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 10,
+                left: 16, right: 16, bottom: 12,
+              ),
               child: Column(
                 children: [
                   // Top row: Logo + Title + Actions
