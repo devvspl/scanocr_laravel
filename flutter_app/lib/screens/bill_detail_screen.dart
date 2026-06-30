@@ -22,6 +22,11 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   bool _actionLoading = false;
   String? _error;
 
+  // Tab state: 0 = Main File, 1+ = support doc types
+  int _activeTab = 0;
+  // Selected file index within a support group
+  int _activeFileIdx = 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +42,50 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
     }
   }
 
+  /// Group support files by doc_type name
+  Map<String, List<SupportFile>> get _supportGroups {
+    if (_detail == null) return {};
+    final map = <String, List<SupportFile>>{};
+    for (final s in _detail!.supports) {
+      final key = s.docType ?? 'Other';
+      map.putIfAbsent(key, () => []).add(s);
+    }
+    return map;
+  }
+
+  /// Get list of tab labels: [Main Scan, DocType1 (count), DocType2 (count), ...]
+  List<String> get _tabLabels {
+    final labels = <String>['Main Scan'];
+    _supportGroups.forEach((key, files) {
+      labels.add('$key (${files.length})');
+    });
+    return labels;
+  }
+
+  /// Get currently active file URL and ext based on tab selection
+  ({String? url, String? ext}) get _activeFile {
+    if (_activeTab == 0) {
+      return (url: _detail?.fileUrl, ext: _detail?.fileExt);
+    }
+    final groups = _supportGroups.values.toList();
+    final groupIdx = _activeTab - 1;
+    if (groupIdx < groups.length) {
+      final files = groups[groupIdx];
+      final idx = _activeFileIdx.clamp(0, files.length - 1);
+      return (url: files[idx].fileUrl, ext: files[idx].fileExt);
+    }
+    return (url: null, ext: null);
+  }
+
+  /// Get files in the currently selected support tab (for file chips)
+  List<SupportFile> get _activeGroupFiles {
+    if (_activeTab == 0) return [];
+    final groups = _supportGroups.values.toList();
+    final groupIdx = _activeTab - 1;
+    if (groupIdx < groups.length) return groups[groupIdx];
+    return [];
+  }
+
   Future<void> _approve() async {
     final remark = await _showActionSheet('Approve Bill', 'Add remark (optional)', false);
     if (remark == null) return;
@@ -44,12 +93,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
     try {
       final result = await ApiService.approveBill(widget.scanId, remark: remark.isEmpty ? null : remark);
       if (mounted) {
-        CherryToast.success(
-          title: Text(result['message'] ?? 'Bill Approved', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          borderRadius: 10,
-          animationType: AnimationType.fromTop,
-          toastDuration: const Duration(seconds: 3),
-        ).show(context);
+        CherryToast.success(title: Text(result['message'] ?? 'Bill Approved', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)), borderRadius: 10, animationType: AnimationType.fromTop, toastDuration: const Duration(seconds: 3)).show(context);
         Future.delayed(const Duration(milliseconds: 500), () { if (mounted) Navigator.pop(context, true); });
       }
     } catch (e) {
@@ -64,12 +108,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
     try {
       final result = await ApiService.rejectBill(widget.scanId, reason);
       if (mounted) {
-        CherryToast.error(
-          title: Text(result['message'] ?? 'Bill Rejected', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          borderRadius: 10,
-          animationType: AnimationType.fromTop,
-          toastDuration: const Duration(seconds: 3),
-        ).show(context);
+        CherryToast.error(title: Text(result['message'] ?? 'Bill Rejected', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)), borderRadius: 10, animationType: AnimationType.fromTop, toastDuration: const Duration(seconds: 3)).show(context);
         Future.delayed(const Duration(milliseconds: 500), () { if (mounted) Navigator.pop(context, true); });
       }
     } catch (e) {
@@ -78,12 +117,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   }
 
   void _showErrorToast(String msg) {
-    CherryToast.error(
-      title: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-      borderRadius: 10,
-      animationType: AnimationType.fromTop,
-      toastDuration: const Duration(seconds: 4),
-    ).show(context);
+    CherryToast.error(title: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)), borderRadius: 10, animationType: AnimationType.fromTop, toastDuration: const Duration(seconds: 4)).show(context);
   }
 
   Future<String?> _showActionSheet(String title, String hint, bool required) {
@@ -101,10 +135,10 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
           Row(children: [
             Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel'))),
             const SizedBox(width: 12),
-            Expanded(child: OutlinedButton(
+            Expanded(child: ElevatedButton(
               onPressed: () { if (required && ctrl.text.trim().isEmpty) return; Navigator.pop(ctx, ctrl.text.trim()); },
               style: ElevatedButton.styleFrom(backgroundColor: title.contains('Approve') ? const Color(AppConfig.successColor) : const Color(AppConfig.dangerColor)),
-              child: Text(title.contains('Approve') ? 'Approve' : 'Reject', style: TextStyle(color:Colors.white)),
+              child: Text(title.contains('Approve') ? 'Approve' : 'Reject'),
             )),
           ]),
           const SizedBox(height: 20),
@@ -127,7 +161,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
         title: Text('Scan #${widget.scanId}', style: const TextStyle(fontSize: 15)),
         actions: [
           if (_detail?.fileUrl != null)
-            IconButton(icon: const Icon(Icons.open_in_new, size: 20), onPressed: () => _openExternal(_detail!.fileUrl), tooltip: 'Open externally'),
+            IconButton(icon: const Icon(Icons.open_in_new, size: 20), onPressed: () => _openExternal(_activeFile.url), tooltip: 'Open externally'),
         ],
       ),
       body: _loading
@@ -143,31 +177,87 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
     final d = _detail!;
     return Column(
       children: [
-        // ═══ Document Viewer (top ~55%) ═══
-        Expanded(
-          flex: 55,
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE7E5E4)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: _buildDocViewer(d.fileUrl, d.fileExt),
+        // ═══ File Tabs (Main Scan + Support Types) ═══
+        Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              // Tab bar
+              SizedBox(
+                height: 36,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  itemCount: _tabLabels.length,
+                  itemBuilder: (ctx, i) {
+                    final isActive = _activeTab == i;
+                    return GestureDetector(
+                      onTap: () => setState(() { _activeTab = i; _activeFileIdx = 0; }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: isActive ? const Color(AppConfig.primaryColor) : Colors.transparent, width: 2)),
+                        ),
+                        child: Text(_tabLabels[i], style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? const Color(AppConfig.primaryColor) : const Color(AppConfig.textSecondary))),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // File chips (if support tab has multiple files)
+              if (_activeTab > 0 && _activeGroupFiles.length > 1)
+                Container(
+                  height: 34,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFF0EEEC)))),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _activeGroupFiles.length,
+                    itemBuilder: (ctx, i) {
+                      final file = _activeGroupFiles[i];
+                      final isSelected = _activeFileIdx == i;
+                      return GestureDetector(
+                        onTap: () => setState(() => _activeFileIdx = i),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 6, top: 4, bottom: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFFAFAF9),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: isSelected ? const Color(AppConfig.primaryColor) : const Color(0xFFE7E5E4)),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon((file.fileExt ?? '').toLowerCase() == 'pdf' ? Icons.picture_as_pdf : Icons.image, size: 12, color: const Color(AppConfig.primaryColor)),
+                            const SizedBox(width: 4),
+                            Text(file.file, style: TextStyle(fontSize: 10, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: const Color(AppConfig.textPrimary))),
+                          ]),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
 
-        // ═══ Details Section (bottom ~45%) ═══
+        // ═══ Document Viewer ═══
         Expanded(
-          flex: 45,
+          flex: 55,
           child: Container(
-            margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE7E5E4)),
-            ),
+            margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE7E5E4))),
+            clipBehavior: Clip.antiAlias,
+            child: _buildDocViewer(_activeFile.url, _activeFile.ext),
+          ),
+        ),
+
+        // ═══ Details Section ═══
+        Expanded(
+          flex: 40,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE7E5E4))),
             child: _buildDetailsPanel(d),
           ),
         ),
@@ -203,24 +293,14 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row: Document name + status badge
-          Row(
-            children: [
-              Expanded(
-                child: Text(d.documentName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(AppConfig.textPrimary)), maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 8),
-              _StatusBadge(status: d.status),
-            ],
-          ),
+          Row(children: [
+            Expanded(child: Text(d.documentName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(AppConfig.textPrimary)), maxLines: 2, overflow: TextOverflow.ellipsis)),
+            const SizedBox(width: 8),
+            _StatusBadge(status: d.status),
+          ]),
           if (d.remark != null && d.remark!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('Remark: ${d.remark}', style: const TextStyle(fontSize: 11, color: Color(AppConfig.textSecondary), fontStyle: FontStyle.italic)),
-            ),
-          const Divider(height: 16),
-
-          // Bill details — shown directly, no toggle
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text('Remark: ${d.remark}', style: const TextStyle(fontSize: 11, color: Color(AppConfig.textSecondary), fontStyle: FontStyle.italic))),
+          const Divider(height: 14),
           _row(Icons.store_outlined, 'Vendor', d.vendor),
           _row(Icons.receipt_outlined, 'Bill No', d.billNo),
           _row(Icons.calendar_today_outlined, 'Bill Date', d.billDate),
@@ -229,29 +309,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
           _row(Icons.date_range_outlined, 'FY', d.fy),
           _row(Icons.person_outline, 'Scanned By', d.scannedBy),
           _row(Icons.access_time, 'Scan Date', d.scanDate),
-          if (d.approvalDate != null)
-            _row(Icons.event_available, 'Action Date', d.approvalDate),
-
-          // Support files
-          if (d.supports.isNotEmpty) ...[
-            const Divider(height: 18),
-            Text('Supporting Files (${d.supports.length})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            ...d.supports.map((s) => InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _FileViewerPage(url: s.fileUrl ?? '', title: s.docType ?? s.file, isPdf: (s.fileExt ?? '').toLowerCase() == 'pdf'))),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(color: const Color(0xFFFAFAF9), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFE7E5E4))),
-                child: Row(children: [
-                  Icon((s.fileExt ?? '').toLowerCase() == 'pdf' ? Icons.picture_as_pdf : Icons.image, size: 16, color: const Color(AppConfig.primaryColor)),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(s.docType ?? s.file, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis)),
-                  const Icon(Icons.chevron_right, size: 16, color: Color(AppConfig.textSecondary)),
-                ]),
-              ),
-            )),
-          ],
+          if (d.approvalDate != null) _row(Icons.event_available, 'Action Date', d.approvalDate),
         ],
       ),
     );
@@ -260,12 +318,12 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   Widget _row(IconData icon, String label, String? value) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
-        Icon(icon, size: 15, color: const Color(AppConfig.textSecondary)),
+        Icon(icon, size: 14, color: const Color(AppConfig.textSecondary)),
         const SizedBox(width: 8),
-        SizedBox(width: 75, child: Text(label, style: const TextStyle(fontSize: 11, color: Color(AppConfig.textSecondary)))),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(AppConfig.textPrimary)))),
+        SizedBox(width: 70, child: Text(label, style: const TextStyle(fontSize: 10, color: Color(AppConfig.textSecondary)))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(AppConfig.textPrimary)))),
       ]),
     );
   }
@@ -305,7 +363,6 @@ class _StatusBadge extends StatelessWidget {
       'rejected' => (const Color(0xFFFEE2E2), const Color(0xFF991B1B), Icons.cancel, 'Rejected'),
       _ => (const Color(0xFFFEF3C7), const Color(0xFF92400E), Icons.schedule, 'Pending'),
     };
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
@@ -314,32 +371,6 @@ class _StatusBadge extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg)),
       ]),
-    );
-  }
-}
-
-// ═══ Full-screen File Viewer ═══
-class _FileViewerPage extends StatelessWidget {
-  final String url;
-  final String title;
-  final bool isPdf;
-  const _FileViewerPage({required this.url, required this.title, required this.isPdf});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontSize: 14)),
-        actions: [
-          IconButton(icon: const Icon(Icons.open_in_new, size: 20), onPressed: () async {
-            final uri = Uri.parse(url);
-            if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }),
-        ],
-      ),
-      body: isPdf
-          ? SfPdfViewer.network(url, canShowScrollHead: true)
-          : InteractiveViewer(minScale: 0.5, maxScale: 4.0, child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain, placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)), errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined, size: 48)))),
     );
   }
 }

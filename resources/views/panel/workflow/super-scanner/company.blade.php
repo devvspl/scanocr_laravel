@@ -700,6 +700,7 @@
                             <th style="width:100px">Status</th>
                             <th>Scanned By</th>
                             <th>Approver</th>
+                            <th>Remark</th>
                             <th style="width:80px">Actions</th>
                         </tr>
                     </thead>
@@ -1371,6 +1372,7 @@
                     { data: 'status_badge', orderable: false },
                     { data: 'scanned_by', defaultContent: '—' },
                     { data: 'approver_name', defaultContent: '—' },
+                    { data: 'Bill_Approver_Remark', defaultContent: '—', render: function(d) { return d ? '<span title="'+d.replace(/"/g,'&quot;')+'" style="display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:#7f1d1d;font-style:italic">'+d+'</span>' : '—'; } },
                     { data: 'actions', orderable: false, searchable: false, render: function(d, t, r) {
                         const canDelete    = (r.Bill_Approved === 'R' || r.temp_scan_reject === 'Y' || r.Final_Submit !== 'Y');
                         const canSupport   = (r.Final_Submit !== 'Y');
@@ -1832,7 +1834,7 @@
 
             // ── Delete Supporting File ────────────────────────────────────────────────
             window.deleteSupportFile = function (supportId) {
-                if (!currentScan || !confirm('Delete this supporting file?')) return;
+                if (!currentScan) return; const ok1 = await customConfirm('Delete this supporting file?', {title:'Delete File',confirmText:'Delete',type:'danger'}); if (!ok1) return;
 
                 $.ajax({
                     url: `/workflow/super-scanner/company/${COMPANY_ID}/scan/${currentScan.id}/support/${supportId}`,
@@ -1850,7 +1852,7 @@
 
             // ── Final Submit (Step 2 banner button) ───────────────────────────────────
             $('#btnFinalSubmit').on('click', function() {
-                if (!currentScan || !confirm('Are you sure you want to submit this scan for final processing?')) return;
+                if (!currentScan) return; const ok2 = await customConfirm('Are you sure you want to submit this scan for final processing?', {title:'Final Submit',confirmText:'Submit',type:'warning'}); if (!ok2) return;
 
                 const $btn = $(this);
                 $btn.prop('disabled', true).html('<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="3" stroke="currentColor" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg> Submitting...');
@@ -2091,7 +2093,7 @@
             // Final Submit from table row
             $(document).on('click', '.btn-final-submit', function () {
                 const scanId = $(this).data('id');
-                if (!confirm('Mark this scan as final submitted?')) return;
+                const okFS = await customConfirm('Mark this scan as final submitted?', {title:'Final Submit',confirmText:'Submit',type:'warning'}); if (!okFS) return;
                 $.ajax({
                     url: `/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}/final-submit`,
                     method: 'POST',
@@ -2108,7 +2110,7 @@
             // Delete Scan from table row
             $(document).on('click', '.btn-delete-scan', function () {
                 const scanId = $(this).data('id');
-                if (!confirm('Delete this scan? This cannot be undone.')) return;
+                const okDel = await customConfirm('Delete this scan? This cannot be undone.', {title:'Delete Scan',confirmText:'Delete',type:'danger'}); if (!okDel) return;
                 $.ajax({
                     url: `/workflow/super-scanner/company/${COMPANY_ID}/scan/${scanId}`,
                     method: 'DELETE',

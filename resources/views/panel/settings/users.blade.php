@@ -30,10 +30,23 @@
                     <option value="0">Non-Core</option>
                 </select>
             </div>
-            <button @click="openPanel()" class="tb-btn tb-btn-add">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                Add User
-            </button>
+            <div class="flex items-center gap-2">
+                <button @click="syncCoreUsers()"
+                        :disabled="syncing"
+                        class="tb-btn tb-btn-fields disabled:opacity-60 disabled:cursor-not-allowed"
+                        title="Sync users from Core API">
+                    <svg x-show="!syncing" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <svg x-show="syncing" class="animate-spin" fill="none" viewBox="0 0 24 24" style="display:none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span x-text="syncing ? 'Syncing…' : 'Sync Core Users'"></span>
+                </button>
+                <button @click="openPanel()" class="tb-btn tb-btn-add">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Add User
+                </button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -751,6 +764,7 @@ function usersPage() {
         rolesOpen: false,
         permsOpen: false,
         docAccessOpen: false,
+        syncing: false,
         docAccessTab: 'types',
         docTypes: [],
         companies: [],
@@ -780,6 +794,33 @@ function usersPage() {
             this.resetForm();
             this.loadMainUsers();
             this.initTable();
+        },
+
+        async syncCoreUsers() {
+            if (this.syncing) return;
+            this.syncing = true;
+            try {
+                const res = await fetch('{{ route("settings.users.sync-core") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || json.success === false) {
+                    _showGlobalToast('error', json.message ?? 'Failed to sync core users.');
+                    return;
+                }
+                window._usersTable?.ajax.reload(null, false);
+                this.loadMainUsers();
+                _showGlobalToast('success', json.message ?? 'Core users synced.');
+            } catch (e) {
+                _showGlobalToast('error', 'Network error while syncing core users.');
+            } finally {
+                this.syncing = false;
+            }
         },
 
         resetForm() {

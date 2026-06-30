@@ -607,6 +607,34 @@
     @endphp
 
     <script>
+        // ── Global Custom Confirm Dialog ──────────────────────────────────────
+        window.customConfirm = function(message, { title = 'Confirm', confirmText = 'Yes, Proceed', cancelText = 'Cancel', type = 'warning' } = {}) {
+            return new Promise((resolve) => {
+                const colors = { warning: { bg: '#fef3c7', border: '#f59e0b', icon: '#d97706', btn: '#d97706' }, danger: { bg: '#fef2f2', border: '#ef4444', icon: '#dc2626', btn: '#dc2626' }, info: { bg: '#eff6ff', border: '#3b82f6', icon: '#2563eb', btn: '#2563eb' } };
+                const c = colors[type] || colors.warning;
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)';
+                overlay.innerHTML = `
+                    <div style="background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.15);width:380px;max-width:calc(100vw - 2rem);overflow:hidden;animation:scaleIn .15s ease">
+                        <div style="padding:20px 20px 16px;text-align:center">
+                            <div style="width:44px;height:44px;border-radius:50%;background:${c.bg};border:2px solid ${c.border};display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                                <svg style="width:22px;height:22px;color:${c.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'danger' ? 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z' : 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'}"/></svg>
+                            </div>
+                            <h3 style="font-size:14px;font-weight:700;color:#1c1917;margin-bottom:6px">${title}</h3>
+                            <p style="font-size:12px;color:#57534e;line-height:1.5">${message}</p>
+                        </div>
+                        <div style="display:flex;gap:8px;padding:0 20px 20px">
+                            <button id="ccCancel" style="flex:1;height:36px;border-radius:8px;border:1px solid #d6d3d1;background:#fff;color:#57534e;font-size:12px;font-weight:600;cursor:pointer">${cancelText}</button>
+                            <button id="ccConfirm" style="flex:1;height:36px;border-radius:8px;border:none;background:${c.btn};color:#fff;font-size:12px;font-weight:600;cursor:pointer">${confirmText}</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('#ccCancel').onclick = () => { overlay.remove(); resolve(false); };
+                overlay.querySelector('#ccConfirm').onclick = () => { overlay.remove(); resolve(true); };
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+            });
+        };
+
         const SUBMENUS = @json($submenus);
 
         async function switchCompany(id) {

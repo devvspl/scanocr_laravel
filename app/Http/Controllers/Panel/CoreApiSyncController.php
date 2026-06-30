@@ -53,7 +53,7 @@ class CoreApiSyncController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('api_end_point', 'like', "%{$search}%")
-                  ->orWhere('table_name',   'like', "%{$search}%")
+                  ->orwhere('api_end_point',   'like', "%{$search}%")
                   ->orWhere('description',  'like', "%{$search}%");
             });
         }
@@ -347,9 +347,10 @@ class CoreApiSyncController extends Controller
 
     public function modalData(Request $request)
     {
-        $request->validate([
-            'table_name' => ['required', 'string', 'max:255'],
-        ]);
+        $tableName = $request->input('table_name');
+        if (empty($tableName)) {
+            return response()->json(['error' => 'Table name is empty. Sync this API first.', 'columns' => [], 'data' => [], 'recordsTotal' => 0, 'recordsFiltered' => 0, 'draw' => 0]);
+        }
 
         $tableName = $this->localTableName($request->input('table_name'));
 
@@ -417,7 +418,7 @@ class CoreApiSyncController extends Controller
 
         DB::table($tableName)->truncate();
 
-        CoreApiList::where('table_name', $tableName)
+        CoreApiList::where('api_end_point', $tableName)
             ->update(['sync_status' => 'pending', 'last_synced_at' => null]);
 
         return response()->json([
@@ -440,7 +441,7 @@ class CoreApiSyncController extends Controller
 
         Schema::dropIfExists($tableName);
 
-        CoreApiList::where('table_name', $tableName)->delete();
+        CoreApiList::where('api_end_point', $tableName)->delete();
 
         return response()->json([
             'success' => true,

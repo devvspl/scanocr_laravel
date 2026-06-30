@@ -23,6 +23,7 @@ class CheckPermission
         'settings.users.company-access.update',
         'settings.users.location-access',
         'settings.users.location-access.update',
+        'settings.users.sync-core',
         // Document AI — all gated by auth only, no granular permission checks
         'document-ai.playground',
         'document-ai.predict',

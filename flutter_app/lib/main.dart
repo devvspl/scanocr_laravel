@@ -138,9 +138,23 @@ class _AuthGateState extends State<AuthGate> {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         if (auth.isLoading) {
-          return const Scaffold(
+          return Scaffold(
+            backgroundColor: const Color(AppConfig.primaryColor),
             body: Center(
-              child: CircularProgressIndicator(color: Color(AppConfig.primaryColor)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72, height: 72,
+                    decoration: BoxDecoration(color: Colors.white.withAlpha(30), borderRadius: BorderRadius.circular(18)),
+                    child: const Icon(Icons.document_scanner_rounded, size: 36, color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('ScanOCR', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+                  const SizedBox(height: 24),
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70)),
+                ],
+              ),
             ),
           );
         }

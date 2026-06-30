@@ -1,5 +1,6 @@
 ﻿<?php
 
+use App\Http\Controllers\AgrisoftController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\DocumentAiController;
 use App\Http\Controllers\Auth\AuthController;
@@ -53,9 +54,23 @@ Route::get('/privacy', [PublicController::class, 'privacy'])->name('privacy');
 Route::get('/help', [PublicController::class, 'help'])->name('help');
 Route::get('/cron-process-queue', [PublicController::class, 'processQueue'])->name('cron.process-queue');
 
-// ── JWT Token Login — accepts GET or POST, separate from normal auth flow ──
 // GET /token-login?token=<jwt>
 Route::match(['get', 'post'], '/token-login', [TokenLoginController::class, 'login'])->name('token-login');
+
+// Agrisoft API 
+Route::get('/api/Agrisoft_ctrl/scan_detail', [AgrisoftController::class, 'scan_detail']);
+Route::get('/api/Agrisoft_ctrl/punch_detail', [AgrisoftController::class, 'punch_detail']);
+Route::get('/api/Agrisoft_ctrl/invoice_detail', [AgrisoftController::class, 'invoice_detail']);
+Route::get('/api/Agrisoft_ctrl/vehicle_traveling_detail', [AgrisoftController::class, 'vehicle_traveling_detail']);
+Route::get('/api/Agrisoft_ctrl/labour_payment_detail_detail', [AgrisoftController::class, 'labour_payment_detail_detail']);
+Route::get('/api/Agrisoft_ctrl/lodging_employee_detail', [AgrisoftController::class, 'lodging_employee_detail']);
+Route::get('/api/Agrisoft_ctrl/ticket_cancellation_detail', [AgrisoftController::class, 'ticket_cancellation_detail']);
+Route::get('/api/Agrisoft_ctrl/master_detail', [AgrisoftController::class, 'master_detail']);
+Route::get('/api/Agrisoft_ctrl/master_firm_detail', [AgrisoftController::class, 'master_firm_detail']);
+Route::get('/api/Agrisoft_ctrl/master_item_detail', [AgrisoftController::class, 'master_item_detail']);
+Route::post('/api/Agrisoft_ctrl/transfer_result', [AgrisoftController::class, 'transfer_result']);
+Route::get('/api/Agrisoft_ctrl/get_punch_date', [AgrisoftController::class, 'get_punch_date']);
+Route::get('/agrisoft_data_set', [AgrisoftController::class, 'set_data']);
 
 Route::middleware('guest')->group(function () {
     // Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -319,6 +334,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
     Route::put('/settings/users/{user}/company-access', [UserController::class, 'updateCompanyAccess'])->name('settings.users.company-access.update');
     Route::get('/settings/users/{user}/location-access', [UserController::class, 'locationAccess'])->name('settings.users.location-access');
     Route::put('/settings/users/{user}/location-access', [UserController::class, 'updateLocationAccess'])->name('settings.users.location-access.update');
+    Route::post('/settings/users/sync-core', [UserController::class, 'syncCoreUsers'])->name('settings.users.sync-core');
 
     // Roles
     Route::get('/settings/roles', [RoleController::class, 'index'])->name('settings.roles');

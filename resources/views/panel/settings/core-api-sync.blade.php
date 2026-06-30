@@ -181,7 +181,7 @@
                 render: (id, t, row) =>
                     `<input type="checkbox" class="row-chk w-3.5 h-3.5 rounded border-stone-300 text-red-700 cursor-pointer"
                             data-id="${id}" data-endpoint="${escHtml(row.api_end_point)}"
-                            data-table="${escHtml(row.table_name)}"
+                            data-table="${escHtml(row.api_end_point)}"
                             data-params="${escHtml(JSON.stringify(row.parameters || {}))}">`,
             },
             {
@@ -208,7 +208,7 @@
                 data: 'id', orderable: false, className: 'td-center',
                 render: (id, t, row) => {
                     const ep         = escHtml(row.api_end_point);
-                    const tn         = escHtml(row.table_name);
+                    const tn         = escHtml(row.api_end_point);
                     // Store params as base64 to avoid HTML attribute encoding issues
                     const paramsB64      = btoa(unescape(encodeURIComponent(JSON.stringify(row.parameters || {}))));
                     const lastParamsB64  = btoa(unescape(encodeURIComponent(JSON.stringify(row.last_used_params || {}))));
@@ -529,7 +529,7 @@
             const cols = json.columns || [];
             if (!cols.length) { errorDiv.textContent = 'No columns found. Sync first.'; errorDiv.classList.remove('hidden'); modal.classList.remove('hidden'); modal.classList.add('flex'); return; }
 
-            if (modalDT && modalTable !== tbl) { modalDT.destroy(); modalDT = null; dtThead.innerHTML = ''; $('#modal-dt-table tbody').empty(); }
+            if (modalDT) { modalDT.destroy(); modalDT = null; dtThead.innerHTML = ''; $('#modal-dt-table tbody').empty(); }
             modalTable = tbl;
             dtThead.innerHTML = cols.map(c => `<th class="px-3 py-2 text-left text-[10px] font-bold text-stone-500 uppercase tracking-wide whitespace-nowrap">${escHtml(c)}</th>`).join('');
 

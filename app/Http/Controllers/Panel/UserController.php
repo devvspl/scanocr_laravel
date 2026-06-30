@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
@@ -385,6 +386,142 @@ class UserController extends Controller
         ActivityLogger::log('updated', $user, [], ['location_access' => 'updated']);
 
         return response()->json(['success' => true, 'message' => 'Location access updated.']);
+    }
+
+    /*** Sync employees from core_employee_tools → users ***/
+    public function syncCoreUsers()
+    {
+        $employees = DB::table('core_employee_tools')->get();
+
+        if ($employees->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No employee data found in core_employee_tools.',
+            ], 422);
+        }
+
+        $defaultPassword = (string) env('CORE_SYNC_DEFAULT_PASSWORD', '');
+        $hashedPassword  = Hash::make($defaultPassword);
+
+        $added       = 0;
+        $updated     = 0;
+        $deactivated = 0;
+        $skipped     = 0;
+        $conflicts   = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $emp) {
+                $empId = trim((string) ($emp->employee_id ?? ''));
+                if ($empId === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                $empName   = trim((string) ($emp->emp_name ?? ''));
+                $empEmail  = trim((string) ($emp->emp_email ?? ''));
+                $empPhone  = trim((string) ($emp->emp_contact ?? ''));
+                $empDesig  = trim((string) ($emp->emp_designation ?? ($emp->designation ?? '')));
+                $empDept   = trim((string) ($emp->emp_department ?? ($emp->department ?? '')));
+                $empStatus = strtoupper(trim((string) ($emp->emp_status ?? '')));
+                $isActive  = in_array($empStatus, ['A', 'ACTIVE'], true);
+
+                // Email must be valid + unique. Fall back to a deterministic local email.
+                $email = filter_var($empEmail, FILTER_VALIDATE_EMAIL)
+                    ? strtolower($empEmail)
+                    : strtolower($empId) . '@core.local';
+
+                $name = $empName !== '' ? $empName : $empId;
+
+                $existing = User::where('employee_id', $empId)->first();
+
+                if (! $existing) {
+                    // Avoid violating the email unique index
+                    $emailOwner = User::where('email', $email)->first();
+                    if ($emailOwner) {
+                        $conflicts[] = "Email {$email} already used by user #{$emailOwner->id}; skipped employee {$empId}.";
+                        $skipped++;
+                        continue;
+                    }
+
+                    User::create([
+                        'name'         => $name,
+                        'email'        => $email,
+                        'password'     => $hashedPassword,
+                        'phone'        => $empPhone ?: null,
+                        'designation'  => $empDesig ?: null,
+                        'department'   => $empDept  ?: null,
+                        'employee_id'  => $empId,
+                        'is_core_user' => true,
+                        'is_active'    => $isActive,
+                        'created_by'   => auth()->id(),
+                    ]);
+                    $added++;
+                    if (! $isActive) {
+                        $deactivated++;
+                    }
+                    continue;
+                }
+
+                $changes = [];
+                if ($name !== '' && $existing->name !== $name) {
+                    $changes['name'] = $name;
+                }
+                if ($empEmail !== '' && $existing->email !== $email) {
+                    $emailTaken = User::where('email', $email)->where('id', '!=', $existing->id)->exists();
+                    if ($emailTaken) {
+                        $conflicts[] = "Email {$email} taken by another user; left employee {$empId} unchanged.";
+                    } else {
+                        $changes['email'] = $email;
+                    }
+                }
+                if ($empPhone !== '' && $existing->phone !== $empPhone) {
+                    $changes['phone'] = $empPhone;
+                }
+                if ($empDesig !== '' && $existing->designation !== $empDesig) {
+                    $changes['designation'] = $empDesig;
+                }
+                if ($empDept !== '' && $existing->department !== $empDept) {
+                    $changes['department'] = $empDept;
+                }
+                if (! $existing->is_core_user) {
+                    $changes['is_core_user'] = true;
+                }
+                if ((bool) $existing->is_active !== $isActive) {
+                    $changes['is_active'] = $isActive;
+                    if (! $isActive) {
+                        $deactivated++;
+                    }
+                }
+
+                if (! empty($changes)) {
+                    $existing->update($changes);
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Sync failed: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Sync complete. Added: {$added}, Updated: {$updated}, Deactivated: {$deactivated}, Skipped: {$skipped}.",
+            'stats'   => [
+                'added'       => $added,
+                'updated'     => $updated,
+                'deactivated' => $deactivated,
+                'skipped'     => $skipped,
+                'conflicts'   => $conflicts,
+            ],
+        ]);
     }
 
     private function validateUser(Request $request, ?int $ignoreId = null): array
