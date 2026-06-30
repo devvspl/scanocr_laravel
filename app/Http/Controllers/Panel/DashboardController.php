@@ -121,14 +121,16 @@ class DashboardController extends Controller
                 SUM(CASE WHEN s.Scan_Complete = 'Y' AND (s.document_verified IS NULL OR s.document_verified = 'N') AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_verification")
             ->groupBy('c.name')->orderByDesc(DB::raw('COUNT(*)'))->get();
 
-        // ── Document Receiving Report (company wise) ──────────────────────────
-        $docReceiving = (clone $base)->join('companies as c', 'c.id', '=', 's.Group_Id')
-            ->selectRaw("c.name as label, COUNT(*) as total_scans,
-                SUM(CASE WHEN s.document_verified = 'Y' THEN 1 ELSE 0 END) as received,
-                SUM(CASE WHEN s.Scan_Complete = 'Y' AND (s.document_verified IS NULL OR s.document_verified = 'N') THEN 1 ELSE 0 END) as pending_verification,
-                SUM(CASE WHEN s.Scan_Complete = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_naming,
-                SUM(CASE WHEN DATE(s.document_verified_date) = CURDATE() THEN 1 ELSE 0 END) as received_today")
-            ->groupBy('c.name')->orderByDesc(DB::raw('COUNT(*)'))->get();
+        // ── Location Wise Report (stage counter per location) ───────────────────
+        $locationWise = (clone $base)->leftJoin('master_work_location as l', 'l.location_id', '=', 's.Location')
+            ->selectRaw("COALESCE(l.location_name, 'Unknown') as label, COUNT(*) as total,
+                SUM(CASE WHEN s.Bill_Approved = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_approval,
+                SUM(CASE WHEN s.Bill_Approved = 'Y' THEN 1 ELSE 0 END) as bill_approved,
+                SUM(CASE WHEN s.Bill_Approved = 'R' OR s.temp_scan_reject = 'Y' THEN 1 ELSE 0 END) as bill_rejected,
+                SUM(CASE WHEN s.is_extract = 'Y' THEN 1 ELSE 0 END) as classified,
+                SUM(CASE WHEN s.File_Punched = 'Y' THEN 1 ELSE 0 END) as punched,
+                SUM(CASE WHEN s.File_Approved = 'Y' THEN 1 ELSE 0 END) as completed")
+            ->groupBy('l.location_name')->orderByDesc(DB::raw('COUNT(*)'))->get();
 
         // ── Bill Approver ─────────────────────────────────────────────────────
         $billApprover = (clone $base)->join('users as u', 'u.id', '=', 's.Bill_Approver')
@@ -145,7 +147,7 @@ class DashboardController extends Controller
                 SUM(CASE WHEN s.File_Punched = 'Y' AND s.File_Approved = 'N' AND (s.Is_Rejected IS NULL OR s.Is_Rejected = 'N') THEN 1 ELSE 0 END) as pending_punch_approval,
                 SUM(CASE WHEN s.File_Approved = 'Y' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN s.Is_Rejected = 'Y' OR s.Bill_Approved = 'R' OR s.temp_scan_reject = 'Y' THEN 1 ELSE 0 END) as rejected")
-            ->groupBy('l.location_name')->orderByDesc(DB::raw('COUNT(*)'))->limit(25)->get();
+            ->groupBy('l.location_name')->orderByDesc(DB::raw('COUNT(*)'))->get();
 
         $docTypes = (clone $base)->leftJoin('document_types as dt', 'dt.id', '=', 's.DocType_Id')->where('s.DocType_Id', '>', 0)
             ->selectRaw("COALESCE(dt.label, 'Unknown') as label, COUNT(*) as total")
@@ -187,7 +189,7 @@ class DashboardController extends Controller
             'extractionToday' => $extractionToday,
             'monthly'       => ['labels' => $monthlyLabels, 'datasets' => $monthly],
             'companyWise'   => $companyWise,
-            'docReceiving'  => $docReceiving,
+            'locationWise'  => $locationWise,
             'billApprover'  => $billApprover,
             'locationWise'  => $locationWise,
             'docTypes'   => $docTypes,
@@ -273,7 +275,7 @@ class DashboardController extends Controller
                 'c.name as company_name', 'mf.firm_name as vendor_name',
                 'dt.label as doc_type',
                 DB::raw("CASE 
-                    WHEN s.File_Approved='Y' THEN 'Approved'
+                    WHEN s.File_Approved='Y' THEN 'Completed'
                     WHEN s.Is_Rejected='Y' THEN 'Rejected'
                     WHEN s.File_Punched='Y' THEN 'Punched'
                     WHEN s.is_extract='Y' THEN 'Classified'
@@ -281,6 +283,7 @@ class DashboardController extends Controller
                     WHEN s.Bill_Approved='R' THEN 'Bill Rejected'
                     ELSE 'Pending'
                 END as status"),
+                DB::raw("(SELECT COUNT(*) FROM scan_action_logs WHERE scan_id = s.Scan_Id) as action_count"),
             ])
             ->orderByDesc('s.Scan_Id');
 
@@ -288,5 +291,20 @@ class DashboardController extends Controller
         $results = $query->offset(($page - 1) * $per)->limit($per)->get();
 
         return response()->json(['results' => $results, 'has_more' => ($page * $per) < $total, 'total' => $total]);
+    }
+
+    // ── Scan Action Logs (AJAX for offcanvas) ─────────────────────────────────
+
+    public function scanActionLogs(Request $request)
+    {
+        $scanId = (int) $request->input('scan_id');
+        if (!$scanId) return response()->json(['logs' => []]);
+
+        $logs = DB::table('scan_action_logs')
+            ->where('scan_id', $scanId)
+            ->orderBy('performed_at')
+            ->get(['action', 'action_label', 'performer_name', 'remark', 'performed_at']);
+
+        return response()->json(['logs' => $logs, 'scan_id' => $scanId]);
     }
 }

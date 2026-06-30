@@ -721,33 +721,32 @@
                         </div>
                     </template>
                     <template x-for="r in results" :key="r.Scan_Id">
-                        <a :href="'/workflow/punching/entry/' + r.Scan_Id + '?view=1'" class="flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 transition-colors border-b border-stone-50 cursor-pointer">
-                            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                <span class="text-[9px] font-bold text-red-700 uppercase" x-text="r.File_Ext || 'DOC'"></span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-semibold text-stone-800 truncate" x-text="r.Document_name || r.File || 'Scan #' + r.Scan_Id"></span>
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0"
-                                          :class="{
-                                              'bg-green-100 text-green-700': r.status === 'Approved',
-                                              'bg-red-100 text-red-700': r.status === 'Rejected' || r.status === 'Bill Rejected',
-                                              'bg-blue-100 text-blue-700': r.status === 'Classified' || r.status === 'Bill Approved',
-                                              'bg-purple-100 text-purple-700': r.status === 'Punched',
-                                              'bg-amber-100 text-amber-700': r.status === 'Pending',
-                                          }" x-text="r.status"></span>
+                        <div class="flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 transition-colors border-b border-stone-50">
+                            <a :href="'/workflow/punching/entry/' + r.Scan_Id + '?view=1'" class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                                <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                    <span class="text-[9px] font-bold text-red-700 uppercase" x-text="r.File_Ext || 'DOC'"></span>
                                 </div>
-                                <p class="text-[11px] text-stone-400 truncate mt-0.5">
-                                    <span x-text="r.company_name"></span>
-                                    <template x-if="r.vendor_name"> &bull; <span x-text="r.vendor_name"></span></template>
-                                    <template x-if="r.bill_no_voucher_no"> &bull; Bill: <span x-text="r.bill_no_voucher_no"></span></template>
-                                </p>
-                            </div>
-                            <div class="text-right shrink-0">
-                                <span class="text-[10px] text-stone-400 font-mono" x-text="'#' + r.Scan_Id"></span>
-                                <p class="text-[10px] text-stone-300" x-text="r.doc_type || ''"></p>
-                            </div>
-                        </a>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-stone-800 truncate" x-text="r.Document_name || r.File || 'Scan #' + r.Scan_Id"></span>
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0"
+                                              :class="{'bg-green-100 text-green-700': r.status==='Completed'||r.status==='Approved', 'bg-red-100 text-red-700': r.status==='Rejected'||r.status==='Bill Rejected', 'bg-blue-100 text-blue-700': r.status==='Classified'||r.status==='Bill Approved', 'bg-purple-100 text-purple-700': r.status==='Punched', 'bg-amber-100 text-amber-700': r.status==='Pending'}" x-text="r.status"></span>
+                                    </div>
+                                    <p class="text-[11px] text-stone-400 truncate mt-0.5">
+                                        <span x-text="r.company_name"></span>
+                                        <template x-if="r.vendor_name"> &bull; <span x-text="r.vendor_name"></span></template>
+                                        <template x-if="r.bill_no_voucher_no"> &bull; Bill: <span x-text="r.bill_no_voucher_no"></span></template>
+                                    </p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="text-[10px] text-stone-400 font-mono" x-text="'#' + r.Scan_Id"></span>
+                                    <p class="text-[10px] text-stone-300" x-text="r.doc_type || ''"></p>
+                                </div>
+                            </a>
+                            <button x-show="r.action_count > 0" @click.stop="openActionLog(r.Scan_Id)" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition" title="Workflow History">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </button>
+                        </div>
                     </template>
                 </div>
                 {{-- Footer --}}
@@ -761,11 +760,54 @@
                 </div>
             </div>
         </div>
+        {{-- Action Log Offcanvas --}}
+        <div x-show="logOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" class="fixed inset-0 z-[300] bg-black/30" @click="closeLog()" style="display:none"></div>
+        <div x-show="logOpen" x-transition:enter="transition ease-out duration-200 transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full" class="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[301] flex flex-col" style="display:none">
+            <div class="px-4 py-3 border-b border-stone-200 flex items-center justify-between shrink-0">
+                <h3 class="text-sm font-semibold text-stone-800 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Workflow History <span class="text-xs text-stone-400 font-mono" x-text="'#' + logScanId"></span>
+                </h3>
+                <button @click="closeLog()" class="w-6 h-6 flex items-center justify-center rounded hover:bg-stone-100 text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <template x-if="logLoading">
+                    <div class="flex items-center justify-center py-12"><svg class="w-5 h-5 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></div>
+                </template>
+                <template x-if="!logLoading && logItems.length === 0">
+                    <p class="text-center text-sm text-stone-400 py-8">No action logs found</p>
+                </template>
+                <template x-if="!logLoading && logItems.length > 0">
+                    <div class="space-y-0">
+                        <template x-for="(log, idx) in logItems" :key="idx">
+                            <div class="flex gap-3 pb-4">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                        <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    </div>
+                                    <div x-show="idx < logItems.length - 1" class="w-0.5 flex-1 bg-stone-200 mt-1"></div>
+                                </div>
+                                <div class="flex-1 pb-2">
+                                    <p class="text-xs font-semibold text-stone-800" x-text="log.action_label || log.action"></p>
+                                    <p class="text-[10px] text-stone-500 mt-0.5">
+                                        <span x-text="log.performer_name || 'System'"></span> &bull; <span x-text="log.performed_at"></span>
+                                    </p>
+                                    <p x-show="log.remark" class="text-[10px] text-stone-400 mt-0.5 italic" x-text="log.remark"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
     </div>
     <script>
     function globalSearchModal() {
         return {
             isOpen: false, query: '', results: [], loading: false, loadingMore: false, hasMore: false, page: 1, total: 0,
+            // Action log offcanvas
+            logOpen: false, logLoading: false, logScanId: null, logItems: [],
+
             open() { this.isOpen = true; this.$nextTick(() => this.$refs.searchInput?.focus()); },
             close() { this.isOpen = false; this.query = ''; this.results = []; this.page = 1; this.hasMore = false; this.total = 0; },
             async search() {
@@ -794,7 +836,20 @@
             onScroll(e) {
                 const el = e.target;
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) this.loadMore();
-            }
+            },
+            async openActionLog(scanId) {
+                this.logScanId = scanId;
+                this.logOpen = true;
+                this.logLoading = true;
+                this.logItems = [];
+                try {
+                    const res = await fetch('/search/action-logs?scan_id=' + scanId, { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
+                    const json = await res.json();
+                    this.logItems = json.logs || [];
+                } catch(e) {}
+                this.logLoading = false;
+            },
+            closeLog() { this.logOpen = false; this.logItems = []; this.logScanId = null; }
         };
     }
     </script>

@@ -52,15 +52,15 @@
 
     {{-- ══ Filters ═════════════════════════════════════════════════════════════ --}}
     <div class="bg-white border border-stone-200 rounded-xl overflow-hidden mb-3">
-        <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:#fafaf9;flex-wrap:nowrap">
+        <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;flex-wrap:nowrap">
             <svg class="shrink-0" style="width:14px;height:14px;color:#a8a29e" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
             <select id="f-fy" style="width:100px"></select>
             <select id="f-company" style="width:140px"></select>
             <select id="f-location" style="width:130px"></select>
             <select id="f-user" style="width:120px"></select>
             <select id="f-doctype" style="width:130px"></select>
-            <input type="date" id="f-from" style="height:28px;padding:0 .4rem;font-size:.68rem;border:1px solid #d6d3d1;border-radius:.375rem;background:#fff;color:#292524;width:110px" onfocus="this.showPicker()">
-            <input type="date" id="f-to" style="height:28px;padding:0 .4rem;font-size:.68rem;border:1px solid #d6d3d1;border-radius:.375rem;background:#fff;color:#292524;width:110px" onfocus="this.showPicker()">
+            <input type="date" id="f-from" style="height:28px;padding:0 .4rem;font-size:.68rem;border:1px solid #d6d3d1;border-radius:.375rem;color:#292524;width:110px" onfocus="this.showPicker()">
+            <input type="date" id="f-to" style="height:28px;padding:0 .4rem;font-size:.68rem;border:1px solid #d6d3d1;border-radius:.375rem;color:#292524;width:110px" onfocus="this.showPicker()">
             <button @click="loadData()" style="height:28px;display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:600;border-radius:.375rem;cursor:pointer;background:#7f1d1d;color:#fff;border:none;padding:0 .65rem;white-space:nowrap">
                 <svg style="width:11px;height:11px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>Apply
             </button>
@@ -116,7 +116,7 @@
     {{-- ══ Document Receiving + Bill Approver ══════════════════════════════════ --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
         <div class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col" style="max-height:400px">
-            <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Document Receiving Report</h3></div>
+            <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Location Wise Report</h3></div>
             <div class="overflow-y-auto flex-1" id="tblDocReceiving"></div>
         </div>
         <div class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col" style="max-height:400px">
@@ -189,9 +189,9 @@ function dashboardApp() {
                 this.renderKPI(d.kpi);
                 this.renderToday(d.today, d.extractionToday);
                 this.renderMonthlyChart(d.monthly);
-                this.renderDocTypeChart(d.topDocTypes);
-                this.renderTable('tblCompany', ['Company', 'Total', 'Pend. Appr.', 'Approved', 'Rejected', 'Classified', 'Punched', 'Completed', 'Pend. Naming', 'Pend. Verify'], d.companyWise, ['label', 'total', 'pending_approval', 'bill_approved', 'bill_rejected', 'classified', 'punched', 'completed', 'pending_naming', 'pending_verification']);
-                this.renderTable('tblDocReceiving', ['Company', 'Total', 'Received', 'Pend. Verify', 'Pend. Naming', 'Today'], d.docReceiving, ['label', 'total_scans', 'received', 'pending_verification', 'pending_naming', 'received_today']);
+                this.renderDocTypeChart(d.docTypes);
+                this.renderTable('tblCompany', ['Company', 'Total', 'Pend. Appr.', 'Pend. Naming', 'Pend. Verify', 'Approved', 'Rejected', 'Classified', 'Punched', 'Completed'], d.companyWise, ['label', 'total', 'pending_approval', 'pending_naming', 'pending_verification', 'bill_approved', 'bill_rejected', 'classified', 'punched', 'completed']);
+                this.renderTable('tblDocReceiving', ['Location', 'Total', 'Pend. Appr.', 'Approved', 'Rejected', 'Classified', 'Punched', 'Completed'], d.locationWise, ['label', 'total', 'pending_approval', 'bill_approved', 'bill_rejected', 'classified', 'punched', 'completed']);
                 this.renderApproverTable(d.billApprover);
                 this.renderTopList('topDocTypes', d.topDocTypes, '#6366f1');
                 this.renderTopList('topScanners', d.topScanners, '#2563eb');
@@ -310,7 +310,7 @@ function dashboardApp() {
                 rows.forEach(r => {
                     const ar = r.approve_rate || 0;
                     const rr = r.reject_rate || 0;
-                    html += `<tr><td>${r.label}</td><td style="text-align:center">${r.total}</td><td style="text-align:center">${r.approved}</td><td style="text-align:center">${r.rejected}</td><td style="text-align:center">${r.pending}</td><td style="text-align:center"><span style="color:#16a34a;font-weight:600">${ar}%</span> <span style="color:#a8a29e">/</span> <span style="color:#dc2626;font-weight:600">${rr}%</span></td></tr>`;
+                    html += `<tr><td>${r.label}</td><td style="text-align:center">${r.total}</td><td style="text-align:center">${r.approved}</td><td style="text-align:center">${r.rejected}</td><td style="text-align:center">${r.pending}</td><td style="text-align:center"><span style="color:#16a34a;">${ar}%</span> <span style="color:#a8a29e">/</span> <span style="color:#dc2626;">${rr}%</span></td></tr>`;
                 });
                 // Grand Total
                 const sTotal = rows.reduce((a, r) => a + (parseInt(r.total) || 0), 0);

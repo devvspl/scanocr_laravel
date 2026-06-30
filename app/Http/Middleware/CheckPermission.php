@@ -256,6 +256,7 @@ class CheckPermission
         'reports.export-logs',
         // Global Search
         'global-search',
+        'search.action-logs',
         'dashboard.data',
         'reports.select.companies',
         'reports.select.locations',

@@ -195,6 +195,7 @@ Route::middleware(['auth', 'checkpermission'])->group(function () {
 
     // Global Search
     Route::get('/search', [DashboardController::class, 'globalSearch'])->name('global-search');
+    Route::get('/search/action-logs', [DashboardController::class, 'scanActionLogs'])->name('search.action-logs');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
 
     // Reports
