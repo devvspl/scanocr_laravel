@@ -286,6 +286,8 @@ class BillApprovalController extends Controller
         $this->authorizeApprover($scan);
 
         $scan->update([
+            'is_extract' => 'N',
+            'extract_status' => 'N',
             'Bill_Approved'        => 'Y',
             'Bill_Approver_Date'   => now()->toDateString(),
             'Bill_Approver_Remark' => $request->input('remark', null),

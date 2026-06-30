@@ -273,6 +273,8 @@ class BillApprovalApiController extends Controller
         }
 
         DB::table('scan_file')->where('Scan_Id', $scanId)->update([
+            'is_extract' => 'N',
+            'extract_status' => 'N',
             'Bill_Approved'        => 'R',
             'Bill_Approver_Date'   => now()->toDateString(),
             'Bill_Approver_Remark' => $request->input('reason'),
