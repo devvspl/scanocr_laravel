@@ -682,7 +682,7 @@ class ReportController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $per  = 20;
 
-        $query = DB::table('users')->whereNull('deleted_at')->orderBy('name');
+        $query = DB::table('users')->where('is_active', true)->orderBy('name');
 
         if ($q !== '') {
             $query->where(fn($qb) => $qb->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%"));

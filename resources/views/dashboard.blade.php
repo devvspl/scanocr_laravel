@@ -107,11 +107,17 @@
         <div style="height:400px"><canvas id="chartDocType"></canvas></div>
     </div>
 
-    {{-- ══ Tables: Company + Bill Approver ═════════════════════════════════════ --}}
+    {{-- ══ Company Wise Report (full width, like super-scanner) ══════════════ --}}
+    <div class="bg-white border border-stone-200 rounded-xl overflow-hidden mb-3 flex flex-col" style="max-height:420px">
+        <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Company Wise Report</h3></div>
+        <div class="overflow-y-auto flex-1" id="tblCompany"></div>
+    </div>
+
+    {{-- ══ Document Receiving + Bill Approver ══════════════════════════════════ --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
         <div class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col" style="max-height:400px">
-            <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Company Wise Report</h3></div>
-            <div class="overflow-y-auto flex-1" id="tblCompany"></div>
+            <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Document Receiving Report</h3></div>
+            <div class="overflow-y-auto flex-1" id="tblDocReceiving"></div>
         </div>
         <div class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col" style="max-height:400px">
             <div class="px-4 py-2.5 border-b border-stone-100 shrink-0"><h3 class="text-xs font-bold text-stone-700 uppercase tracking-wide">Bill Approver Report</h3></div>
@@ -184,7 +190,8 @@ function dashboardApp() {
                 this.renderToday(d.today, d.extractionToday);
                 this.renderMonthlyChart(d.monthly);
                 this.renderDocTypeChart(d.topDocTypes);
-                this.renderTable('tblCompany', ['Company', 'Total', 'Bill Appr.', 'Punched', 'Approved'], d.companyWise, ['label', 'total', 'bill_approved', 'punched', 'completed']);
+                this.renderTable('tblCompany', ['Company', 'Total', 'Pend. Appr.', 'Approved', 'Rejected', 'Classified', 'Punched', 'Completed', 'Pend. Naming', 'Pend. Verify'], d.companyWise, ['label', 'total', 'pending_approval', 'bill_approved', 'bill_rejected', 'classified', 'punched', 'completed', 'pending_naming', 'pending_verification']);
+                this.renderTable('tblDocReceiving', ['Company', 'Total', 'Received', 'Pend. Verify', 'Pend. Naming', 'Today'], d.docReceiving, ['label', 'total_scans', 'received', 'pending_verification', 'pending_naming', 'received_today']);
                 this.renderApproverTable(d.billApprover);
                 this.renderTopList('topDocTypes', d.topDocTypes, '#6366f1');
                 this.renderTopList('topScanners', d.topScanners, '#2563eb');

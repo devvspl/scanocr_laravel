@@ -108,9 +108,26 @@ class DashboardController extends Controller
         }
         $monthlyLabels = $months;
 
-        // ── Company Wise ──────────────────────────────────────────────────────
+        // ── Company Wise (full detail like super-scanner summary) ──────────────
         $companyWise = (clone $base)->join('companies as c', 'c.id', '=', 's.Group_Id')
-            ->selectRaw("c.name as label, COUNT(*) as total, SUM(CASE WHEN s.Bill_Approved='Y' THEN 1 ELSE 0 END) as bill_approved, SUM(CASE WHEN s.File_Punched='Y' THEN 1 ELSE 0 END) as punched, SUM(CASE WHEN s.File_Approved='Y' THEN 1 ELSE 0 END) as completed")
+            ->selectRaw("c.name as label, COUNT(*) as total,
+                SUM(CASE WHEN s.Bill_Approved = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_approval,
+                SUM(CASE WHEN s.Bill_Approved = 'Y' THEN 1 ELSE 0 END) as bill_approved,
+                SUM(CASE WHEN s.Bill_Approved = 'R' OR s.temp_scan_reject = 'Y' THEN 1 ELSE 0 END) as bill_rejected,
+                SUM(CASE WHEN s.is_extract = 'Y' THEN 1 ELSE 0 END) as classified,
+                SUM(CASE WHEN s.File_Punched = 'Y' THEN 1 ELSE 0 END) as punched,
+                SUM(CASE WHEN s.File_Approved = 'Y' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN s.Scan_Complete = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_naming,
+                SUM(CASE WHEN s.Scan_Complete = 'Y' AND (s.document_verified IS NULL OR s.document_verified = 'N') AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_verification")
+            ->groupBy('c.name')->orderByDesc(DB::raw('COUNT(*)'))->get();
+
+        // ── Document Receiving Report (company wise) ──────────────────────────
+        $docReceiving = (clone $base)->join('companies as c', 'c.id', '=', 's.Group_Id')
+            ->selectRaw("c.name as label, COUNT(*) as total_scans,
+                SUM(CASE WHEN s.document_verified = 'Y' THEN 1 ELSE 0 END) as received,
+                SUM(CASE WHEN s.Scan_Complete = 'Y' AND (s.document_verified IS NULL OR s.document_verified = 'N') THEN 1 ELSE 0 END) as pending_verification,
+                SUM(CASE WHEN s.Scan_Complete = 'N' AND (s.temp_scan_reject IS NULL OR s.temp_scan_reject = 'N') THEN 1 ELSE 0 END) as pending_naming,
+                SUM(CASE WHEN DATE(s.document_verified_date) = CURDATE() THEN 1 ELSE 0 END) as received_today")
             ->groupBy('c.name')->orderByDesc(DB::raw('COUNT(*)'))->get();
 
         // ── Bill Approver ─────────────────────────────────────────────────────
@@ -130,10 +147,14 @@ class DashboardController extends Controller
                 SUM(CASE WHEN s.Is_Rejected = 'Y' OR s.Bill_Approved = 'R' OR s.temp_scan_reject = 'Y' THEN 1 ELSE 0 END) as rejected")
             ->groupBy('l.location_name')->orderByDesc(DB::raw('COUNT(*)'))->limit(25)->get();
 
+        $docTypes = (clone $base)->leftJoin('document_types as dt', 'dt.id', '=', 's.DocType_Id')->where('s.DocType_Id', '>', 0)
+            ->selectRaw("COALESCE(dt.label, 'Unknown') as label, COUNT(*) as total")
+            ->groupBy('dt.label')->orderByDesc('dt.label')->get();
+            
         // ── Top Document Types ────────────────────────────────────────────────
         $topDocTypes = (clone $base)->leftJoin('document_types as dt', 'dt.id', '=', 's.DocType_Id')->where('s.DocType_Id', '>', 0)
             ->selectRaw("COALESCE(dt.label, 'Unknown') as label, COUNT(*) as total")
-            ->groupBy('dt.label')->orderByDesc('dt.label')->get();
+            ->groupBy('dt.label')->orderByDesc(DB::raw('COUNT(*)'))->limit(10)->get();
 
         // ── Top Scanners ──────────────────────────────────────────────────────
         $topScanners = (clone $base)->leftJoin('users as u', 'u.id', '=', DB::raw("IF(s.Temp_Scan='Y', s.Temp_Scan_By, s.Scan_By)"))
@@ -166,8 +187,10 @@ class DashboardController extends Controller
             'extractionToday' => $extractionToday,
             'monthly'       => ['labels' => $monthlyLabels, 'datasets' => $monthly],
             'companyWise'   => $companyWise,
+            'docReceiving'  => $docReceiving,
             'billApprover'  => $billApprover,
             'locationWise'  => $locationWise,
+            'docTypes'   => $docTypes,
             'topDocTypes'   => $topDocTypes,
             'topScanners'   => $topScanners,
             'topPunchers'   => $topPunchers,

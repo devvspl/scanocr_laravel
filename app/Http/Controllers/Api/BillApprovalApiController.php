@@ -69,6 +69,7 @@ class BillApprovalApiController extends Controller
         $base = DB::table('scan_file')
             ->whereIn('Group_Id', $allowedIds)
             ->where('Bill_Approver', $userId)
+            ->where('Final_Submit', 'Y')
             ->where('Is_Deleted', 'N');
 
         // Apply filters
@@ -103,6 +104,7 @@ class BillApprovalApiController extends Controller
             ->leftJoin('users as u', 'u.id', '=', DB::raw("IF(s.Temp_Scan='Y', s.Temp_Scan_By, s.Scan_By)"))
             ->whereIn('s.Group_Id', $allowedIds)
             ->where('s.Bill_Approver', $userId)
+            ->where('s.Final_Submit', 'Y')
             ->where('s.Is_Deleted', 'N');
 
         // Apply filters
