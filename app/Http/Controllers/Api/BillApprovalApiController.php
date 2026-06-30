@@ -154,16 +154,16 @@ class BillApprovalApiController extends Controller
                 'document_name' => $r->Document_name ?? $r->File,
                 'file_url'      => $r->File_Location,
                 'file_ext'      => $r->File_Ext,
-                'bill_date'     => $r->bill_voucher_date,
+                'bill_date'     => $this->formatDate($r->bill_voucher_date),
                 'bill_no'       => $r->bill_no_voucher_no,
                 'company'       => $r->company_name,
                 'location'      => $r->location_name,
                 'vendor'        => $r->vendor_name,
                 'scanned_by'    => $r->scanned_by,
-                'scan_date'     => $r->scan_date,
+                'scan_date'     => $this->formatDate($r->scan_date),
                 'status'        => $this->resolveStatus($r),
                 'remark'        => $r->Bill_Approver_Remark,
-                'approval_date' => $r->Bill_Approver_Date,
+                'approval_date' => $this->formatDate($r->Bill_Approver_Date),
             ]);
 
         return response()->json([
@@ -220,17 +220,17 @@ class BillApprovalApiController extends Controller
                 'document_name' => $detail->Document_name ?? $detail->File,
                 'file_url'      => $detail->File_Location,
                 'file_ext'      => $detail->File_Ext,
-                'bill_date'     => $detail->bill_voucher_date,
+                'bill_date'     => $this->formatDate($detail->bill_voucher_date),
                 'bill_no'       => $detail->bill_no_voucher_no,
                 'company'       => $detail->company_name,
                 'location'      => $detail->location_name,
                 'fy'            => $detail->fy_label,
                 'vendor'        => $detail->vendor_name,
                 'scanned_by'    => $detail->scanned_by,
-                'scan_date'     => $detail->scan_date,
+                'scan_date'     => $this->formatDate($detail->scan_date),
                 'status'        => $this->resolveStatus($detail),
                 'remark'        => $detail->Bill_Approver_Remark,
-                'approval_date' => $detail->Bill_Approver_Date,
+                'approval_date' => $this->formatDate($detail->Bill_Approver_Date),
                 'supports'      => $supports->map(fn($s) => [
                     'id'       => $s->Support_Id,
                     'file'     => $s->File,
@@ -421,6 +421,20 @@ class BillApprovalApiController extends Controller
         if ($row->Bill_Approved === 'R') return 'rejected';
         if ($row->Bill_Approved === 'Y') return 'approved';
         return 'pending';
+    }
+
+    /**
+     * Format any date / datetime value to DD-MM-YYYY for API responses.
+     * Returns null for empty / unparseable values.
+     */
+    private function formatDate($value): ?string
+    {
+        if (empty($value)) return null;
+        try {
+            return \Illuminate\Support\Carbon::parse($value)->format('d-m-Y');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function applyFilters($query, Request $request): void
