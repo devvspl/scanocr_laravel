@@ -25,3 +25,5 @@ Thumbs.db
 
 /storage/tmp/*
 !/storage/tmp/.gitkeep
+
+firebase-credentials.json

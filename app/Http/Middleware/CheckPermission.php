@@ -84,6 +84,7 @@ class CheckPermission
         'workflow.temp-scan.index',
         'workflow.temp-scan.store',
         'workflow.temp-scan.data',
+        'workflow.temp-scan.tab-counts',
         'workflow.temp-scan.locations',
         'workflow.temp-scan.supporting',
         'workflow.temp-scan.supporting.store',
