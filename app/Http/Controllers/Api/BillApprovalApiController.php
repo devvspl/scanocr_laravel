@@ -129,6 +129,7 @@ class BillApprovalApiController extends Controller
                 ->where('s.Document_name', 'like', "%{$search}%")
                 ->orWhere('s.bill_no_voucher_no', 'like', "%{$search}%")
                 ->orWhere('mf.firm_name', 'like', "%{$search}%")
+                ->orWhere('s.File', 'like', "%{$search}%")
                 ->orWhere('c.name', 'like', "%{$search}%")
             );
         }
