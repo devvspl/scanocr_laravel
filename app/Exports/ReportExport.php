@@ -3,8 +3,7 @@
 namespace App\Exports;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\LazyCollection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromGenerator;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -18,8 +17,13 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Maatwebsite\Excel\Events\AfterSheet;
 
+/**
+ * Memory-efficient export using FromGenerator.
+ * Rows are yielded one at a time — no full collection in RAM.
+ * Per-row styling is skipped for large datasets (> LARGE_DATASET).
+ */
 class ReportExport extends DefaultValueBinder implements
-    FromCollection,
+    FromGenerator,
     WithHeadings,
     WithStyles,
     WithTitle,
@@ -31,7 +35,6 @@ class ReportExport extends DefaultValueBinder implements
     private string     $title;
     private int        $rowCount;
 
-    // Threshold: above this, skip per-row styling to save memory
     private const LARGE_DATASET = 5000;
 
     public function __construct(Collection $rows, array $headings, string $title = 'Report')
@@ -42,21 +45,26 @@ class ReportExport extends DefaultValueBinder implements
         $this->rowCount = $rows->count();
     }
 
-    public function collection(): Collection
+    /**
+     * FromGenerator: yields one row array at a time — constant memory.
+     */
+    public function generator(): \Generator
     {
-        // Use lazy map to avoid building a second full copy in memory
-        return $this->rows->values()->map(function ($row, $index) {
+        $index = 1;
+        foreach ($this->rows as $row) {
             $values = array_values((array) $row);
-            array_unshift($values, $index + 1); // Sr No
-            return $values;
-        });
+            array_unshift($values, $index++); // Sr No
+            yield $values;
+        }
     }
 
     public function headings(): array
     {
         $colCount = count($this->headings) + 1; // +1 for Sr No
         return [
+            // Row 1: report title (merged in AfterSheet)
             array_merge([$this->title], array_fill(0, $colCount - 1, '')),
+            // Row 2: column headers
             array_merge(['Sr No'], $this->headings),
         ];
     }
@@ -69,13 +77,11 @@ class ReportExport extends DefaultValueBinder implements
     public function styles(Worksheet $sheet): array
     {
         return [
-            // Title row
             1 => [
                 'font'      => ['bold' => true, 'size' => 12, 'color' => ['argb' => 'FF1C1917']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF5F5F4']],
             ],
-            // Header row
             2 => [
                 'font'      => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF7F1D1D']],
@@ -91,42 +97,39 @@ class ReportExport extends DefaultValueBinder implements
                 $sheet    = $event->sheet->getDelegate();
                 $colCount = count($this->headings) + 1;
                 $lastCol  = Coordinate::stringFromColumnIndex($colCount);
-                $lastRow  = $this->rowCount + 2; // +2 for title + header rows
+                $lastRow  = $this->rowCount + 2; // +2 for title + header
 
-                // Merge title row across all columns
+                // Merge title row
                 $sheet->mergeCells("A1:{$lastCol}1");
                 $sheet->getRowDimension(1)->setRowHeight(28);
                 $sheet->getRowDimension(2)->setRowHeight(22);
 
-                // Header row borders
+                // Header borders
                 $sheet->getStyle("A2:{$lastCol}2")->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF44403C']]],
                 ]);
 
                 if ($lastRow > 2) {
+                    // Data font size — single range call, no loop
+                    $sheet->getStyle("A3:{$lastCol}{$lastRow}")->getFont()->setSize(9);
+
+                    // Sr No center aligned
+                    $sheet->getStyle("A3:A{$lastRow}")
+                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                    // Thin borders on data — only for small datasets
                     if ($this->rowCount <= self::LARGE_DATASET) {
-                        // Full styling for small datasets
                         $sheet->getStyle("A3:{$lastCol}{$lastRow}")->applyFromArray([
                             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFD6D3D1']]],
-                            'font'    => ['size' => 9],
                         ]);
 
-                        // Alternating row colors
-                        for ($row = 3; $row <= $lastRow; $row++) {
-                            if ($row % 2 === 1) {
-                                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
-                                    ->setFillType(Fill::FILL_SOLID)
-                                    ->getStartColor()->setARGB('FFFAFAF9');
-                            }
+                        // Alternating row colors — only small datasets
+                        for ($row = 3; $row <= $lastRow; $row += 2) {
+                            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+                                ->setFillType(Fill::FILL_SOLID)
+                                ->getStartColor()->setARGB('FFFAFAF9');
                         }
-                    } else {
-                        // Large dataset: only apply font size to data range (range-based, no per-row loop)
-                        $sheet->getStyle("A3:{$lastCol}{$lastRow}")->getFont()->setSize(9);
                     }
-
-                    // Sr No column center-aligned
-                    $sheet->getStyle("A3:A{$lastRow}")->getAlignment()
-                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 // Outer border
@@ -134,20 +137,20 @@ class ReportExport extends DefaultValueBinder implements
                     'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF78716C']]],
                 ]);
 
-                // Auto-size only for small datasets — too slow for large ones
+                // Column widths
                 if ($this->rowCount <= self::LARGE_DATASET) {
-                    foreach (range(1, $colCount) as $col) {
+                    // Auto-size for small datasets
+                    for ($col = 1; $col <= $colCount; $col++) {
                         $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
                     }
                 } else {
-                    // Fixed column widths for large datasets
-                    $sheet->getColumnDimension('A')->setWidth(8);  // Sr No
-                    foreach (range(2, $colCount) as $col) {
-                        $sheet->getColumnDimensionByColumn($col)->setWidth(18);
+                    // Fixed widths for large datasets — auto-size reads every cell (slow + memory)
+                    $sheet->getColumnDimension('A')->setWidth(7);   // Sr No
+                    for ($col = 2; $col <= $colCount; $col++) {
+                        $sheet->getColumnDimensionByColumn($col)->setWidth(20);
                     }
                 }
 
-                // Freeze header rows
                 $sheet->freezePane('A3');
             },
         ];

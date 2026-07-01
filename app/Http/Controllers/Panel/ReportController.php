@@ -145,10 +145,13 @@ class ReportController extends Controller
         // Store Excel file
         try {
             \Log::info('[ReportController] Excel::store starting', [
-                'row_count'    => $rowCount,
+                'row_count'     => $rowCount,
                 'memory_before' => round(memory_get_usage(true) / 1024 / 1024, 1) . 'MB',
                 'memory_limit'  => ini_get('memory_limit'),
             ]);
+
+            // Free any other references before building the spreadsheet
+            gc_collect_cycles();
 
             Excel::store(
                 new \App\Exports\ReportExport(
