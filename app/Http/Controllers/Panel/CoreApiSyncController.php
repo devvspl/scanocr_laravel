@@ -347,12 +347,13 @@ class CoreApiSyncController extends Controller
 
     public function modalData(Request $request)
     {
-        $tableName = $request->input('table_name');
-        if (empty($tableName)) {
+        $raw = $request->input('table_name');
+        if (empty($raw)) {
             return response()->json(['error' => 'Table name is empty. Sync this API first.', 'columns' => [], 'data' => [], 'recordsTotal' => 0, 'recordsFiltered' => 0, 'draw' => 0]);
         }
 
-        $tableName = $this->localTableName($request->input('table_name'));
+        // Blade passes api_end_point; run through localTableName() to get the prefixed table
+        $tableName = $this->localTableName($raw);
 
         if (! Schema::hasTable($tableName)) {
             return response()->json([
@@ -407,7 +408,9 @@ class CoreApiSyncController extends Controller
             'table_name' => ['required', 'string', 'max:255'],
         ]);
 
-        $tableName = $this->localTableName($request->input('table_name'));
+        // The blade passes api_end_point as table_name — resolve the actual local table
+        $apiEndPoint = $request->input('table_name');
+        $tableName   = $this->localTableName($apiEndPoint);
 
         if (! Schema::hasTable($tableName)) {
             return response()->json([
@@ -418,7 +421,8 @@ class CoreApiSyncController extends Controller
 
         DB::table($tableName)->truncate();
 
-        CoreApiList::where('api_end_point', $tableName)
+        // Look up by api_end_point (always populated), not table_name (may be null/empty)
+        CoreApiList::where('api_end_point', $apiEndPoint)
             ->update(['sync_status' => 'pending', 'last_synced_at' => null]);
 
         return response()->json([
@@ -437,11 +441,14 @@ class CoreApiSyncController extends Controller
             'table_name' => ['required', 'string', 'max:255'],
         ]);
 
-        $tableName = $this->localTableName($request->input('table_name'));
+        // The blade passes api_end_point as table_name — resolve the actual local table
+        $apiEndPoint = $request->input('table_name');
+        $tableName   = $this->localTableName($apiEndPoint);
 
         Schema::dropIfExists($tableName);
 
-        CoreApiList::where('api_end_point', $tableName)->delete();
+        // Look up by api_end_point (always populated), not table_name (may be null/empty)
+        CoreApiList::where('api_end_point', $apiEndPoint)->delete();
 
         return response()->json([
             'success' => true,

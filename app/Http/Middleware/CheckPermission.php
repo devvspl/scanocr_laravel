@@ -125,7 +125,6 @@ class CheckPermission
         'settings.core-api-sync.data',
         'settings.core-api-sync.fetch',
         'settings.core-api-sync.sync',
-        'settings.core-api-sync.table-data',
         'settings.core-api-sync.modal-data',
         'settings.core-api-sync.empty',
         'settings.core-api-sync.drop',
