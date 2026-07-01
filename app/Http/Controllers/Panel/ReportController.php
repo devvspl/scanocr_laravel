@@ -50,8 +50,8 @@ class ReportController extends Controller
 
     public function generate(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600);
+        ini_set('memory_limit', '1G');
 
         \Log::info('[ReportController] generate() called', [
             'user_id'  => Auth::id(),
