@@ -273,7 +273,7 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
                         borderRadius: BorderRadius.circular(8),
                       ),
                       labelColor: const Color(AppConfig.primaryColor),
-                      unselectedLabelColor: Colors.white70,
+                      unselectedLabelColor: Colors.white,
                       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
                       unselectedLabelStyle: const TextStyle(fontSize: 10),
                       indicatorSize: TabBarIndicatorSize.tab,
@@ -296,7 +296,7 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
                                 '${_counts[_tabs[i]] ?? 0}',
                                 style: TextStyle(
                                   fontSize: 10, fontWeight: FontWeight.w700,
-                                  color: _tabCtrl.index == i ? const Color(AppConfig.primaryColor) : Colors.white70,
+                                  color: _tabCtrl.index == i ? const Color(AppConfig.primaryColor) : Colors.white,
                                 ),
                               ),
                             ),
