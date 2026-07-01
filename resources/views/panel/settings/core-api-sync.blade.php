@@ -36,7 +36,6 @@
                         <th class="td-center" style="width:36px;"><input type="checkbox" id="chk-all" class="w-3.5 h-3.5 rounded border-stone-300 text-red-700 cursor-pointer"></th>
                         <th class="td-center" style="width:46px;">#</th>
                         <th>Endpoint</th>
-                        <th>Table Name</th>
                         <th class="td-center">Last Synced At</th>
                         <th class="td-center">Status</th>
                         <th class="td-center" style="width:130px;">Actions</th>
@@ -191,10 +190,6 @@
             {
                 data: 'api_end_point',
                 render: v => `<code class="text-xs bg-stone-100 px-2 py-0.5 rounded font-mono text-stone-700">${escHtml(v)}</code>`,
-            },
-            {
-                data: 'table_name',
-                render: v => `<code class="text-xs bg-stone-100 px-2 py-0.5 rounded font-mono text-stone-600">${escHtml(v)}</code>`,
             },
             {
                 data: 'last_synced_at', className: 'td-center',
