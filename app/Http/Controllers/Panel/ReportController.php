@@ -130,6 +130,9 @@ class ReportController extends Controller
         // Ensure storage directory exists
         $fileName = $type . '-' . now()->format('Ymd-His') . '.xlsx';
         $filePath = 'reports/' . $fileName;
+        $rowCount = is_object($result['rows']) && method_exists($result['rows'], 'count')
+            ? $result['rows']->count()
+            : count($result['rows']);
 
         \Log::info('[ReportController] creating storage directory and writing Excel', ['filePath' => $filePath]);
 
@@ -174,9 +177,6 @@ class ReportController extends Controller
         }
 
         $fileUrl  = asset('storage/' . $filePath);
-        $rowCount = is_object($result['rows']) && method_exists($result['rows'], 'count')
-            ? $result['rows']->count()
-            : count($result['rows']);
 
         // Log export (graceful — skip if export_logs table missing)
         try {
