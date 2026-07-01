@@ -37,6 +37,28 @@
                     <span x-text="loading === 'pull' ? 'Pulling...' : 'Git Pull'"></span>
                 </button>
 
+                {{-- Pull Strategy Hint --}}
+                <div class="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-2">
+                    <p class="text-[10px] font-bold text-stone-500 uppercase tracking-wide">Pull Strategy</p>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button @click="pullWith('merge')" :disabled="loading" title="git pull (merge)" class="flex flex-col items-center gap-1 px-2 py-2 rounded-lg border border-stone-200 bg-white hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 transition-colors group">
+                            <svg class="w-4 h-4 text-stone-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            <span class="text-[10px] font-semibold text-stone-600 group-hover:text-blue-700">Merge</span>
+                            <span class="text-[9px] text-stone-400">default</span>
+                        </button>
+                        <button @click="pullWith('rebase')" :disabled="loading" title="git pull --rebase" class="flex flex-col items-center gap-1 px-2 py-2 rounded-lg border border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50 transition-colors group">
+                            <svg class="w-4 h-4 text-stone-400 group-hover:text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span class="text-[10px] font-semibold text-stone-600 group-hover:text-amber-700">Rebase</span>
+                            <span class="text-[9px] text-stone-400">linear</span>
+                        </button>
+                        <button @click="if(confirm('Force pull will DISCARD all local commits and reset to remote. Continue?')) pullWith('force')" :disabled="loading" title="git fetch + reset --hard" class="flex flex-col items-center gap-1 px-2 py-2 rounded-lg border border-red-200 bg-white hover:border-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors group">
+                            <svg class="w-4 h-4 text-red-300 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span class="text-[10px] font-semibold text-red-400 group-hover:text-red-700">Force</span>
+                            <span class="text-[9px] text-red-300">destructive</span>
+                        </button>
+                    </div>
+                </div>
+
                 {{-- Commit --}}
                 <div class="border border-stone-200 rounded-lg p-3">
                     <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5">Commit Message</label>
@@ -130,9 +152,19 @@ function gitDeployPage() {
         },
 
         async pull() {
-            this.loading = 'pull'; this.cmdOutput = '$ git pull origin ' + (this.branch || 'main') + '\n\nRunning...';
+            return this.pullWith('merge');
+        },
+
+        async pullWith(strategy) {
+            const strategyLabel = { merge: 'git pull (merge)', rebase: 'git pull --rebase', force: 'git fetch + reset --hard' };
+            this.loading = 'pull';
+            this.cmdOutput = '$ ' + (strategyLabel[strategy] || 'git pull') + '\n\nRunning...';
             try {
-                const res = await fetch('/git-deploy/pull', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
+                const res = await fetch('/git-deploy/pull', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ strategy }),
+                });
                 const json = await res.json();
                 this.cmdOutput = json.output || json.error || 'Done';
                 if (json.success) this.loadStatus();
