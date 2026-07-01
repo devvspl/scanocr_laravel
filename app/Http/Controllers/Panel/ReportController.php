@@ -53,12 +53,21 @@ class ReportController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
+        \Log::info('[ReportController] generate() called', [
+            'user_id'  => Auth::id(),
+            'payload'  => $request->all(),
+            'php'      => PHP_VERSION,
+            'env'      => app()->environment(),
+        ]);
+
         $request->validate([
             'report_type' => 'required|string|in:' . implode(',', array_keys(self::REPORTS)),
         ]);
 
         $type   = $request->input('report_type');
         $method = 'report' . str_replace('_', '', ucwords($type, '_'));
+
+        \Log::info('[ReportController] resolved method', ['type' => $type, 'method' => $method, 'exists' => method_exists($this, $method)]);
 
         if (!method_exists($this, $method)) {
             return response()->json(['success' => false, 'message' => 'Report not implemented yet.'], 422);
@@ -74,6 +83,7 @@ class ReportController extends Controller
                 ->first();
 
             if ($existing && Storage::disk('public')->exists($existing->file_path)) {
+                \Log::info('[ReportController] returning cached export', ['file' => $existing->file_path]);
                 return response()->json([
                     'success'   => true,
                     'file_url'  => asset('storage/' . $existing->file_path),
@@ -84,20 +94,36 @@ class ReportController extends Controller
                 ]);
             }
         } catch (\Throwable $e) {
-            // export_logs table may not exist on this environment — continue without cache
+            \Log::warning('[ReportController] ExportLog cache check failed', ['error' => $e->getMessage()]);
         }
 
         // Generate report data
+        \Log::info('[ReportController] running report method', ['method' => $method]);
         try {
             $result = $this->$method($request);
+            \Log::info('[ReportController] report data generated', [
+                'row_count' => is_object($result['rows']) && method_exists($result['rows'], 'count')
+                    ? $result['rows']->count() : count($result['rows'] ?? []),
+            ]);
         } catch (\Throwable $e) {
+            \Log::error('[ReportController] query failed', [
+                'method'  => $method,
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile() . ':' . $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Query error: ' . $e->getMessage(),
             ], 500);
         }
 
-        if (empty($result['rows']) || (is_object($result['rows']) && method_exists($result['rows'], 'isEmpty') && $result['rows']->isEmpty()) || (is_array($result['rows']) && empty($result['rows']))) {
+        if (
+            empty($result['rows']) ||
+            (is_object($result['rows']) && method_exists($result['rows'], 'isEmpty') && $result['rows']->isEmpty()) ||
+            (is_array($result['rows']) && empty($result['rows']))
+        ) {
+            \Log::info('[ReportController] no data found', ['method' => $method]);
             return response()->json(['success' => false, 'message' => 'No data found for selected filters.'], 422);
         }
 
@@ -105,10 +131,12 @@ class ReportController extends Controller
         $fileName = $type . '-' . now()->format('Ymd-His') . '.xlsx';
         $filePath = 'reports/' . $fileName;
 
+        \Log::info('[ReportController] creating storage directory and writing Excel', ['filePath' => $filePath]);
+
         try {
             Storage::disk('public')->makeDirectory('reports');
         } catch (\Throwable $e) {
-            // Directory may already exist
+            \Log::warning('[ReportController] makeDirectory failed (may already exist)', ['error' => $e->getMessage()]);
         }
 
         // Store Excel file
@@ -122,14 +150,20 @@ class ReportController extends Controller
                 $filePath,
                 'public'
             );
+            \Log::info('[ReportController] Excel stored successfully', ['filePath' => $filePath]);
         } catch (\Throwable $e) {
+            \Log::error('[ReportController] Excel::store failed', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile() . ':' . $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Excel export failed: ' . $e->getMessage(),
             ], 500);
         }
 
-        $fileUrl = asset('storage/' . $filePath);
+        $fileUrl  = asset('storage/' . $filePath);
         $rowCount = is_object($result['rows']) && method_exists($result['rows'], 'count')
             ? $result['rows']->count()
             : count($result['rows']);
@@ -144,8 +178,9 @@ class ReportController extends Controller
                 'data_hash' => $dataHash,
                 'user_id'   => Auth::id(),
             ]);
+            \Log::info('[ReportController] ExportLog saved', ['file' => $fileName, 'rows' => $rowCount]);
         } catch (\Throwable $e) {
-            // export_logs table may not exist — non-fatal
+            \Log::warning('[ReportController] ExportLog::create failed (non-fatal)', ['error' => $e->getMessage()]);
         }
 
         return response()->json([
