@@ -38,12 +38,38 @@ class GitDeployController extends Controller
 
     /**
      * POST /git-deploy/pull (AJAX)
+     * Supports strategy: merge (default), rebase, force
      */
-    public function pull()
+    public function pull(Request $request)
     {
         $this->guardSuperAdmin();
-        $branch = env('GIT_BRANCH', 'main');
-        $result = $this->runAuth("git pull origin {$branch}");
+
+        $branch   = trim($this->run('git branch --show-current')['output']) ?: env('GIT_BRANCH', 'main');
+        $strategy = $request->input('strategy', 'merge');
+
+        switch ($strategy) {
+            case 'rebase':
+                $result = $this->runAuth("git pull --rebase origin {$branch}");
+                break;
+
+            case 'force':
+                // Fetch latest then hard reset — discards all local commits
+                $fetch  = $this->runAuth("git fetch origin {$branch}");
+                if ($fetch['exitCode'] !== 0) {
+                    return response()->json([
+                        'success' => false,
+                        'output'  => $fetch['output'],
+                        'error'   => $fetch['error'],
+                    ]);
+                }
+                $result = $this->run("git reset --hard origin/{$branch}");
+                $result['output'] = $fetch['output'] . "\n" . $result['output'];
+                break;
+
+            default: // merge
+                $result = $this->runAuth("git pull origin {$branch}");
+                break;
+        }
 
         return response()->json([
             'success' => $result['exitCode'] === 0,
