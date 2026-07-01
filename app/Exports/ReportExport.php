@@ -107,7 +107,7 @@ class ReportExport implements
                     ],
                 ]);
 
-                // Borders on data area
+                // Borders + font on data area
                 if ($lastRow > 2) {
                     $sheet->getStyle("A3:{$lastCol}{$lastRow}")->applyFromArray([
                         'borders' => [
@@ -127,12 +127,14 @@ class ReportExport implements
                 // Sr No column center align
                 $sheet->getStyle("A3:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Alternating row colors
-                for ($row = 3; $row <= $lastRow; $row++) {
-                    if ($row % 2 === 1) {
-                        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFAFAF9']],
-                        ]);
+                // Skip alternating row colors for large datasets (>5000 rows) — too memory intensive
+                if ($lastRow <= 5002) {
+                    for ($row = 3; $row <= $lastRow; $row++) {
+                        if ($row % 2 === 1) {
+                            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFAFAF9']],
+                            ]);
+                        }
                     }
                 }
 

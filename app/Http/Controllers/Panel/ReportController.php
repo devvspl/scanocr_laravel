@@ -141,6 +141,12 @@ class ReportController extends Controller
 
         // Store Excel file
         try {
+            \Log::info('[ReportController] Excel::store starting', [
+                'row_count'    => $rowCount,
+                'memory_before' => round(memory_get_usage(true) / 1024 / 1024, 1) . 'MB',
+                'memory_limit'  => ini_get('memory_limit'),
+            ]);
+
             Excel::store(
                 new \App\Exports\ReportExport(
                     $result['rows'],
@@ -150,7 +156,11 @@ class ReportController extends Controller
                 $filePath,
                 'public'
             );
-            \Log::info('[ReportController] Excel stored successfully', ['filePath' => $filePath]);
+
+            \Log::info('[ReportController] Excel stored successfully', [
+                'filePath'      => $filePath,
+                'memory_after'  => round(memory_get_usage(true) / 1024 / 1024, 1) . 'MB',
+            ]);
         } catch (\Throwable $e) {
             \Log::error('[ReportController] Excel::store failed', [
                 'error' => $e->getMessage(),
