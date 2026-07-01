@@ -57,67 +57,102 @@ class ReportController extends Controller
             'report_type' => 'required|string|in:' . implode(',', array_keys(self::REPORTS)),
         ]);
 
-        $type = $request->input('report_type');
+        $type   = $request->input('report_type');
         $method = 'report' . str_replace('_', '', ucwords($type, '_'));
 
         if (!method_exists($this, $method)) {
             return response()->json(['success' => false, 'message' => 'Report not implemented yet.'], 422);
         }
 
-        // Build data hash from filters to detect duplicates
+        // Check for cached export (graceful — skip if export_logs table missing)
         $dataHash = md5($type . json_encode($request->except(['_token'])));
+        try {
+            $existing = ExportLog::where('data_hash', $dataHash)
+                ->where('user_id', Auth::id())
+                ->where('created_at', '>=', now()->subHours(24))
+                ->latest()
+                ->first();
 
-        // Check for existing export with same hash (within last 24 hours)
-        $existing = ExportLog::where('data_hash', $dataHash)
-            ->where('user_id', Auth::id())
-            ->where('created_at', '>=', now()->subHours(24))
-            ->latest()
-            ->first();
-
-        if ($existing && Storage::disk('public')->exists($existing->file_path)) {
-            $fileUrl = asset('storage/' . $existing->file_path);
-            return response()->json([
-                'success'   => true,
-                'file_url'  => $fileUrl,
-                'file_name' => $existing->file_name,
-                'row_count' => $existing->row_count,
-                'cached'    => true,
-                'message'   => 'Report loaded from cache.',
-            ]);
+            if ($existing && Storage::disk('public')->exists($existing->file_path)) {
+                return response()->json([
+                    'success'   => true,
+                    'file_url'  => asset('storage/' . $existing->file_path),
+                    'file_name' => $existing->file_name,
+                    'row_count' => $existing->row_count,
+                    'cached'    => true,
+                    'message'   => 'Report loaded from cache.',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // export_logs table may not exist on this environment — continue without cache
         }
 
-        // Generate fresh report
-        $result = $this->$method($request);
+        // Generate report data
+        try {
+            $result = $this->$method($request);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query error: ' . $e->getMessage(),
+            ], 500);
+        }
 
-        if (empty($result['rows']) || $result['rows']->isEmpty()) {
+        if (empty($result['rows']) || (is_object($result['rows']) && method_exists($result['rows'], 'isEmpty') && $result['rows']->isEmpty()) || (is_array($result['rows']) && empty($result['rows']))) {
             return response()->json(['success' => false, 'message' => 'No data found for selected filters.'], 422);
         }
 
+        // Ensure storage directory exists
         $fileName = $type . '-' . now()->format('Ymd-His') . '.xlsx';
         $filePath = 'reports/' . $fileName;
 
-        Excel::store(
-            new \App\Exports\ReportExport($result['rows'], $result['headings'], $result['title'] ?? self::REPORTS[$type]['label']),
-            $filePath,
-            'public'
-        );
+        try {
+            Storage::disk('public')->makeDirectory('reports');
+        } catch (\Throwable $e) {
+            // Directory may already exist
+        }
+
+        // Store Excel file
+        try {
+            Excel::store(
+                new \App\Exports\ReportExport(
+                    $result['rows'],
+                    $result['headings'],
+                    $result['title'] ?? self::REPORTS[$type]['label']
+                ),
+                $filePath,
+                'public'
+            );
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Excel export failed: ' . $e->getMessage(),
+            ], 500);
+        }
 
         $fileUrl = asset('storage/' . $filePath);
+        $rowCount = is_object($result['rows']) && method_exists($result['rows'], 'count')
+            ? $result['rows']->count()
+            : count($result['rows']);
 
-        ExportLog::create([
-            'model'     => 'Report_' . $type,
-            'file_name' => $fileName,
-            'file_path' => $filePath,
-            'row_count' => $result['rows']->count(),
-            'data_hash' => $dataHash,
-            'user_id'   => Auth::id(),
-        ]);
+        // Log export (graceful — skip if export_logs table missing)
+        try {
+            ExportLog::create([
+                'model'     => 'Report_' . $type,
+                'file_name' => $fileName,
+                'file_path' => $filePath,
+                'row_count' => $rowCount,
+                'data_hash' => $dataHash,
+                'user_id'   => Auth::id(),
+            ]);
+        } catch (\Throwable $e) {
+            // export_logs table may not exist — non-fatal
+        }
 
         return response()->json([
             'success'   => true,
             'file_url'  => $fileUrl,
             'file_name' => $fileName,
-            'row_count' => $result['rows']->count(),
+            'row_count' => $rowCount,
             'cached'    => false,
         ]);
     }
